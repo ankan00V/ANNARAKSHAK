@@ -8,6 +8,7 @@ import { FarmerProvider, useFarmer } from './FarmerContext'
 import LanguagePicker from './components/LanguagePicker'
 import Onboard from './screens/Onboard'
 import BrandMark from '../ui/BrandMark'
+import AccountMenu from '../auth/AccountMenu'
 
 const NAV = [
   { to: '/app', icon: HomeIcon, key: 'home' },
@@ -120,6 +121,7 @@ function Shell() {
               setLang(code)
               if (farmId != null) api.setFarmLang(farmId, code).catch(() => undefined)
             }} />
+            <AccountMenu logoutLabel={t('authLogout')} demoLabel={t('demoFarm')} />
           </div>
         </div>
       </header>

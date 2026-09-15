@@ -28,6 +28,7 @@ the officials' surveillance dashboard.
 | Follow-up monitoring | Day-4 check-in; "got worse" re-escalates automatically |
 | Learns from field confirmations | Capped per-district prior + confirmed-vs-corrected field accuracy (not retraining — stated as such) |
 | Dashboards for officials | `/officer`: KPIs, gate breakdown, risk outlook, district table, IMD rainfall vs normal, MoSPI pesticide baseline, model card |
+| Two roles, signed in | Farmers and experts (KVK scientists, agriculture officers, agronomists) sign up with different questions — a farmer's village, GPS field location, crop, sowing date, area, water source and Soil Health Card pH set up their advice; an expert's designation, organisation, staff ID, qualification, experience, districts, crops, specialities and languages decide which cases reach them. One-time codes by email (SMS when a gateway is added), hashed; HttpOnly sessions; every farm, case and dashboard call checks who is asking (`backend/app/auth.py`) |
 
 ## Principles that are enforced in code
 
@@ -37,6 +38,7 @@ the officials' surveillance dashboard.
 - **Veto, never endorse.** The spray check has no vocabulary for "safe".
 - **Every alert carries a task.** The database refuses an alert without inspection tasks.
 - **Labelled stub.** Without a trained model the API says `is_stub: true` and the app shows a banner.
+- **Your farm is yours.** A farmer sees only their own fields; the expert console and officials' dashboard need an expert account; an expert's verdict carries their signed-in name, not a typed one.
 
 ## The model, measured
 

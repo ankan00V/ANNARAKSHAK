@@ -7,6 +7,9 @@ import { useAsync } from '../../lib/hooks'
 import { Card, ErrorBox, Pill, Spinner } from '../../ui/kit'
 import LanguagePicker from '../components/LanguagePicker'
 import { useFarmer } from '../FarmerContext'
+import { useAuth } from '../../auth/AuthContext'
+import { Chips } from '../../auth/parts'
+import type { Irrigation } from '../../api/types'
 
 const CROP_TINT: Record<string, string> = {
   rice: 'bg-leaf/15 text-leaf-deep',
@@ -95,10 +98,12 @@ function RegisterForm({ crops, onDone }: {
   onDone: (id: number) => void
 }) {
   const { lang, t } = useFarmer()
-  const [name, setName] = useState('')
+  const { me } = useAuth()
+  const [name, setName] = useState(me?.name ?? '')
+  const [irrigation, setIrrigation] = useState<Irrigation>('rainfed')
   const [crop, setCrop] = useState(crops[0]?.id ?? 'rice')
   const [sowing, setSowing] = useState(() => new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10))
-  const [district, setDistrict] = useState('Pune')
+  const [district, setDistrict] = useState(me?.profile?.district ?? 'Pune')
   const [area, setArea] = useState('2')
   const [ph, setPh] = useState('')  // Soil Health Card pH, optional
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null)
@@ -133,6 +138,8 @@ function RegisterForm({ crops, onDone }: {
         lat: coords?.lat ?? d.lat,
         lon: coords?.lon ?? d.lon,
         area_acres: parseFloat(area),
+        irrigation,
+        village: me?.profile?.village ?? null,
         ...(phOk && ph ? { soil_ph: parseFloat(ph), soil_ph_on: new Date().toISOString().slice(0, 10) } : {}),
       })
       onDone(f.id)
@@ -184,6 +191,11 @@ function RegisterForm({ crops, onDone }: {
           ))}
         </select>
       </label>
+      <div className="text-xs text-soil-dark/60">
+        <p className="mb-1">{t('authIrrigation')}</p>
+        <Chips columns={2} value={[irrigation]} onChange={([v]) => setIrrigation(v)}
+          options={(['rainfed', 'canal', 'borewell', 'open_well', 'farm_pond', 'drip', 'sprinkler'] as const).map((id) => ({ id, label: t(`irr_${id}`) }))} />
+      </div>
       <label className="block text-xs text-soil-dark/60">
         {t('soilPhCard')}
         <input className={field} type="number" inputMode="decimal" min="3" max="11" step="0.1" value={ph}

@@ -25,7 +25,14 @@ import type {
   SatelliteView,
   SprayHour,
   WeatherView,
+  Me,
+  OtpSent,
+  AuthOptions,
+  Role,
 } from './types'
+
+/** Fired when a signed-in call comes back 401 (session expired or revoked). */
+export const UNAUTHORIZED = 'ar:unauthorized'
 
 export class ApiError extends Error {
   status: number
@@ -50,6 +57,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* non-JSON error body */
     }
+    if (res.status === 401 && !path.startsWith('/api/auth/')) window.dispatchEvent(new Event(UNAUTHORIZED))
     throw new ApiError(res.status, detail)
   }
   return res.json() as Promise<T>
@@ -62,6 +70,17 @@ const json = (body: unknown): RequestInit => ({
 })
 
 export const api = {
+  me: () => req<Me>('/api/auth/me'),
+  authOptions: (lang: Lang) => req<AuthOptions>(`/api/auth/options?lang=${lang}`),
+  requestOtp: (body: { role: Role; purpose: 'signup' | 'login'; email?: string; phone?: string; identifier?: string; lang: Lang }) =>
+    req<OtpSent>('/api/auth/otp', json(body)),
+  login: (challengeId: string, code: string, role: Role, lang: Lang) =>
+    req<Me>('/api/auth/login', json({ challenge_id: challengeId, code, role, lang })),
+  signupFarmer: (body: Record<string, unknown>) => req<Me>('/api/auth/signup/farmer', json(body)),
+  signupExpert: (body: Record<string, unknown>) => req<Me>('/api/auth/signup/expert', json(body)),
+  demoLogin: (role: Role) => req<Me>('/api/auth/demo', json({ role })),
+  logout: () => req<{ signed_out: boolean }>('/api/auth/logout', { method: 'POST' }),
+
   health: () => req<{ status: string; model: { is_stub: boolean }; voice: { configured: boolean } }>('/health'),
 
   crops: (lang: Lang) => req<CropInfo[]>(`/api/kb/crops?lang=${lang}`),

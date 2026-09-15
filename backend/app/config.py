@@ -109,6 +109,25 @@ REDIS_URL = os.environ.get("REDIS_URL")
 AGRO_CACHE_MINUTES = 30
 """Hour-by-hour agro-weather is re-fetched at most this often per location."""
 
+# --- Sign-in (OTP) and roles ------------------------------------------------
+
+AUTH_ENFORCE = os.environ.get("ANNRAKSHAK_AUTH", "on") != "off"
+"""Every farm, problem, alert and expert endpoint checks who is asking. Tests
+of the older flows turn it off; the auth tests turn it on."""
+DEMO_LOGIN = os.environ.get("ANNRAKSHAK_DEMO_LOGIN", "on") != "off"
+"""'Try the demo' sign-in to the seeded demo farms / a demo expert. Off in production."""
+OTP_CHANNEL = "email"
+"""Where one-time codes go. Both roles give a mobile number at sign-up, but
+there is no free SMS gateway yet, so every code is emailed (SMTP above)."""
+EXPERT_AUTO_VERIFY = os.environ.get("ANNRAKSHAK_EXPERT_AUTO_VERIFY", "on") != "off"
+"""Hackathon builds verify experts at sign-up; production sets this off and the district office verifies."""
+OTP_DIGITS = 6
+OTP_TTL_MINUTES = 5
+OTP_MAX_ATTEMPTS = 5
+OTP_RESEND_SECONDS = 30
+SESSION_DAYS = 30
+COOKIE_SECURE = os.environ.get("ANNRAKSHAK_COOKIE_SECURE", "off") == "on"  # on behind HTTPS
+
 # --- Notifications: in-app (SSE), phone (Web Push) and email ---------------
 
 WATCH_ENABLED = os.environ.get("ANNRAKSHAK_WATCH", "on") != "off"

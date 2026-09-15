@@ -26,7 +26,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from app import notify, services, watch
+from app import auth, notify, services, watch
 from app.config import EMAIL_BACKEND
 from app.db import get_db
 from app.engine import agromet, agroweather, satellite
@@ -35,7 +35,7 @@ from app.limits import limit as rate_limit
 from app.mailer import valid_address
 from app.models import Farm, Notice, PushSubscription, SprayLog
 
-router = APIRouter(prefix="/api", tags=["weather"])
+router = APIRouter(prefix="/api", tags=["weather"], dependencies=[Depends(auth.require())])
 
 EMAIL_PREFS = ("warnings", "all", "digest", "off")
 SSE_MAX_SECONDS = 300
@@ -337,6 +337,6 @@ def unsubscribe_one_click(token: str = "", db: Session = Depends(get_db)):
 # Ops
 # --------------------------------------------------------------------------
 
-@router.post("/officials/watch/run")
+@router.post("/officials/watch/run", dependencies=[Depends(auth.require("expert"))])
 async def watch_run():
     return await run_in_threadpool(watch.cycle)

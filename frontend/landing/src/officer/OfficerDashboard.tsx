@@ -8,6 +8,7 @@ import type { ModelCard, OutlookRow, PesticideBaseline, RainfallPanel, Summary }
 import { useAsync } from '../lib/hooks'
 import { Card, ErrorBox, Pill, Spinner } from '../ui/kit'
 import HotspotMap from './HotspotMap'
+import AccountMenu from '../auth/AccountMenu'
 import BrandMark from '../ui/BrandMark'
 
 const pct = (n: number | null | undefined, d = 0) => (n == null ? '—' : `${(n * 100).toFixed(d)}%`)
@@ -56,6 +57,7 @@ export default function OfficerDashboard() {
               {sweeping ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
               Run risk sweep
             </button>
+            <AccountMenu />
           </div>
         </div>
       </header>

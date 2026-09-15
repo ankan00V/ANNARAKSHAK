@@ -646,3 +646,55 @@ export interface SatelliteView {
   polygon_ha?: number
   source?: string
 }
+
+// --- Sign-in -----------------------------------------------------------------
+
+export type Role = 'farmer' | 'expert'
+export type Irrigation = 'rainfed' | 'canal' | 'borewell' | 'open_well' | 'farm_pond' | 'drip' | 'sprinkler'
+
+export interface Me {
+  id: number
+  role: Role
+  name: string
+  phone: string | null
+  email: string | null
+  lang: Lang
+  is_demo: boolean
+  farm_ids?: number[]
+  profile: {
+    district?: string
+    taluka?: string | null
+    village?: string | null
+    total_land_acres?: number | null
+    designation?: string
+    designation_name?: string
+    organisation?: string
+    districts?: string[]
+    crops?: string[]
+    specialities?: string[]
+    languages?: Lang[]
+    verified?: boolean
+    experience_years?: number
+  } | null
+}
+
+export interface OtpSent {
+  challenge_id: string
+  channel: 'email'
+  sent_to: string
+  expires_in: number
+  resend_in: number
+  digits: number
+}
+
+export interface AuthOptions {
+  districts: string[]
+  crops: { id: string; name: string }[]
+  languages: { code: Lang; name: string }[]
+  irrigation: Irrigation[]
+  designations: { id: string; name: string }[]
+  qualifications: { id: string; name: string }[]
+  specialities: { id: string; name: string }[]
+  otp: { digits: number; minutes: number; channel: 'email' }
+  demo_login: boolean
+}

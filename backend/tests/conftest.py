@@ -19,6 +19,7 @@ os.environ["AGRO_API_KEY"] = ""
 os.environ["EMAIL_BACKEND"] = "outbox"
 os.environ["SMTP_HOST"] = ""
 os.environ["REDIS_URL"] = ""  # in-process fallbacks; never the shared Redis
+os.environ["ANNRAKSHAK_AUTH"] = "off"  # the older flow tests; tests/test_auth.py switches it on
 # Tests never touch the cloud database or Redis from .env.
 os.environ["ANNRAKSHAK_DB_URL"] = f"sqlite:///{Path(_tmp) / 'test.db'}"
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))

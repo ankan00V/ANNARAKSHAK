@@ -14,7 +14,7 @@ from app.engine import vision
 from app.kb import get_kb
 from app import voice
 from app import cache, notify, watch
-from app.routers import expert, farmer, live, officials, weather
+from app.routers import auth, expert, farmer, live, officials, weather
 
 
 @asynccontextmanager
@@ -49,6 +49,7 @@ _EXTRA = BACKEND_DIR.parent / "data" / "processed" / "extra_640"
 if _EXTRA.exists():  # held-out photos from the extra sources (blast, rust, field FAW)
     app.mount("/samples-extra", StaticFiles(directory=_EXTRA), name="samples-extra")
 
+app.include_router(auth.router)
 app.include_router(farmer.router)
 app.include_router(expert.router)
 app.include_router(officials.router)

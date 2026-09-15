@@ -5,19 +5,21 @@ from __future__ import annotations
 from datetime import date
 from typing import Literal
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app import services
+from app import auth, services
 from app.db import get_db
 from app.limits import limit
 from app.engine import labelcheck, vision
 from app.kb import KB, get_kb, tr
 from app.models import Alert, Farm, FollowUp, Problem, SensorReading, TrapReading
 
-router = APIRouter(prefix="/api", tags=["farmer"])
+# Every /farms/{farm_id}, /problems/{id}, /alerts/{id} and /followups/{id} URL is
+# checked against the signed-in farmer (app.auth.guard); experts may open any farm.
+router = APIRouter(prefix="/api", tags=["farmer"], dependencies=[Depends(auth.require())])
 Lang = Literal["en", "hi", "mr", "bn", "ta", "te", "kn", "ml", "gu", "pa", "od"]
 MAX_UPLOAD_BYTES = 12 * 1024 * 1024
 
@@ -115,18 +117,31 @@ class FarmIn(BaseModel):
     soil: str | None = None
     soil_ph: float | None = Field(default=None, ge=3, le=11)  # from the Soil Health Card, if the farmer has one
     soil_ph_on: date | None = None
+    irrigation: Literal["rainfed", "canal", "borewell", "open_well", "farm_pond", "drip", "sprinkler"] | None = None
 
 
 @router.get("/farms")
-def list_farms(lang: Lang = "en", db: Session = Depends(get_db), kb: KB = Depends(get_kb)):
-    return [services.farm_view(kb, f, lang) for f in db.scalars(select(Farm).order_by(Farm.id)).all()]
+def list_farms(request: Request, lang: Lang = "en", db: Session = Depends(get_db), kb: KB = Depends(get_kb)):
+    """The signed-in farmer's farms (a demo farmer: the demo farms; an expert: all)."""
+    ids = auth.farm_ids_for(db, auth.signed_in(request, db))
+    q = select(Farm).order_by(Farm.id)
+    if ids is not None:
+        q = q.where(Farm.id.in_(ids))
+    return [services.farm_view(kb, f, lang) for f in db.scalars(q).all()]
 
 
 @router.post("/farms", status_code=201)
-def create_farm(body: FarmIn, db: Session = Depends(get_db), kb: KB = Depends(get_kb)):
+def create_farm(body: FarmIn, request: Request, db: Session = Depends(get_db), kb: KB = Depends(get_kb)):
+    """Another field for the signed-in farmer (the first comes with sign-up)."""
+    user = auth.signed_in(request, db)
+    if user is not None and user.role != "farmer":
+        raise HTTPException(403, "only farmers add farms")
     if body.crop not in kb.crops:
         raise HTTPException(422, f"unsupported crop {body.crop}")
-    farm = Farm(**body.model_dump())
+    farm = Farm(**body.model_dump(), user_id=user.id if user else None)
+    if user is not None:  # the account's contact details reach this field's alerts too
+        farm.phone = farm.phone or user.phone
+        farm.email = user.email
     db.add(farm)
     db.commit()
     return services.farm_view(kb, farm, body.lang)
@@ -331,8 +346,9 @@ class LabelCheckIn(BaseModel):
 
 
 @router.post("/labelcheck")
-def label_check(body: LabelCheckIn, db: Session = Depends(get_db), kb: KB = Depends(get_kb)):
+def label_check(body: LabelCheckIn, request: Request, db: Session = Depends(get_db), kb: KB = Depends(get_kb)):
     farm = _farm(db, body.farm_id)
+    auth.check_farm(auth.signed_in(request, db), farm)
     target = None
     if body.problem_id is not None:
         target = _problem(db, body.problem_id).target

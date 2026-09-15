@@ -8,6 +8,11 @@ check, a phone on the same Wi-Fi needs HTTPS for the camera (a tunnel such as
 localhost is fine — point the webcam at a real leaf, or at held-out photos
 shown on a second screen.
 
+Signing in: the landing page's **Log in** has **Demo farmer** and **Demo expert**
+buttons (the seeded demo farms / an expert who covers every district), so no
+code is needed on stage. To show a real sign-up, use **Get Started** → farmer or
+expert: the two ask different questions, and the one-time code arrives by email.
+
 Every step names the PS clause it proves.
 
 ## 1. The alert comes first (0:00–0:40) — *weather-based risk forecasting, pest-trap/sensor inputs*
@@ -81,4 +86,6 @@ Every step names the PS clause it proves.
 - **"Is it pan-India?"** Seven languages today (Marathi, Hindi, English hand-written; Bengali, Tamil, Telugu, Kannada machine translated from the approved text and under native review). Malayalam, Gujarati, Punjabi and Odia next — the pipeline is built, it needs translation credits.
 - **"Is the live check just video upload?"** No. Frames go over a WebSocket at ~1.5/s (about 30 KB each, fine on 4G), are analysed in memory and dropped; only the close-ups that prove a problem are kept, for the expert. Leave mid-call and nothing is saved.
 - **"Is that pH measured?"** Only if a sensor or Soil Health Card gave it — the card says *measured*, *from your Soil Health Card* or *estimated (soil map)*. We never present a map estimate as a measurement.
+- **"Who can see a farmer's data?"** The farmer, and an expert or officer once a case or a confirmed outbreak nearby involves their field — every farm, case and dashboard call checks the signed-in role on the server, not just in the app. Codes are stored only as hashes; sessions are HttpOnly cookies.
+- **"Why email codes, not SMS?"** No free SMS gateway yet; both roles give a mobile number at sign-up, so switching the code to SMS is a config change once DLT registration and a gateway are in place.
 - **"Does it work offline / without a smartphone?"** Honest answer: web app installable as a PWA today; SMS/IVR is the next integration (see docs/INTEGRATIONS.md).

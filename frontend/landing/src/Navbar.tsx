@@ -1,6 +1,9 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { smoothScrollTo } from './smoothScroll'
 import BrandMark from './ui/BrandMark'
+import { useAuth } from './auth/AuthContext'
+import { homeOf } from './auth/helpers'
 
 const EASE = 'ease-[cubic-bezier(0.76,0,0.24,1)]'
 
@@ -31,6 +34,10 @@ function Hamburger({ open, onClick }: { open: boolean; onClick: () => void }) {
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
+  const { me } = useAuth()
+  const account = me
+    ? { to: homeOf(me.role), label: me.role === 'expert' ? 'Open console' : 'Open my farm' }
+    : { to: '/login', label: 'Log in' }
 
   const go = (id: string) => {
     setOpen(false)
@@ -64,12 +71,20 @@ export default function Navbar() {
           >
             Contact
           </button>
-          <button
-            onClick={() => smoothScrollTo('cta')}
-            className="hidden md:inline-block bg-white text-black rounded-full px-5 py-2 text-sm font-medium"
+          <Link
+            to={account.to}
+            className="hidden md:block text-white/80 hover:text-white text-sm font-light transition-colors duration-200"
           >
-            Get Started
-          </button>
+            {account.label}
+          </Link>
+          {!me && (
+            <Link
+              to="/signup"
+              className="hidden md:inline-block bg-white text-black rounded-full px-5 py-2 text-sm font-medium"
+            >
+              Get Started
+            </Link>
+          )}
           <Hamburger open={open} onClick={() => setOpen(true)} />
         </div>
       </nav>
@@ -120,16 +135,27 @@ export default function Navbar() {
             ))}
           </nav>
 
-          <div className="px-6 pb-10">
-            <button
-              onClick={() => go('cta')}
+          <div className="px-6 pb-10 space-y-3">
+            <Link
+              to={me ? account.to : '/signup'}
               style={{ transitionDelay: open ? '550ms' : '0ms' }}
               className={`block w-full bg-white text-black text-center rounded-full py-4 text-sm font-medium transition-opacity duration-700 ${EASE} ${
                 open ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              Get Started
-            </button>
+              {me ? account.label : 'Get Started'}
+            </Link>
+            {!me && (
+              <Link
+                to="/login"
+                style={{ transitionDelay: open ? '600ms' : '0ms' }}
+                className={`block w-full border border-white/40 text-white text-center rounded-full py-4 text-sm font-medium transition-opacity duration-700 ${EASE} ${
+                  open ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                Log in
+              </Link>
+            )}
           </div>
         </div>
       </div>

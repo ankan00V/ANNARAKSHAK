@@ -1,34 +1,48 @@
 import { Globe, Mail } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import BrandMark from '../ui/BrandMark'
+import { useAuth } from '../auth/AuthContext'
+import { homeOf } from '../auth/helpers'
 
 export default function FinalCta() {
+  const { me } = useAuth()
   return (
     <section id="cta" className="w-full bg-leaf-deep text-cream">
       <div className="max-w-4xl mx-auto px-6 md:px-12 pt-16 md:pt-24 pb-10 text-center">
         <h2 className="font-instrument-serif text-3xl sm:text-4xl md:text-5xl leading-tight">
           Ready to protect your harvest?
         </h2>
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link
-            to="/app"
-            className="w-full sm:w-auto bg-ochre text-soil-dark rounded-full px-8 py-4 text-sm font-medium hover:brightness-105 transition"
-          >
-            I&apos;m a Farmer
-          </Link>
-          <Link
-            to="/officer"
-            className="w-full sm:w-auto border border-cream/60 text-cream rounded-full px-8 py-4 text-sm font-medium hover:bg-cream/10 transition-colors"
-          >
-            I&apos;m an Agriculture Official
-          </Link>
-          <Link
-            to="/expert"
-            className="w-full sm:w-auto border border-cream/30 text-cream/80 rounded-full px-8 py-4 text-sm font-medium hover:bg-cream/10 transition-colors"
-          >
-            I&apos;m an Expert / KVK
-          </Link>
-        </div>
+        {me ? (
+          <div className="mt-8 flex justify-center">
+            <Link
+              to={homeOf(me.role)}
+              className="w-full sm:w-auto bg-ochre text-soil-dark rounded-full px-8 py-4 text-sm font-medium hover:brightness-105 transition"
+            >
+              Continue as {me.name}
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                to="/signup/farmer"
+                className="w-full sm:w-auto bg-ochre text-soil-dark rounded-full px-8 py-4 text-sm font-medium hover:brightness-105 transition"
+              >
+                I&apos;m a Farmer
+              </Link>
+              <Link
+                to="/signup/expert"
+                className="w-full sm:w-auto border border-cream/60 text-cream rounded-full px-8 py-4 text-sm font-medium hover:bg-cream/10 transition-colors"
+              >
+                I&apos;m an Expert, KVK or Agriculture Official
+              </Link>
+            </div>
+            <p className="mt-5 text-sm text-cream/70">
+              Already registered?{' '}
+              <Link to="/login" className="text-cream font-medium underline underline-offset-4">Log in</Link>
+            </p>
+          </>
+        )}
 
         <footer id="contact" className="mt-16 md:mt-24 border-t border-cream/10 pt-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

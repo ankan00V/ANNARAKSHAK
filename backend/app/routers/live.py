@@ -26,13 +26,13 @@ from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisco
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
-from app import live
+from app import auth, live
 from app.db import SessionLocal, get_db
 from app.engine.livescan import decode
 from app.kb import KB, get_kb, tr
 from app.models import Farm
 
-router = APIRouter(prefix="/api", tags=["live"])
+router = APIRouter(prefix="/api", tags=["live"], dependencies=[Depends(auth.require())])
 MAX_FRAME_BYTES = 400_000
 MAX_FRAMES = 600
 MAX_SECONDS = 600
@@ -58,6 +58,10 @@ async def live_ws(ws: WebSocket, farm_id: int):
         if farm is None:
             await ws.send_json({"type": "error", "code": "FARM_NOT_FOUND"})
             await ws.close()
+            return
+        if not auth.can_open_farm(auth.ws_user(ws, db), farm):
+            await ws.send_json({"type": "error", "code": "NOT_ALLOWED"})
+            await ws.close(code=1008)
             return
         start = await ws.receive_json()
         if start.get("type") != "start":
