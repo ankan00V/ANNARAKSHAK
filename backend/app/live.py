@@ -24,7 +24,7 @@ FAR_FROM_FARM_KM = 2.0  # GPS further than this from the registered farm is flag
 # Context: where, weather now, soil, crop stage, risk from the forecast
 # --------------------------------------------------------------------------
 
-def _soil_ph(db: Session, farm: Farm, lat: float, lon: float, lang: str) -> dict | None:
+def soil_ph_for(db: Session, farm: Farm, lat: float, lon: float, lang: str) -> dict | None:
     since = date.today() - timedelta(days=14)
     sensor = db.scalars(select(SensorReading).where(
         SensorReading.farm_id == farm.id, SensorReading.soil_ph.is_not(None), SensorReading.on >= since,
@@ -43,7 +43,7 @@ def _soil_ph(db: Session, farm: Farm, lat: float, lon: float, lang: str) -> dict
     return None
 
 
-def _soil_moisture(db: Session, farm: Farm, modelled: dict | None) -> dict | None:
+def soil_moisture_for(db: Session, farm: Farm, modelled: dict | None) -> dict | None:
     recent = db.scalars(select(SensorReading).where(
         SensorReading.farm_id == farm.id, SensorReading.soil_moisture_pct.is_not(None),
         SensorReading.on >= date.today() - timedelta(days=2),
@@ -57,7 +57,7 @@ def _soil_moisture(db: Session, farm: Farm, modelled: dict | None) -> dict | Non
     return None
 
 
-def _prevention(kb: KB, target: str, lang: str) -> dict:
+def prevention_for(kb: KB, target: str, lang: str) -> dict:
     adv = advisory_engine.compose(kb, target, lang)
     return {
         "avoid": adv["what_to_avoid"][:1],
@@ -92,7 +92,7 @@ def context(db: Session, kb: KB, farm: Farm, lat: float | None, lon: float | Non
             "target": s.target, "name": tr(kb.targets[s.target]["names"], lang), "level": s.level,
             "trigger": s.trigger, "reason": tr(s.reason, lang),
             "check": (kb.rules[s.target]["tasks"].get(lang) or kb.rules[s.target]["tasks"]["en"])[:2],
-            "prevention": _prevention(kb, s.target, lang),
+            "prevention": prevention_for(kb, s.target, lang),
         })
     stage, das = kb.stage_for(farm.crop, farm.sowing_date, today)
     return {
@@ -101,7 +101,7 @@ def context(db: Session, kb: KB, farm: Farm, lat: float | None, lon: float | Non
                      "far_from_farm": gps and dist > FAR_FROM_FARM_KM},
         "weather_now": now["weather"],
         "forecast": forecast,
-        "soil": {"ph": _soil_ph(db, farm, lat, lon, lang), "moisture": _soil_moisture(db, farm, now["soil_model"])},
+        "soil": {"ph": soil_ph_for(db, farm, lat, lon, lang), "moisture": soil_moisture_for(db, farm, now["soil_model"])},
         "crop": {"id": farm.crop, "name": tr(kb.crops[farm.crop]["names"], lang), "stage": stage,
                  "stage_name": kb.stage_name(farm.crop, stage, lang), "das": das,
                  "photo_model": kb.crops[farm.crop]["photo_diagnosis"] and not vision.model_status()["is_stub"]},

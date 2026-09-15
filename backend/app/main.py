@@ -1,24 +1,34 @@
 from __future__ import annotations
 
+import asyncio
+import contextlib
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.config import BACKEND_DIR, UPLOAD_DIR
+from app.config import BACKEND_DIR, UPLOAD_DIR, WATCH_ENABLED
 from app.db import init_db
 from app.engine import vision
 from app.kb import get_kb
 from app import voice
-from app.routers import expert, farmer, live, officials
+from app import cache, notify, watch
+from app.routers import expert, farmer, live, officials, weather
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     get_kb()  # refuse to start on a broken knowledge base
     init_db()
+    tasks = [asyncio.create_task(cache.listen(notify.broker.deliver_local))]
+    if WATCH_ENABLED:
+        tasks.append(asyncio.create_task(watch.run_forever()))
     yield
+    for task in tasks:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
 
 
 app = FastAPI(title="AnnRakshak API", version="0.2.0", lifespan=lifespan)
@@ -43,6 +53,7 @@ app.include_router(farmer.router)
 app.include_router(expert.router)
 app.include_router(officials.router)
 app.include_router(live.router)
+app.include_router(weather.router)
 app.include_router(voice.router)
 
 

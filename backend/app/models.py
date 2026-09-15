@@ -48,6 +48,11 @@ class Farm(Base):
     soil: Mapped[str | None] = mapped_column(String(40))
     soil_ph: Mapped[float | None] = mapped_column(Float)  # from the farmer's Soil Health Card
     soil_ph_on: Mapped[date | None] = mapped_column(Date)
+    email: Mapped[str | None] = mapped_column(String(200))
+    email_pref: Mapped[str] = mapped_column(String(10), default="warnings")
+    """Which emails: 'warnings' (right away) + daily summary, 'all', 'digest' (summary only) or 'off'."""
+    email_token: Mapped[str | None] = mapped_column(String(40))
+    """Secret for the one-click unsubscribe link; never shown in the app."""
     is_demo: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
@@ -179,13 +184,21 @@ class Alert(Base):
     outcome: Mapped[str | None] = mapped_column(String(20))
     outcome_at: Mapped[datetime | None] = mapped_column(DateTime)
     source_case_id: Mapped[int | None] = mapped_column(ForeignKey("case.id"))
+    notified_at: Mapped[datetime | None] = mapped_column(DateTime)
+    """When the phone / in-app notification for this alert went out."""
+    emailed_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     __table_args__ = (
-        # COALESCE: a missing '$.en' yields NULL, and a CHECK on NULL passes.
+        # COALESCE: a missing 'en' yields NULL, and a CHECK on NULL passes.
+        # JSON syntax differs per database, so each gets its own spelling.
         CheckConstraint(
             "COALESCE(json_array_length(json_extract(tasks, '$.en')), 0) > 0",
             name="ck_alert_has_task",
-        ),
+        ).ddl_if(dialect="sqlite"),
+        CheckConstraint(
+            "COALESCE(json_array_length(tasks -> 'en'), 0) > 0",
+            name="ck_alert_has_task",
+        ).ddl_if(dialect="postgresql"),
         UniqueConstraint("farm_id", "target", "trigger", "issued_on", name="uq_alert_daily"),
     )
 
@@ -261,3 +274,76 @@ class LiveScan(Base):
     context: Mapped[dict] = mapped_column(JSON)
     problem_ids: Mapped[list] = mapped_column(JSON, default=list)
     model_version: Mapped[str] = mapped_column(String(80))
+
+
+class Notice(Base):
+    """A weather advisory issued to one farm (app.engine.agromet). The text is
+    rendered from the KB when read, in whoever's language is asking; only the
+    numbers are frozen. One per farm and dedupe key — the watcher can run every
+    half hour without repeating itself."""
+
+    __tablename__ = "notice"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    farm_id: Mapped[int] = mapped_column(ForeignKey("farm.id"))
+    rule: Mapped[str] = mapped_column(String(40))
+    severity: Mapped[str] = mapped_column(String(10))
+    category: Mapped[str] = mapped_column(String(20))
+    dedupe_key: Mapped[str] = mapped_column(String(80))
+    values: Mapped[dict] = mapped_column(JSON)
+    valid_until: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime)
+    pushed_at: Mapped[datetime | None] = mapped_column(DateTime)
+    emailed_at: Mapped[datetime | None] = mapped_column(DateTime)
+
+    __table_args__ = (
+        UniqueConstraint("farm_id", "dedupe_key", name="uq_notice_key"),
+        CheckConstraint("severity IN ('warning', 'advice', 'info')", name="ck_notice_severity"),
+    )
+
+
+class PushSubscription(Base):
+    """A browser's Web Push endpoint for one farm (the PWA on the farmer's phone)."""
+
+    __tablename__ = "push_subscription"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    farm_id: Mapped[int] = mapped_column(ForeignKey("farm.id"))
+    endpoint: Mapped[str] = mapped_column(Text, unique=True)
+    p256dh: Mapped[str] = mapped_column(String(200))
+    auth: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    last_ok_at: Mapped[datetime | None] = mapped_column(DateTime)
+    failures: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class SprayLog(Base):
+    """'I sprayed just now' — lets the watcher warn when rain follows."""
+
+    __tablename__ = "spray_log"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    farm_id: Mapped[int] = mapped_column(ForeignKey("farm.id"))
+    product: Mapped[str | None] = mapped_column(String(120))
+    sprayed_at: Mapped[datetime] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class EmailLog(Base):
+    """Every email attempt: the daily summary is idempotent per farm and day by
+    constraint, and the per-day cap counts these rows."""
+
+    __tablename__ = "email_log"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    farm_id: Mapped[int] = mapped_column(ForeignKey("farm.id"))
+    kind: Mapped[str] = mapped_column(String(10))  # alert | digest | test
+    dedupe_key: Mapped[str] = mapped_column(String(80))
+    to_addr: Mapped[str] = mapped_column(String(200))
+    subject: Mapped[str] = mapped_column(String(300))
+    status: Mapped[str] = mapped_column(String(10))  # sent | outbox | failed
+    error: Mapped[str | None] = mapped_column(Text)
+    sent_at: Mapped[datetime] = mapped_column(DateTime)
+
+    __table_args__ = (UniqueConstraint("farm_id", "dedupe_key", name="uq_email_key"),)

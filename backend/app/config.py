@@ -16,6 +16,9 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 load_dotenv(BACKEND_DIR.parent / ".env")  # secrets only (API keys); never thresholds
 
 SARVAM_API_KEY = os.environ.get("SARVAM_API_KEY")
+SARVAM_API_KEYS = list(dict.fromkeys(
+    k.strip() for k in [*(os.environ.get("SARVAM_API_KEYS") or "").split(","), SARVAM_API_KEY or ""] if k.strip()))
+"""Every Sarvam key we may use, rotated; one out of credits is benched and the next takes over."""
 OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY")  # optional; Open-Meteo is the keyless fallback
 SARVAM_TTS_MODEL = "bulbul:v3"
 SARVAM_STT_MODEL = "saaras:v3"
@@ -78,6 +81,38 @@ WEATHER_FORECAST_DAYS = 7
 WEATHER_TIMEOUT_S = 10
 WEATHER_CACHE_MAX_AGE_H = 12
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
+
+REDIS_URL = os.environ.get("REDIS_URL")
+"""Upstash/any Redis: shared cache, rate limits, one-watcher lease, cross-instance events. Optional."""
+
+AGRO_CACHE_MINUTES = 30
+"""Hour-by-hour agro-weather is re-fetched at most this often per location."""
+
+# --- Notifications: in-app (SSE), phone (Web Push) and email ---------------
+
+WATCH_ENABLED = os.environ.get("ANNRAKSHAK_WATCH", "on") != "off"
+"""The background watcher (weather rules, risk run, pushes, emails). Tests turn it off."""
+WATCH_MINUTES = 30
+QUIET_HOURS = (21, 6)
+"""Local hours [start, end) when only warnings are delivered; the rest wait for morning."""
+MAX_PUSH_PER_FARM_PER_DAY = 4
+"""Non-warning phone notifications per farm per day. Warnings are never held back."""
+MAX_ALERT_EMAILS_PER_FARM_PER_DAY = 3
+DIGEST_HOUR = 6
+"""Local hour after which the daily farm summary email goes out."""
+PUBLIC_APP_URL = os.environ.get("ANNRAKSHAK_PUBLIC_URL", "http://localhost:5173").rstrip("/")
+
+# Secrets and delivery settings (from .env; see .env.example)
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY")  # PEM; generated into DATA_DIR if unset
+VAPID_SUBJECT = os.environ.get("VAPID_SUBJECT", "mailto:alerts@annrakshak.in")
+SMTP_HOST = os.environ.get("SMTP_HOST")
+SMTP_PORT = int(os.environ.get("SMTP_PORT") or 587)
+SMTP_USER = os.environ.get("SMTP_USER")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
+SMTP_SECURITY = os.environ.get("SMTP_SECURITY", "starttls")  # starttls | ssl | none
+EMAIL_FROM = os.environ.get("EMAIL_FROM") or (f"AnnRakshak <{SMTP_USER}>" if SMTP_USER else "AnnRakshak <alerts@localhost>")
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND") or ("smtp" if SMTP_HOST else "outbox")
+"""'smtp' sends; 'outbox' writes .eml files to DATA_DIR/outbox (dev and tests)."""
 
 FOLLOWUP_DUE_DAYS = 4
 CASE_ETA_MINUTES_PER_POSITION = 20

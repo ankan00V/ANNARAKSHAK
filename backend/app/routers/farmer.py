@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app import services
 from app.db import get_db
+from app.limits import limit
 from app.engine import labelcheck, vision
 from app.kb import KB, get_kb, tr
 from app.models import Alert, Farm, FollowUp, Problem, SensorReading, TrapReading
@@ -131,6 +132,20 @@ def create_farm(body: FarmIn, db: Session = Depends(get_db), kb: KB = Depends(ge
     return services.farm_view(kb, farm, body.lang)
 
 
+class FarmPrefs(BaseModel):
+    lang: Lang
+
+
+@router.patch("/farms/{farm_id}")
+def update_farm(farm_id: int, body: FarmPrefs, db: Session = Depends(get_db), kb: KB = Depends(get_kb)):
+    """The farmer's preferred language: the app, the voice, phone notifications
+    and emails all follow it."""
+    farm = _farm(db, farm_id)
+    farm.lang = body.lang
+    db.commit()
+    return services.farm_view(kb, farm, body.lang)
+
+
 @router.get("/farms/{farm_id}")
 def get_farm(farm_id: int, lang: Lang = "en", db: Session = Depends(get_db), kb: KB = Depends(get_kb)):
     return services.farm_view(kb, _farm(db, farm_id), lang)
@@ -155,7 +170,7 @@ def home(farm_id: int, lang: Lang = "en", db: Session = Depends(get_db), kb: KB 
         "weather": services.weather_summary(window),
         "rain_context": services.rain_context(kb, farm, lang),
         "alerts": [services.alert_view(kb, a, lang) for a in alerts if a.outcome in (None, "snoozed")],
-        "problems": [services.problem_view(db, kb, p, lang) for p in problems],
+        "problems": services.problem_views(db, kb, list(problems), lang),
         "followups_due": [{"id": f.id, "problem_id": f.problem_id, "due_on": f.due_on.isoformat()} for f in due],
         "model": vision.model_status(),
     }
@@ -171,6 +186,7 @@ async def diagnose(
     kb: KB = Depends(get_kb),
 ):
     farm = _farm(db, farm_id)
+    limit(f"diagnose:{farm_id}", 30, 60)
     data = await image.read()
     if not data:
         raise HTTPException(422, "empty image")

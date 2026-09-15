@@ -1,0 +1,324 @@
+{
+  "_note": "Weather -> action rules for the farmer. Thresholds live here, not in code; every rule names its source. Text placeholders are filled by app.engine.agromet. 'notify': false rules show in the app but never become a notification.",
+  "kc": {
+    "_source": "FAO Irrigation and Drainage Paper 56, Table 12 (single crop coefficients). Development-stage values are interpolated between FAO's initial and mid-season values.",
+    "rice": {"nursery": 1.05, "tillering": 1.10, "panicle_initiation": 1.20, "flowering": 1.20, "grain_filling": 1.05, "maturity": 0.75},
+    "maize": {"seedling": 0.30, "whorl": 0.75, "tasseling": 1.20, "silking": 1.20, "grain_filling": 0.90, "maturity": 0.50},
+    "cotton": {"emergence": 0.35, "vegetative": 0.70, "squaring": 1.00, "flowering": 1.18, "boll_development": 1.10, "boll_opening": 0.60},
+    "soybean": {"emergence": 0.40, "vegetative": 0.75, "flowering": 1.15, "pod_formation": 1.15, "pod_filling": 0.90, "maturity": 0.50}
+  },
+  "heat_sensitive_stages": {
+    "_source": "Pollen and spikelet sterility above ~35 °C at anthesis (rice, maize); flower and boll shedding in cotton and soybean under heat.",
+    "rice": ["flowering"],
+    "maize": ["tasseling", "silking"],
+    "cotton": ["flowering", "boll_development"],
+    "soybean": ["flowering", "pod_formation"]
+  },
+  "irrigation_stop_stages": {
+    "_source": "Standard practice: irrigation stops as the crop matures (rice fields are drained 10–15 days before harvest).",
+    "rice": ["maturity"],
+    "maize": ["maturity"],
+    "cotton": ["boll_opening"],
+    "soybean": ["maturity"]
+  },
+  "thresholds": {
+    "thunder_codes": [95, 96, 99],
+    "thunder_min_prob": 40,
+    "thunder_hours_ahead": 24,
+    "heavy_rain_mm_day": 64.5,
+    "very_heavy_rain_mm_day": 115.6,
+    "rain_days_ahead": 3,
+    "skip_irrigation_mm_48h": 10,
+    "skip_irrigation_min_prob": 60,
+    "irrigate_deficit_mm": {"rice": 20, "maize": 25, "cotton": 25, "soybean": 25},
+    "useful_rain_mm_day": 5,
+    "useful_rain_min_prob": 50,
+    "effective_rain_floor_mm": 2,
+    "effective_rain_fraction": 0.8,
+    "fungal_rh": 90,
+    "fungal_t_min": 18,
+    "fungal_t_max": 30,
+    "fungal_hours_48h": 12,
+    "heat_flowering_c": 35,
+    "heat_any_stage_c": 38,
+    "uv_very_high": 8,
+    "heat_people_tmax_c": 35,
+    "heat_people_feels_c": 40,
+    "cold_tmin_c": 10,
+    "frost_tmin_c": 4,
+    "frost_max_cloud_pct": 30,
+    "frost_max_wind_kmh": 6,
+    "strong_gust_kmh": 45,
+    "fog_visibility_m": 1000,
+    "fog_hours_ahead": 12,
+    "rain_after_spray_mm": 2,
+    "rain_after_spray_hours": 6
+  },
+  "spray": {
+    "_source": "Pesticide label guidance on drift and rain-free period; IMD agromet advisories ('avoid spraying in windy or rainy weather'); spraying in the heat of the day raises evaporation and leaf scorch.",
+    "wind_min_kmh": 3,
+    "wind_max_kmh": 15,
+    "wind_avoid_kmh": 20,
+    "gust_max_kmh": 25,
+    "gust_avoid_kmh": 30,
+    "rain_free_hours": 4,
+    "rain_prob_max": 40,
+    "rain_prob_avoid": 60,
+    "rain_mm_max": 0.2,
+    "t_max_c": 32,
+    "t_avoid_c": 35,
+    "rh_wet_leaf": 95,
+    "fog_visibility_m": 1000,
+    "min_window_hours": 2
+  },
+  "words": {
+    "today": {"en": "today", "hi": "आज", "mr": "आज"},
+    "tomorrow": {"en": "tomorrow", "hi": "कल", "mr": "उद्या"},
+    "weekdays": {
+      "en": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      "hi": ["सोम", "मंगल", "बुध", "गुरु", "शुक्र", "शनि", "रवि"],
+      "mr": ["सोम", "मंगळ", "बुध", "गुरु", "शुक्र", "शनि", "रवि"]
+    },
+    "reasons": {
+      "wind": {"en": "wind up to {v} km/h", "hi": "हवा {v} किमी/घं तक", "mr": "वारा {v} किमी/तास पर्यंत"},
+      "gust": {"en": "gusts up to {v} km/h", "hi": "झोंके {v} किमी/घं तक", "mr": "झोत {v} किमी/तास पर्यंत"},
+      "calm": {"en": "almost no wind — spray hangs in the air and drifts", "hi": "हवा लगभग नहीं — दवा हवा में टिककर भटकती है", "mr": "वारा जवळजवळ नाही — औषध हवेत तरंगून भटकते"},
+      "rain": {"en": "rain likely ({v}% chance)", "hi": "बारिश की संभावना ({v}%)", "mr": "पावसाची शक्यता ({v}%)"},
+      "heat": {"en": "too hot ({v}°C)", "hi": "बहुत गर्मी ({v}°C)", "mr": "खूप उष्णता ({v}°C)"},
+      "wet": {"en": "fog or dew keeps leaves wet", "hi": "कोहरा या ओस से पत्ते गीले", "mr": "धुके किंवा दवामुळे पाने ओली"},
+      "night": {"en": "dark", "hi": "अँधेरा", "mr": "अंधार"}
+    },
+    "product_unknown": {"en": "a pesticide", "hi": "दवा", "mr": "औषध"},
+    "rain_verbs": {
+      "past": {"en": "fell", "hi": "गिरी", "mr": "पडला"},
+      "future": {"en": "is expected", "hi": "होने की संभावना है", "mr": "पडण्याची शक्यता आहे"}
+    }
+  },
+  "rules": [
+    {
+      "id": "thunderstorm", "category": "safety", "severity": "warning", "notify": true,
+      "source": "IMD / NDMA lightning safety advice; IMD 'Damini' lightning app",
+      "title": {"en": "Thunderstorm likely {when}", "hi": "{when} आँधी-तूफ़ान और बिजली की संभावना", "mr": "{when} विजांसह वादळी पावसाची शक्यता"},
+      "text": {
+        "en": "Lightning can strike open fields. Stay off the field while it thunders, keep away from lone trees and wire fences, and shelter your animals.",
+        "hi": "खुले खेत में बिजली गिर सकती है। गरज के समय खेत में न रहें, अकेले पेड़ और तार की बाड़ से दूर रहें, और पशुओं को सुरक्षित जगह रखें।",
+        "mr": "मोकळ्या शेतात वीज पडू शकते. गडगडाट सुरू असताना शेतात थांबू नका, एकट्या झाडापासून व तारेच्या कुंपणापासून दूर राहा, आणि जनावरे सुरक्षित ठिकाणी ठेवा."
+      },
+      "do": {
+        "en": ["Don't spray or apply fertiliser before the storm — it will wash off", "Cover harvested produce", "Use IMD's Damini app for lightning warnings near you"],
+        "hi": ["तूफ़ान से पहले छिड़काव या खाद न डालें — बह जाएगी", "कटी हुई उपज को ढक दें", "पास में बिजली की चेतावनी के लिए IMD का 'दामिनी' ऐप इस्तेमाल करें"],
+        "mr": ["वादळापूर्वी फवारणी किंवा खत देऊ नका — ते वाहून जाईल", "काढणी केलेला माल झाकून ठेवा", "जवळपास वीज पडण्याच्या इशाऱ्यांसाठी IMD चे 'दामिनी' ॲप वापरा"]
+      }
+    },
+    {
+      "id": "heavy_rain", "category": "rain", "severity": "warning", "notify": true,
+      "source": "IMD rainfall intensity categories (heavy 64.5–115.5 mm/day, very heavy 115.6–204.4 mm/day)",
+      "title": {"en": "Heavy rain {day}: about {mm} mm", "hi": "{day} भारी बारिश: लगभग {mm} मिमी", "mr": "{day} मुसळधार पाऊस: सुमारे {mm} मिमी"},
+      "text": {
+        "en": "IMD calls 64.5 mm or more in a day heavy rain. Water can stand in the field and wash away fertiliser and sprays.",
+        "hi": "IMD के अनुसार एक दिन में 64.5 मिमी या अधिक बारिश भारी बारिश है। खेत में पानी रुक सकता है और खाद व दवा बह सकती है।",
+        "mr": "IMD नुसार एका दिवसात 64.5 मिमी किंवा जास्त पाऊस म्हणजे मुसळधार पाऊस. शेतात पाणी साचू शकते आणि खत व फवारणी वाहून जाऊ शकते."
+      },
+      "do": {
+        "en": ["Open field drains so water doesn't stand", "Postpone fertiliser and pesticide application", "Move harvested produce to a dry, covered place"],
+        "hi": ["खेत की नालियाँ खोलें ताकि पानी न रुके", "खाद और दवा का प्रयोग टाल दें", "कटी उपज को सूखी, ढकी जगह पर रखें"],
+        "mr": ["शेतातील चर मोकळे करा म्हणजे पाणी साचणार नाही", "खत व कीटकनाशकाचा वापर पुढे ढकला", "काढलेला माल कोरड्या, झाकलेल्या जागी ठेवा"]
+      }
+    },
+    {
+      "id": "strong_wind", "category": "wind", "severity": "warning", "notify": true,
+      "source": "IMD agromet advisories (gusty and squally winds)",
+      "title": {"en": "Strong gusts {when}: up to {gust} km/h", "hi": "{when} तेज़ झोंके: {gust} किमी/घं तक", "mr": "{when} जोरदार वारा: {gust} किमी/तास पर्यंत"},
+      "text": {
+        "en": "Gusts this strong can flatten tall or heavy-headed crops and tear covers.",
+        "hi": "इतने तेज़ झोंके ऊँची या भारी बालियों वाली फसल गिरा सकते हैं और ढकने की चादरें फाड़ सकते हैं।",
+        "mr": "इतका जोरदार वारा उंच किंवा जड लोंब्यांचे पीक लोळवू शकतो आणि आच्छादने फाडू शकतो."
+      },
+      "do": {
+        "en": ["Don't spray", "Earth up maize and cotton at the base; drain rice fields near harvest so stems stay firm", "Tie down covers and shed roofs"],
+        "hi": ["छिड़काव न करें", "मक्का और कपास में जड़ों पर मिट्टी चढ़ाएँ; कटाई के पास धान के खेत से पानी निकालें ताकि तने मज़बूत रहें", "ढकने की चादरें और छप्पर बाँध दें"],
+        "mr": ["फवारणी करू नका", "मका व कापसाला बुडाशी भर द्या; काढणीजवळच्या भात शेतातील पाणी काढा म्हणजे खोड मजबूत राहील", "आच्छादने व छपरे बांधून ठेवा"]
+      }
+    },
+    {
+      "id": "frost", "category": "cold", "severity": "warning", "notify": true,
+      "source": "IMD agromet advisories (ground frost)",
+      "title": {"en": "Frost risk {day}: {tmin}°C, clear and calm", "hi": "{day} पाले का खतरा: {tmin}°C, साफ़ आसमान और शांत हवा", "mr": "{day} हिमबाधेचा धोका: {tmin}°C, निरभ्र आणि शांत"},
+      "text": {
+        "en": "On clear, still nights near {tmin}°C, frost can form on leaves and kill tender tissue.",
+        "hi": "साफ़ और शांत रातों में {tmin}°C के आसपास पत्तों पर पाला जम सकता है और कोमल भाग मर सकते हैं।",
+        "mr": "निरभ्र, शांत रात्री {tmin}°C च्या आसपास पानांवर हिम जमू शकते आणि कोवळे भाग मरू शकतात."
+      },
+      "do": {
+        "en": ["Give a light irrigation in the evening before the cold night", "Cover nursery beds and young plants overnight with straw or plastic"],
+        "hi": ["ठंडी रात से पहले शाम को हल्की सिंचाई करें", "नर्सरी और छोटे पौधों को रात भर पुआल या प्लास्टिक से ढकें"],
+        "mr": ["थंड रात्रीपूर्वी संध्याकाळी हलके पाणी द्या", "रोपवाटिका व लहान रोपे रात्रभर पेंढा किंवा प्लास्टिकने झाका"]
+      }
+    },
+    {
+      "id": "rain_after_spray", "category": "spray", "severity": "warning", "notify": true,
+      "source": "Pesticide labels (rain-free period after application)",
+      "title": {"en": "Rain after your spray", "hi": "छिड़काव के बाद बारिश", "mr": "फवारणीनंतर पाऊस"},
+      "text": {
+        "en": "You sprayed {product} at {time}. About {mm} mm of rain {verb} within {hours} hours after — much of it may wash off.",
+        "hi": "आपने {time} बजे {product} छिड़का। उसके {hours} घंटों के भीतर लगभग {mm} मिमी बारिश {verb} — दवा का बड़ा हिस्सा बह सकता है।",
+        "mr": "तुम्ही {time} वाजता {product} फवारले. त्यानंतर {hours} तासांत सुमारे {mm} मिमी पाऊस {verb} — औषधाचा मोठा भाग धुऊन जाऊ शकतो."
+      },
+      "do": {
+        "en": ["Read the label's rain-free period before spraying again", "Never double the dose to make up for it"],
+        "hi": ["दोबारा छिड़काव से पहले लेबल पर लिखी बारिश-मुक्त अवधि पढ़ें", "कमी पूरी करने के लिए खुराक कभी दोगुनी न करें"],
+        "mr": ["पुन्हा फवारणीपूर्वी लेबलवरील पावसाविना कालावधी वाचा", "भरपाईसाठी मात्रा कधीही दुप्पट करू नका"]
+      }
+    },
+    {
+      "id": "heat_crop", "category": "heat", "severity": "advice", "notify": true,
+      "source": "Pollen and spikelet sterility above ~35 °C at flowering (rice, maize); IMD agromet advisories for heat",
+      "title": {"en": "Heat stress for the crop: {tmax}°C {day}", "hi": "फसल पर गर्मी का तनाव: {day} {tmax}°C", "mr": "पिकावर उष्णतेचा ताण: {day} {tmax}°C"},
+      "text": {
+        "en": "{why} Very hot days also dry the soil fast.",
+        "hi": "{why} बहुत गर्म दिन मिट्टी को भी जल्दी सुखाते हैं।",
+        "mr": "{why} खूप उष्ण दिवस मातीही लवकर कोरडी करतात."
+      },
+      "why": {
+        "flowering": {
+          "en": "Your crop is flowering: above about 35°C, pollen dies and fewer grains set.",
+          "hi": "आपकी फसल फूल अवस्था में है: लगभग 35°C से ऊपर पराग मर जाते हैं और दाने कम बनते हैं।",
+          "mr": "तुमचे पीक फुलोऱ्यात आहे: सुमारे 35°C पेक्षा जास्त तापमानात परागकण मरतात आणि दाणे कमी भरतात."
+        },
+        "any": {
+          "en": "Heat above 38°C stresses the crop at any stage.",
+          "hi": "38°C से अधिक गर्मी किसी भी अवस्था में फसल पर तनाव डालती है।",
+          "mr": "38°C पेक्षा जास्त उष्णता कोणत्याही अवस्थेत पिकावर ताण आणते."
+        }
+      },
+      "do": {
+        "en": ["Give a light irrigation in the evening before the hot days", "Don't spray or apply fertiliser in the afternoon heat", "Mulch where you can to keep the soil cool"],
+        "hi": ["गर्म दिनों से पहले शाम को हल्की सिंचाई करें", "दोपहर की गर्मी में छिड़काव या खाद न डालें", "जहाँ हो सके मल्चिंग करें ताकि मिट्टी ठंडी रहे"],
+        "mr": ["उष्ण दिवसांपूर्वी संध्याकाळी हलके पाणी द्या", "दुपारच्या उन्हात फवारणी किंवा खत देऊ नका", "जमेल तिथे आच्छादन करा म्हणजे माती थंड राहील"]
+      }
+    },
+    {
+      "id": "fungal_weather", "category": "disease", "severity": "advice", "notify": true,
+      "source": "Leaf-wetness rule used in crop disease forecasting (RH ≥ 90 % at 18–30 °C); crop-specific rules in risk_rules.json",
+      "title": {"en": "Weather favours fungal diseases", "hi": "मौसम फफूंद रोगों के अनुकूल", "mr": "हवामान बुरशीजन्य रोगांना पोषक"},
+      "text": {
+        "en": "{hours} of the next 48 hours will be very humid (above 90%) at {tmin}–{tmax}°C. Leaves stay wet — exactly what fungal spores need to infect.",
+        "hi": "अगले 48 में से {hours} घंटे बहुत नमी (90% से अधिक) और {tmin}–{tmax}°C रहेगा। पत्ते गीले रहेंगे — फफूंद के संक्रमण के लिए यही चाहिए।",
+        "mr": "पुढील 48 पैकी {hours} तास खूप दमट (90% पेक्षा जास्त) आणि {tmin}–{tmax}°C राहील. पाने ओली राहतील — बुरशीच्या संसर्गासाठी हेच हवे असते."
+      },
+      "do": {
+        "en": ["Walk the field tomorrow morning and look for new leaf spots", "Hold extra nitrogen for now — soft growth gets infected first", "If a disease is confirmed, spray only in a dry window"],
+        "hi": ["कल सुबह खेत में घूमकर पत्तों पर नए धब्बे देखें", "अभी अतिरिक्त नाइट्रोजन न दें — नरम बढ़वार पहले संक्रमित होती है", "रोग पक्का हो तो सूखे समय में ही छिड़काव करें"],
+        "mr": ["उद्या सकाळी शेतात फिरून पानांवर नवे ठिपके पाहा", "सध्या जास्तीचे नत्र देऊ नका — कोवळी वाढ आधी रोगग्रस्त होते", "रोग निश्चित झाल्यास फक्त कोरड्या वेळेत फवारणी करा"]
+      }
+    },
+    {
+      "id": "spray_no_window", "category": "spray", "severity": "advice", "notify": true,
+      "source": "Pesticide label guidance on drift and rain-free period; IMD agromet advisories",
+      "title": {"en": "No good time to spray in the next 24 hours", "hi": "अगले 24 घंटे छिड़काव का अच्छा समय नहीं", "mr": "पुढील 24 तास फवारणीसाठी योग्य वेळ नाही"},
+      "text": {
+        "en": "{reason}. Spray that drifts away or washes off is money that never reaches the pest.",
+        "hi": "{reason}। उड़ी या बही हुई दवा वह पैसा है जो कभी कीट तक नहीं पहुँचता।",
+        "mr": "{reason}. उडून गेलेली किंवा धुऊन गेलेली फवारणी म्हणजे किडीपर्यंत कधीच न पोहोचलेला पैसा."
+      },
+      "do": {
+        "en": ["Wait for calm, dry weather — the app will show the next good window", "Never spray just before rain to 'save time'"],
+        "hi": ["शांत, सूखे मौसम का इंतज़ार करें — ऐप अगला अच्छा समय दिखाएगा", "समय बचाने के लिए बारिश से ठीक पहले छिड़काव न करें"],
+        "mr": ["शांत, कोरड्या हवामानाची वाट पाहा — ॲप पुढची योग्य वेळ दाखवेल", "वेळ वाचवण्यासाठी पावसाच्या आधी फवारणी करू नका"]
+      }
+    },
+    {
+      "id": "rain_skip_irrigation", "category": "irrigation", "severity": "advice", "notify": true,
+      "source": "Water-balance practice (FAO-56); IMD agromet advisories",
+      "title": {"en": "Rain on the way — hold irrigation", "hi": "बारिश आने वाली है — सिंचाई रोकें", "mr": "पाऊस येतोय — पाणी देणे थांबवा"},
+      "text": {
+        "en": "About {mm} mm of rain is expected in the next 2 days ({prob}% chance). Irrigating now wastes water and diesel.",
+        "hi": "अगले 2 दिनों में लगभग {mm} मिमी बारिश की उम्मीद है ({prob}% संभावना)। अभी सिंचाई करने से पानी और डीज़ल बर्बाद होगा।",
+        "mr": "पुढील 2 दिवसांत सुमारे {mm} मिमी पावसाची अपेक्षा आहे ({prob}% शक्यता). आता पाणी दिल्यास पाणी व डिझेल वाया जाईल."
+      },
+      "do": {
+        "en": ["Postpone fertiliser top-dressing until after the rain", "Check again tomorrow — forecasts change"],
+        "hi": ["बारिश के बाद तक खाद की टॉप-ड्रेसिंग टालें", "कल फिर देखें — पूर्वानुमान बदलता है"],
+        "mr": ["पावसानंतरपर्यंत वरखत पुढे ढकला", "उद्या पुन्हा पाहा — अंदाज बदलतो"]
+      }
+    },
+    {
+      "id": "irrigate", "category": "irrigation", "severity": "advice", "notify": true,
+      "source": "FAO Irrigation and Drainage Paper 56: crop water use = ET₀ × Kc (an estimate, not a soil measurement)",
+      "title": {"en": "Your crop needs water", "hi": "फसल को पानी चाहिए", "mr": "पिकाला पाण्याची गरज आहे"},
+      "text": {
+        "en": "This week the crop used about {etc} mm of water and rain gave about {rain} mm — a shortfall of about {deficit} mm, with no useful rain in the next 3 days.",
+        "hi": "इस हफ़्ते फसल ने लगभग {etc} मिमी पानी इस्तेमाल किया और बारिश से लगभग {rain} मिमी मिला — करीब {deficit} मिमी की कमी, और अगले 3 दिन काम की बारिश नहीं है।",
+        "mr": "या आठवड्यात पिकाने सुमारे {etc} मिमी पाणी वापरले आणि पावसातून सुमारे {rain} मिमी मिळाले — सुमारे {deficit} मिमी तूट, आणि पुढील 3 दिवस उपयोगी पाऊस नाही."
+      },
+      "do": {
+        "en": ["Check first: if the soil is dry 5 cm down, irrigate", "Irrigate in the early morning or evening to lose less to evaporation"],
+        "hi": ["पहले देखें: 5 सेमी नीचे मिट्टी सूखी हो तो सिंचाई करें", "सुबह जल्दी या शाम को सिंचाई करें ताकि वाष्पीकरण कम हो"],
+        "mr": ["आधी तपासा: 5 सेंमी खाली माती कोरडी असल्यास पाणी द्या", "बाष्पीभवन कमी व्हावे म्हणून पहाटे किंवा संध्याकाळी पाणी द्या"]
+      },
+      "crop_do": {
+        "rice": {"en": "Rice: bring standing water back to 2–5 cm", "hi": "धान: खेत में 2–5 सेमी पानी फिर से भरें", "mr": "भात: शेतात पुन्हा 2–5 सेंमी पाणी भरा"}
+      }
+    },
+    {
+      "id": "heat_people", "category": "heat", "severity": "advice", "notify": true,
+      "source": "WHO Global Solar UV Index (8–10 = very high); NDMA heat wave guidelines",
+      "title": {"en": "Strong sun and heat {day}: UV {uv}, {tmax}°C", "hi": "{day} तेज़ धूप और गर्मी: UV {uv}, {tmax}°C", "mr": "{day} कडक ऊन आणि उष्णता: UV {uv}, {tmax}°C"},
+      "text": {
+        "en": "UV {uv} is 'very high' on the WHO scale and it will feel like {feels}°C. Long hours in the midday sun cause heat exhaustion and sunburn.",
+        "hi": "WHO पैमाने पर UV {uv} 'बहुत अधिक' है और {feels}°C जैसा महसूस होगा। दोपहर की धूप में लंबे समय तक रहने से लू और त्वचा जलने का खतरा है।",
+        "mr": "WHO मापनानुसार UV {uv} 'खूप जास्त' आहे आणि {feels}°C इतके जाणवेल. दुपारच्या उन्हात जास्त वेळ राहिल्यास उष्माघात व त्वचा भाजण्याचा धोका आहे."
+      },
+      "do": {
+        "en": ["Do field work before 11 am and after 4 pm", "Drink water often; cover your head", "Rest in shade and stop if you feel dizzy"],
+        "hi": ["खेत का काम सुबह 11 से पहले और शाम 4 के बाद करें", "बार-बार पानी पिएँ; सिर ढकें", "छाँव में आराम करें और चक्कर आए तो रुक जाएँ"],
+        "mr": ["शेतीकाम सकाळी 11 पूर्वी व दुपारी 4 नंतर करा", "वारंवार पाणी प्या; डोके झाका", "सावलीत विश्रांती घ्या आणि चक्कर आल्यास थांबा"]
+      }
+    },
+    {
+      "id": "cold", "category": "cold", "severity": "advice", "notify": true,
+      "source": "IMD agromet advisories (cold wave)",
+      "title": {"en": "Cold night {day}: down to {tmin}°C", "hi": "{day} ठंडी रात: {tmin}°C तक", "mr": "{day} थंड रात्र: {tmin}°C पर्यंत"},
+      "text": {
+        "en": "Cold nights slow growth and stress young and flowering crops.",
+        "hi": "ठंडी रातें बढ़वार धीमी करती हैं और छोटी व फूल वाली फसल पर तनाव डालती हैं।",
+        "mr": "थंड रात्रींमुळे वाढ मंदावते आणि लहान व फुलोऱ्यातील पिकावर ताण येतो."
+      },
+      "do": {
+        "en": ["Irrigate lightly in the evening — moist soil holds heat", "Hold nitrogen top-dressing until it warms up"],
+        "hi": ["शाम को हल्की सिंचाई करें — नम मिट्टी गर्मी रोकती है", "गर्मी लौटने तक नाइट्रोजन टॉप-ड्रेसिंग रोकें"],
+        "mr": ["संध्याकाळी हलके पाणी द्या — ओलसर माती उष्णता धरून ठेवते", "थंडी कमी होईपर्यंत नत्राचा वरखत थांबवा"]
+      }
+    },
+    {
+      "id": "fog", "category": "fog", "severity": "advice", "notify": true,
+      "source": "IMD fog definition (visibility below 1000 m)",
+      "title": {"en": "Fog {when}: visibility {vis} m", "hi": "{when} कोहरा: दृश्यता {vis} मी", "mr": "{when} धुके: दृश्यमानता {vis} मी"},
+      "text": {
+        "en": "Fog keeps leaves wet for hours — good for fungal spores, bad for spraying.",
+        "hi": "कोहरे से पत्ते घंटों गीले रहते हैं — फफूंद के लिए अच्छा, छिड़काव के लिए खराब।",
+        "mr": "धुक्यामुळे पाने तासन्‌तास ओली राहतात — बुरशीसाठी पोषक, फवारणीसाठी वाईट."
+      },
+      "do": {
+        "en": ["Spray only after the leaves have dried", "Check leaves for spots after foggy mornings"],
+        "hi": ["पत्ते सूखने के बाद ही छिड़काव करें", "कोहरे वाली सुबह के बाद पत्तों पर धब्बे देखें"],
+        "mr": ["पाने वाळल्यानंतरच फवारणी करा", "धुक्याच्या सकाळीनंतर पानांवर ठिपके तपासा"]
+      }
+    },
+    {
+      "id": "spray_window", "category": "spray", "severity": "info", "notify": false,
+      "source": "Pesticide label guidance on drift and rain-free period; IMD agromet advisories",
+      "title": {"en": "Best time to spray: {start}–{end}", "hi": "छिड़काव का सबसे अच्छा समय: {start}–{end}", "mr": "फवारणीची उत्तम वेळ: {start}–{end}"},
+      "text": {
+        "en": "Light wind (about {wind} km/h), no rain expected for at least 4 hours after, and not too hot.",
+        "hi": "हल्की हवा (लगभग {wind} किमी/घं), बाद में कम से कम 4 घंटे बारिश नहीं, और ज़्यादा गर्मी नहीं।",
+        "mr": "मंद वारा (सुमारे {wind} किमी/तास), नंतर किमान 4 तास पाऊस नाही, आणि फार उष्णता नाही."
+      },
+      "do": {
+        "en": ["Spray only if a problem is confirmed — check the product in Spray check first"],
+        "hi": ["समस्या पक्की हो तभी छिड़कें — पहले 'छिड़काव जाँच' में दवा देखें"],
+        "mr": ["समस्या निश्चित असेल तरच फवारा — आधी 'फवारणी तपासणी'त औषध तपासा"]
+      }
+    }
+  ]
+}

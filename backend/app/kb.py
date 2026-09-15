@@ -45,6 +45,7 @@ class KB:
     pesticides: dict[str, dict]
     institutes: dict[str, dict] = field(default_factory=dict)
     technologies: list[dict] = field(default_factory=list)
+    agromet: dict = field(default_factory=dict)
     _cue_index: dict[frozenset, dict] = field(default_factory=dict)
 
     # --- lookups ---------------------------------------------------------
@@ -254,6 +255,69 @@ def validate(kb: KB) -> list[str]:
                     if not (text or {}).get(lang):
                         errors.append(f"technology {tid}: {key} missing {lang}")
 
+    errors += validate_agromet(kb)
+    return errors
+
+
+AGROMET_SEVERITIES = ("warning", "advice", "info")
+AGROMET_CATEGORIES = ("safety", "rain", "wind", "cold", "heat", "spray", "disease", "irrigation", "fog")
+
+
+def _fields(text: str) -> set[str]:
+    import string  # noqa: PLC0415
+
+    return {f for _, f, _, _ in string.Formatter().parse(text) if f}
+
+
+def validate_agromet(kb: KB) -> list[str]:
+    am = kb.agromet
+    if not am:
+        return []
+    errors: list[str] = []
+    for crop, table in am.get("kc", {}).items():
+        if crop.startswith("_"):
+            continue
+        stages = {s["key"] for s in kb.crops.get(crop, {}).get("stages", [])}
+        if crop not in kb.crops:
+            errors.append(f"agromet kc: unknown crop {crop}")
+        elif set(table) != stages:
+            errors.append(f"agromet kc {crop}: stages {sorted(set(table) ^ stages)} do not match crops.json")
+        if any(not (0.1 <= v <= 1.5) for v in table.values()):
+            errors.append(f"agromet kc {crop}: a coefficient outside 0.1–1.5")
+    for key in ("heat_sensitive_stages", "irrigation_stop_stages"):
+        for crop, stages in am.get(key, {}).items():
+            if crop.startswith("_"):
+                continue
+            known = {s["key"] for s in kb.crops.get(crop, {}).get("stages", [])}
+            for st in stages:
+                if st not in known:
+                    errors.append(f"agromet {key}: {st} is not a {crop} stage")
+    seen = set()
+    for r in am.get("rules", []):
+        rid = r.get("id", "?")
+        if rid in seen:
+            errors.append(f"agromet rule {rid}: duplicate id")
+        seen.add(rid)
+        if r.get("severity") not in AGROMET_SEVERITIES:
+            errors.append(f"agromet rule {rid}: bad severity")
+        if r.get("category") not in AGROMET_CATEGORIES:
+            errors.append(f"agromet rule {rid}: bad category")
+        if not r.get("source"):
+            errors.append(f"agromet rule {rid}: no source")
+        for part in ("title", "text"):
+            en = _fields((r.get(part) or {}).get("en", ""))
+            for lang in LANGS:
+                text = (r.get(part) or {}).get(lang)
+                if not text:
+                    errors.append(f"agromet rule {rid}: {part} missing {lang}")
+                elif _fields(text) != en:
+                    errors.append(f"agromet rule {rid}: {part} {lang} placeholders differ from en")
+        do = r.get("do") or {}
+        if not do.get("en"):
+            errors.append(f"agromet rule {rid}: nothing to do")
+        for lang in ("hi", "mr"):
+            if len(do.get(lang, [])) != len(do.get("en", [])):
+                errors.append(f"agromet rule {rid}: do list {lang} does not match en")
     return errors
 
 
@@ -270,6 +334,8 @@ def load_kb(kb_dir: Path = KB_DIR) -> KB:
     if tech_file.exists():
         tech = _load("icar_technologies.json", kb_dir)
         kb.institutes, kb.technologies = tech["institutes"], tech["technologies"]
+    if (kb_dir / "agromet.json").exists():
+        kb.agromet = _load("agromet.json", kb_dir)
     errors = validate(kb)
     if errors:
         raise KBError("knowledge base refused:\n  " + "\n  ".join(errors))
