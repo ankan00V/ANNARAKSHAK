@@ -1,0 +1,171 @@
+"""The farmer → Doubt Doctor → expert → spread loop over HTTP, with the
+network stubbed so tests never depend on a weather API being up."""
+
+import io
+from datetime import date, timedelta
+
+import pytest
+from fastapi.testclient import TestClient
+from PIL import Image
+from sqlalchemy import select
+
+from app import services
+from app.db import Base, SessionLocal, engine
+from app.engine.weather import Day, Window
+from app.main import app
+from app.models import Alert, Farm
+
+
+def _leaf_jpeg() -> bytes:
+    buf = io.BytesIO()
+    Image.new("RGB", (320, 240), (60, 140, 50)).save(buf, "JPEG")
+    return buf.getvalue()
+
+
+def _grey_jpeg() -> bytes:
+    buf = io.BytesIO()
+    Image.new("RGB", (320, 240), (128, 128, 128)).save(buf, "JPEG")
+    return buf.getvalue()
+
+
+@pytest.fixture()
+def client(monkeypatch):
+    humid = Window([Day(date.today() - timedelta(6 - i), 92, 23, 30, 6.0) for i in range(7)], "test", None)
+    monkeypatch.setattr(services, "fetch_window", lambda lat, lon: humid)
+    monkeypatch.setattr(services, "fetch_month_rain", lambda lat, lon: None)
+    Base.metadata.drop_all(bind=engine)
+    with TestClient(app) as c:
+        with SessionLocal() as db:
+            sown = date.today() - timedelta(days=60)
+            for lat, lon in [(21.17, 79.65), (21.18, 79.66), (21.60, 79.90)]:  # two near, one far
+                db.add(Farm(farmer_name="t", crop="rice", sowing_date=sown, district="Bhandara",
+                            lat=lat, lon=lon, area_acres=2))
+            db.add(Farm(farmer_name="t", crop="cotton", sowing_date=sown, district="Yavatmal",
+                        lat=20.39, lon=78.12, area_acres=2))
+            db.commit()
+        yield c
+
+
+def diagnose(c, farm_id, scenario, img=None):
+    return c.post(f"/api/farms/{farm_id}/diagnose",
+                  files={"image": ("x.jpg", img or _leaf_jpeg(), "image/jpeg")},
+                  data={"lang": "en", "demo_scenario": scenario}).json()
+
+
+def test_stub_is_always_labelled(client):
+    r = diagnose(client, 1, "clear")
+    assert r["is_stub"] is True and r["model_version"] == "stub-0"
+
+
+def test_no_advisory_outside_advise(client):
+    for scenario in ("torn", "unsure"):
+        r = diagnose(client, 1, scenario)
+        assert r["gate"]["outcome"] != "advise"
+        assert "advisory" not in r
+
+
+def test_clarify_cant_tell_escalates_and_lands_in_bundle(client):
+    r = diagnose(client, 1, "torn")
+    assert r["gate"]["outcome"] == "clarify"
+    out = client.post(f"/api/problems/{r['problem_id']}/clarify",
+                      json={"cue_id": r["clarify"]["cue_id"], "answer": "unknown"}).json()
+    assert out["outcome"] == "escalate" and "advisory" not in out
+    bundle = client.get(f"/api/cases/{out['case']['id']}").json()
+    assert bundle["doubt_doctor"][0]["answer"] == "unknown"
+    assert bundle["photos"] and bundle["model"]["hypotheses"]
+
+
+def test_clarify_yes_resolves_to_advice(client):
+    r = diagnose(client, 1, "torn")
+    out = client.post(f"/api/problems/{r['problem_id']}/clarify",
+                      json={"cue_id": r["clarify"]["cue_id"], "answer": "yes"}).json()
+    assert out["outcome"] == "advise" and out["advisory"]["ladder"][-1]["tier"] == "chemical"
+    assert out["followup"]["id"]
+
+
+def test_expert_confirmation_spreads_only_within_radius(client):
+    r = diagnose(client, 1, "unsure")
+    case_id = r["case"]["id"]
+    out = client.post(f"/api/cases/{case_id}/resolve", json={
+        "verdict": "confirmed", "final_label": "rice_sheath_blight", "expert_name": "KVK"}).json()
+    assert out["spread_alerts"] == 1  # farm 2 is ~1.5 km away, farm 3 is ~50 km away
+    with SessionLocal() as db:
+        spread = db.scalars(select(Alert).where(Alert.trigger == "spread")).all()
+        assert [a.farm_id for a in spread] == [2]
+    again = client.post(f"/api/cases/{case_id}/resolve", json={
+        "verdict": "confirmed", "final_label": "rice_sheath_blight", "expert_name": "KVK"})
+    assert again.status_code == 409
+
+
+def test_unconfirmed_advice_does_not_spread(client):
+    diagnose(client, 1, "clear")
+    with SessionLocal() as db:
+        assert not db.scalars(select(Alert).where(Alert.trigger == "spread")).all()
+
+
+def test_correction_feeds_prior_and_accuracy(client):
+    r = diagnose(client, 1, "unsure")
+    client.post(f"/api/cases/{r['case']['id']}/resolve", json={
+        "verdict": "corrected", "final_label": "rice_false_smut", "expert_name": "KVK"})
+    s = client.get("/api/officials/summary").json()
+    assert s["totals"]["corrected"] == 1 and s["totals"]["field_accuracy"] == 0.0
+    assert s["accuracy_by_label"][0]["model_label"] == "rice_sheath_blight"
+
+
+def test_non_crop_photo_asks_retake_without_case(client):
+    r = diagnose(client, 1, "clear", img=_grey_jpeg())
+    assert r["gate"]["outcome"] == "retake" and "case" not in r
+
+
+def test_crop_without_photo_model_goes_to_expert(client):
+    r = diagnose(client, 4, "clear")
+    assert r["gate"]["reason"] == "CROP_NOT_SUPPORTED" and r["case"]["id"]
+
+
+def test_risk_run_is_idempotent_and_every_alert_has_tasks(client):
+    first = client.post("/api/farms/1/risk/run").json()
+    second = client.post("/api/farms/1/risk/run").json()
+    assert first["issued"] and not second["issued"]
+    for a in client.get("/api/farms/1/alerts?lang=mr").json():
+        assert len(a["tasks"]) >= 2 and a["reason"]
+
+
+def test_alert_without_tasks_is_refused_by_the_database(client):
+    with SessionLocal() as db:
+        db.add(Alert(farm_id=1, target="rice_brown_spot", trigger="weather", level="low",
+                     reason={"en": "x"}, tasks={"en": []}, issued_on=date.today()))
+        with pytest.raises(Exception):
+            db.commit()
+
+
+def test_followup_got_worse_escalates(client):
+    r = diagnose(client, 1, "clear")
+    out = client.post(f"/api/followups/{r['followup']['id']}", json={"response": "got_worse"}).json()
+    assert out["case"]["reason"] == "FOLLOWUP_WORSE"
+
+
+def test_healthy_label_gets_a_localized_name():
+    from app.engine.gate import Prediction
+    from app.kb import get_kb
+
+    kb = get_kb()
+    assert services._pred_view(kb, Prediction("maize_healthy", 0.04), "en")["name"] == "Healthy Maize"
+    assert services._pred_view(kb, Prediction("rice_healthy", 0.04), "mr")["name"].startswith("निरोगी")
+
+
+def test_expert_bundle_carries_icar_referral(client):
+    r = diagnose(client, 1, "clear")  # stub: rice bacterial leaf blight above the gate
+    esc = client.post(f"/api/problems/{r['problem_id']}/escalate").json()
+    bundle = client.get(f"/api/cases/{esc['case']['id']}").json()
+    ids = [x["id"] for x in bundle["icar_referral"]]
+    assert "nrri_clcc" in ids and "nrri_ricexpert" in ids  # target-linked first, then crop-level
+    assert ids.index("nrri_clcc") < ids.index("nrri_ricexpert")
+
+
+def test_outlook_lists_icar_inputs_to_stock(client):
+    client.post("/api/officials/risk/run-all")
+    rows = client.get("/api/officials/outlook").json()
+    assert rows
+    for row in rows:
+        assert all(x["type"] in ("biocontrol", "variety", "monitoring") for x in row["icar_inputs"])
+    assert any(row["icar_inputs"] for row in rows)
