@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import {
-  ArrowLeft, Camera, CheckCircle2, Clock, FlaskConical, HelpCircle, Loader2, PhoneCall, RefreshCw, ShieldQuestion, UserRound,
+  ArrowLeft, ArrowRightLeft, Camera, CheckCircle2, Clock, FlaskConical, HelpCircle, Loader2, PhoneCall, RefreshCw, ShieldQuestion, UserRound,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../../api/client'
-import type { CaseBrief, DiagnoseResult, TargetView } from '../../api/types'
+import type { CaseBrief, DiagnoseResult, Farm, TargetView } from '../../api/types'
+import { useAsync } from '../../lib/hooks'
 import { ConfidenceMeter, GradCamOverlay, ListenButton, Pill } from '../../ui/kit'
 import AdvisoryView from '../components/AdvisoryView'
 import { useFarmer } from '../FarmerContext'
@@ -99,6 +100,8 @@ function ResultView({ r }: { r: DiagnoseResult }) {
       )}
 
       {outcome === 'clarify' && r.clarify && <DoubtDoctor r={r} />}
+
+      {outcome === 'escalate' && r.gate.reason === 'CROP_MISMATCH' && top && <CropMismatch r={r} top={top} />}
 
       {outcome === 'escalate' && <Escalated message={r.message} kase={r.case} alternatives={r.gate.alternatives} />}
 
@@ -269,6 +272,62 @@ function Escalated({ message, kase, alternatives }: { message: string; kase?: Ca
         {t('callKcc')}
       </a>
       <Pill className="mx-auto">{kase ? `Case #${kase.id}` : ''}</Pill>
+    </section>
+  )
+}
+
+/** The photo shows another crop than the farm is registered for. Say what the
+ *  model sees, and let the farmer re-check the same photo on a farm of that crop. */
+function CropMismatch({ r, top }: { r: DiagnoseResult; top: TargetView }) {
+  const { t, lang, setFarmId, setResult } = useFarmer()
+  const navigate = useNavigate()
+  const farms = useAsync(() => api.farms(lang), [lang])
+  const crops = useAsync(() => api.crops(lang), [lang])
+  const [busy, setBusy] = useState<number | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+  const cropName = crops.data?.find((c) => c.id === top.crop)?.name ?? top.crop
+  const others: Farm[] = (farms.data ?? []).filter((f) => f.crop === top.crop).slice(0, 4)
+
+  const recheck = async (f: Farm) => {
+    if (!r.image_url) return
+    setBusy(f.id)
+    setErr(null)
+    try {
+      const blob = await (await fetch(r.image_url)).blob()
+      const out = await api.diagnose(f.id, blob, f.lang)  // that farm's own language: the app switches to it
+      setFarmId(f.id)
+      setResult(out)
+      navigate('/app/result')
+    } catch (e) {
+      setErr((e as Error).message)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <section className="rounded-2xl bg-ochre/10 border border-ochre/40 p-5">
+      <ArrowRightLeft className="w-7 h-7 text-[#8a5a17]" />
+      <h1 className="mt-2 font-instrument-serif text-2xl leading-tight">{t('mismatchTitle').replace('{crop}', cropName)}</h1>
+      <p className="mt-1 text-sm text-soil-dark/80">
+        {t('mismatchBody').replace('{name}', top.name).replace('{crop}', cropName)
+          .replace('{pct}', String(Math.round((top.confidence ?? 0) * 100)))}
+      </p>
+      {others.length > 0 && (
+        <>
+          <p className="mt-3 text-xs font-medium text-soil-dark/70">{t('mismatchPick').replace('{crop}', cropName)}</p>
+          <div className="mt-2 grid gap-2">
+            {others.map((f) => (
+              <button key={f.id} onClick={() => recheck(f)} disabled={busy !== null}
+                className="flex items-center justify-between gap-2 min-h-[48px] rounded-xl bg-white border border-soil-dark/10 px-3 text-sm text-left disabled:opacity-60">
+                <span><span className="font-medium">{f.farmer_name}</span> <span className="text-xs text-soil-dark/55">· {f.district}</span></span>
+                {busy === f.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <span className="text-leaf-deep text-xs font-medium">{t('mismatchCheck')} →</span>}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {err && <p className="mt-2 text-xs text-ember">{err}</p>}
     </section>
   )
 }
