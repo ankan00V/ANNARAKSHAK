@@ -101,7 +101,7 @@ function ResultView({ r }: { r: DiagnoseResult }) {
 
       {outcome === 'clarify' && r.clarify && <DoubtDoctor r={r} />}
 
-      {outcome === 'escalate' && r.gate.reason === 'CROP_MISMATCH' && top && <CropMismatch r={r} top={top} />}
+      {outcome === 'escalate' && r.gate.reason === 'CROP_MISMATCH' && top && (top.confidence ?? 0) >= 0.6 && <CropMismatch r={r} top={top} />}
 
       {outcome === 'escalate' && <Escalated message={r.message} kase={r.case} alternatives={r.gate.alternatives} />}
 

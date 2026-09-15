@@ -105,8 +105,11 @@ def classify(image_bytes: bytes, farm_crop: str, scenario: str | None = None) ->
 
     model = _real_model()
     if model is not None:
-        preds, heatmap = model.predict(img)
+        preds, heatmap, fam = model.analyse(img)
         topk = TopK([Prediction(t, c) for t, c in preds], model.version, is_stub=False, heatmap=heatmap)
+        if not model.is_familiar(fam):  # a face, a room, a document: nothing like a crop photo
+            return TopK(topk.predictions, topk.model_version, False,
+                        out_of_scope=True, oos_reason="NOT_A_CROP_PHOTO", heatmap=None)
     else:
         crop = farm_crop if farm_crop in STUB_SCENARIOS else "rice"
         if scenario not in SCENARIO_ORDER:

@@ -294,3 +294,13 @@ def test_look_alikes_are_not_both_reported_as_seen():
     f = s.findings(kb)
     assert [x["target"] for x in f["seen"]] == ["rice_brown_spot"]
     assert next(x for x in f["possible"] if x["target"] == "rice_blast")["reason"] == "LOOKALIKE"
+
+
+def test_a_frame_the_model_does_not_recognise_as_a_crop_never_counts():
+    s = LiveSession(crop="rice", lang="en", can_classify=True)
+    while s.steps[s.idx].kind != "close":  # walk to the first close-up step
+        s.on_frame(leaf(1000 + s.frames), b"x", lambda img: [])
+    need_before = s.steps[s.idx].got
+    out = s.on_frame(leaf(4242), b"face", lambda img: [])  # e.g. a person in front of plants
+    assert not out["counted"] and out["quality"]["hint"] == "show_crop"
+    assert s.steps[s.idx].got == need_before and s.classified == 0

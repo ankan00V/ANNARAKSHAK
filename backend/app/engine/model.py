@@ -126,11 +126,45 @@ class Classifier:
         self.model.load_state_dict(state)
         self.model.train(False)  # inference mode: dropout off, batch-norm frozen
         self.tf = test_transform(self.size)
+        # Familiarity: how close a photo's features are to the training photos'.
+        # A softmax always picks a class, even for a face; this says whether the
+        # photo is the kind of thing the model knows at all (ml/build_familiarity.py).
+        self.bank = None
+        self.familiar_min = None
+        bank, cfg = artifacts / "familiarity_bank.npy", artifacts / "familiarity.json"
+        if bank.exists() and cfg.exists():
+            conf = json.loads(cfg.read_text())
+            if conf.get("model_version") == self.version:  # a bank from another model means nothing
+                self.bank = torch.from_numpy(np.load(bank).astype(np.float32))
+                self.familiar_min = float(conf["threshold"])
+                self.familiar_k = int(conf.get("k", 5))
 
-    def predict(self, img: Image.Image, k: int = 3, with_heatmap: bool = True) -> tuple[list[tuple[str, float]], dict | None]:
+    def embed(self, img: Image.Image) -> torch.Tensor:
         x = self.tf(img.convert("RGB")).unsqueeze(0)
         with torch.no_grad():
-            logits = self.model(x)[0]
+            return F.normalize(self.model.pooled(x), dim=1)[0]
+
+    def familiarity(self, feat: torch.Tensor) -> float | None:
+        """Mean cosine similarity to the k nearest training photos (None if no bank)."""
+        if self.bank is None:
+            return None
+        sims = self.bank @ F.normalize(feat, dim=0)
+        return float(sims.topk(min(self.familiar_k, len(sims))).values.mean())
+
+    def is_familiar(self, fam: float | None) -> bool:
+        return fam is None or self.familiar_min is None or fam >= self.familiar_min
+
+    def predict(self, img: Image.Image, k: int = 3, with_heatmap: bool = True) -> tuple[list[tuple[str, float]], dict | None]:
+        preds, heatmap, _ = self.analyse(img, k, with_heatmap)
+        return preds, heatmap
+
+    def analyse(self, img: Image.Image, k: int = 3, with_heatmap: bool = True):
+        """(top-k targets, Grad-CAM grid or None, familiarity or None) from one forward pass."""
+        x = self.tf(img.convert("RGB")).unsqueeze(0)
+        with torch.no_grad():
+            feat = self.model.pooled(x)
+            logits = self.model.head(feat)[0]
+        fam = self.familiarity(feat[0])
         probs = torch.softmax(logits / self.temperature, dim=0).numpy()
         by_target: dict[str, float] = {}
         for cls, p in zip(self.classes, probs):
@@ -139,7 +173,7 @@ class Classifier:
         ranked = sorted(by_target.items(), key=lambda kv: kv[1], reverse=True)[:k]
         top_class = int(np.argmax(probs))
         if not with_heatmap:  # live frames: ~3x faster without the backward pass
-            return [(t, round(c, 4)) for t, c in ranked], None
+            return [(t, round(c, 4)) for t, c in ranked], None, fam
         with torch.enable_grad():
             cam = gradcam(self.model, x.requires_grad_(True), top_class)
         return [(t, round(c, 4)) for t, c in ranked], {
@@ -148,4 +182,4 @@ class Classifier:
             "cols": cam.shape[1],
             "method": "grad-cam",
             "class": self.classes[top_class],
-        }
+        }, fam

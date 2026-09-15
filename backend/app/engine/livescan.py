@@ -200,6 +200,13 @@ class LiveSession:
             self.closeups = sorted(self.closeups, key=lambda x: -x[0])[:MAX_EVIDENCE_FRAMES]
             if classify is not None and self.can_classify:
                 preds = classify(img)
+                if not preds:  # the model says this is not a crop view at all
+                    step.got -= 1
+                    self.good_frames -= 1
+                    self.closeups = [c for c in self.closeups if c[1] is not jpeg]
+                    q.ok, q.hint = False, "show_crop"
+                    return out | {"quality": q.__dict__ | {"hint_text": self.hint_text(q.hint)}, "counted": False,
+                                  "guide": self.guide()}
                 self.classified += 1
                 out["live"] = self._record(preds, jpeg)
         if step.got >= step.need:

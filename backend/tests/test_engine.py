@@ -276,3 +276,17 @@ def test_a_lab_trained_class_must_clear_its_own_higher_bar():
     assert (d.outcome, d.reason) == ("escalate", "LAB_CLASS_BELOW_GATE")
     assert run_gate(topk(("rice_blast", 0.93), ("rice_brown_spot", 0.03))).outcome == "advise"
     assert run_gate(topk(("rice_brown_spot", 0.75), ("rice_blast", 0.05))).outcome == "advise"  # others unchanged
+
+
+def test_familiarity_rejects_what_is_far_from_every_training_photo():
+    import torch
+
+    from app.engine.model import Classifier
+    clf = Classifier.__new__(Classifier)  # no weights needed for the similarity maths
+    clf.bank = torch.nn.functional.normalize(torch.tensor([[1.0, 0, 0], [0.9, 0.1, 0], [0.95, 0, 0.05]]), dim=1)
+    clf.familiar_min, clf.familiar_k = 0.8, 2
+    near = clf.familiarity(torch.tensor([1.0, 0.05, 0.0]))
+    far = clf.familiarity(torch.tensor([0.0, 0.0, 1.0]))
+    assert clf.is_familiar(near) and not clf.is_familiar(far)
+    clf.bank = None
+    assert clf.is_familiar(clf.familiarity(torch.tensor([0.0, 0.0, 1.0])))  # no bank: no opinion

@@ -131,8 +131,8 @@ def new_session(kb: KB, farm: Farm, lang: str) -> LiveSession:
 def classify(img) -> list[tuple[str, float]]:
     """Top-3 targets for one close-up, calibrated — the same model as the photo path."""
     model = vision._real_model()
-    preds, _ = model.predict(img, with_heatmap=False)
-    return preds
+    preds, _, fam = model.analyse(img, with_heatmap=False)
+    return preds if model.is_familiar(fam) else []  # not a crop view: nothing to record
 
 
 def finish(db: Session, kb: KB, farm: Farm, sess: LiveSession, ctx: dict, lang: str,
