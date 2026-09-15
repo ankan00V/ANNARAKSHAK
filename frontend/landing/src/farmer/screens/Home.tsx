@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Camera, ClipboardCheck, Loader2, ShieldCheck, Sparkles } from 'lucide-react'
+import { Camera, ClipboardCheck, Loader2, ShieldCheck, Sparkles, Video } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { api } from '../../api/client'
 import type { CropInfo, Home as HomeData } from '../../api/types'
@@ -28,6 +28,25 @@ export default function Home() {
       {d.followups_due.map((f) => (
         <FollowUp key={f.id} id={f.id} onDone={home.reload} />
       ))}
+
+      <Link
+        to="/app/live"
+        className="relative block w-full rounded-3xl bg-gradient-to-br from-soil-dark to-leaf-deep text-cream overflow-hidden p-5 shadow-lg shadow-leaf-deep/25 active:scale-[0.99] transition-transform"
+      >
+        <span aria-hidden className="absolute -bottom-14 -right-8 w-48 h-48 rounded-full bg-ochre/30 blur-2xl" />
+        <span className="relative inline-flex items-center gap-1.5 rounded-full bg-ember px-2 py-0.5 text-[10px] font-bold">
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> LIVE
+        </span>
+        <span className="relative mt-2 flex items-center gap-4">
+          <span className="w-14 h-14 rounded-2xl bg-cream/10 ring-1 ring-ochre/50 flex items-center justify-center">
+            <Video className="w-7 h-7 text-ochre" />
+          </span>
+          <span>
+            <span className="block text-lg font-medium leading-tight">{t('liveCta')}</span>
+            <span className="block text-xs text-cream/70 mt-0.5">{t('liveCtaSub')}</span>
+          </span>
+        </span>
+      </Link>
 
       <Link
         to="/app/scan"

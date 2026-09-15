@@ -8,6 +8,7 @@ import { Spinner } from './ui/kit'
 // Farmers load only their own screens on slow rural networks; the expert
 // console and the Leaflet-heavy officials' dashboard are separate chunks.
 const Scan = lazy(() => import('./farmer/screens/Scan'))
+const Live = lazy(() => import('./farmer/screens/Live'))
 const Result = lazy(() => import('./farmer/screens/Result'))
 const Spray = lazy(() => import('./farmer/screens/Spray'))
 const Alerts = lazy(() => import('./farmer/screens/Alerts'))
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/app" element={<FarmerApp />}>
             <Route index element={<Home />} />
             <Route path="scan" element={<Scan />} />
+            <Route path="live" element={<Live />} />
             <Route path="result" element={<Result />} />
             <Route path="spray" element={<Spray />} />
             <Route path="alerts" element={<Alerts />} />

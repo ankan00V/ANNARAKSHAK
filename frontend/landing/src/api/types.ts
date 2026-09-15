@@ -396,3 +396,77 @@ export interface OutlookRow {
   inspected: number
   icar_inputs: IcarTech[]
 }
+
+// --- Live field walk ----------------------------------------------------------
+
+export interface LiveRisk {
+  target: string
+  name: string
+  level: 'low' | 'medium' | 'high'
+  trigger: string
+  reason: string
+  check: string[]
+  prevention: { avoid: string[]; do: string[]; icar: string[] }
+}
+
+export interface LiveContext {
+  location: { lat: number; lon: number; source: 'gps' | 'farm'; accuracy_m: number | null; km_from_farm: number; far_from_farm: boolean }
+  weather_now: {
+    temp_c: number | null; rh_pct: number | null; rain_mm_1h: number | null; wind_kmh: number | null
+    text: string | null; station: string | null; source: string; observed_at: string | null
+  } | null
+  forecast: { days: number; rain_mm: number; rh_max: number | null; t_min: number | null; t_max: number | null; source: string } | null
+  soil: {
+    ph: { value: number; how: 'measured' | 'card' | 'estimated'; source: string; on: string | null; band: string; soc_g_per_kg?: number | null } | null
+    moisture: { value_pct: number; how: 'measured' | 'estimated'; source: string; deeper_pct?: number | null; temp_c?: number | null } | null
+  }
+  crop: { id: string; name: string; stage: string; stage_name: string; das: number; photo_model: boolean }
+  risks: LiveRisk[]
+}
+
+export interface LiveGuide {
+  step: string | null
+  kind?: 'scene' | 'plant' | 'close' | 'base'
+  index: number
+  total: number
+  need?: number
+  got?: number
+  text?: string
+}
+
+export interface LiveFrameReply {
+  type: 'frame'
+  seq: number
+  quality: { ok: boolean; hint: string | null; hint_text: string | null; sharp: number; bright: number; veg: number } | null
+  counted: boolean
+  advanced: boolean
+  live: { top: { target: string; name: string; confidence: number }[] } | null
+  guide: LiveGuide
+}
+
+export interface LiveFinding {
+  target: string
+  name: string
+  views: number
+  strong_views: number
+  confidence: number
+  problem_id: number
+  evidence?: string[]
+  advisory?: Advisory
+  settled_by_answer?: boolean
+  reason?: string
+  case?: CaseBrief
+}
+
+export interface LiveSummary {
+  scan_id: number
+  verdict: 'all_good' | 'risk' | 'found' | 'check'
+  context: LiveContext
+  seen: LiveFinding[]
+  possible: LiveFinding[]
+  expert_case: CaseBrief | null
+  stats: { frames: number; good_frames: number; classified_views: number; healthy_views: number; other_crop_views: number }
+  model_version: string
+  photo_model: boolean
+  speech: string
+}

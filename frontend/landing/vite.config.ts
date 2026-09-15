@@ -11,7 +11,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': API,
+      '/api': { target: API, ws: true }, // ws: the live field walk streams frames over a WebSocket
       '/media': API,
       '/samples': API,
       '/health': API,

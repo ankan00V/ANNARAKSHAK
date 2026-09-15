@@ -39,7 +39,7 @@ function Shell() {
     window.scrollTo(0, 0)
   }, [pathname])
 
-  const active = pathname === '/app/result'
+  const active = pathname === '/app/result' || pathname === '/app/live'
     ? '/app/scan'
     : NAV.slice().reverse().find((n) => pathname === n.to || pathname.startsWith(n.to + '/'))?.to ?? '/app'
 

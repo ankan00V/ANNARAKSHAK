@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Camera, CheckCircle2, ImagePlus, Loader2, ScanLine, X } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Camera, CheckCircle2, ImagePlus, Loader2, ScanLine, Video, X } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../../api/client'
 import { useAsync } from '../../lib/hooks'
 import { ErrorBox, Pill } from '../../ui/kit'
@@ -86,6 +86,12 @@ export default function Scan() {
   return (
     <div className="space-y-4">
       <h1 className="font-instrument-serif text-3xl leading-tight">{t('takePhoto')}</h1>
+
+      <Link to="/app/live" className="flex items-center gap-3 rounded-2xl border border-leaf/30 bg-white p-3 text-sm">
+        <span className="shrink-0 w-9 h-9 rounded-full bg-ember/10 text-ember flex items-center justify-center"><Video className="w-4 h-4" /></span>
+        <span className="flex-1"><span className="font-medium">{t('liveCta')}</span><span className="block text-xs text-soil-dark/60">{t('liveTitle')}</span></span>
+        <span className="text-leaf-deep">→</span>
+      </Link>
 
       {farm && !farm.photo_diagnosis && (
         <p className="text-sm rounded-2xl bg-sky-50 text-sky-900 p-3">{t('photoLater')}</p>
