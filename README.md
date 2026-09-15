@@ -1,47 +1,87 @@
 # AnnRakshak
 
-Early detection and management of crop diseases and pest infestations.
-Smart India Hackathon 2026 — PS 26131 (Govt. of Maharashtra).
+**Early detection and management of crop diseases and pest infestations.**
+Smart India Hackathon 2026 · PS 26131 · Government of Maharashtra.
+
+A farmer photographs a sick plant or gets a "go look here" alert. AnnRakshak
+either gives safe, cited advice in Marathi/Hindi, asks one field question when
+it is torn between two diseases, or sends the case to a KVK expert — it never
+guesses. Every expert verdict updates the farmer, warns nearby farms, and feeds
+the officials' surveillance dashboard.
+
+## What's built — mapped to the problem statement
+
+| PS asks for | Where it lives |
+|---|---|
+| Image-based symptom identification | `ml/train.py` → EfficientNetV2-S / DenseNet201 on the ICAR rice & maize set; `/api/farms/{id}/diagnose` |
+| Pest-trap or sensor inputs | Trap counts vs ICAR-CICR action levels, field-sensor readings override the district forecast (`/traps`, `/sensor`) |
+| Weather-based risk forecasting | `backend/app/engine/risk.py` — Open-Meteo window + crop stage + farm history + IMD rainfall normals |
+| Geospatial hotspot mapping | Officials' map: confirmed / awaiting-expert / AI-advised cases, 5 km spread radius, active risk alerts |
+| Expert validation | `/expert` console: pre-packed case bundles, confirm/correct, lab referral, 3-minute review timer |
+| Multilingual advisories | Marathi, Hindi, English throughout; Sarvam AI text-to-speech and speech-to-text |
+| IPM + safe input usage | Advice ladder is cultural → biological → chemical (enforced at load and at composition); veto-only spray check |
+| Referral to extension / labs | Escalation queue with ETA, lab-referral flag, Kisan Call Centre one-tap call |
+| Follow-up monitoring | Day-4 check-in; "got worse" re-escalates automatically |
+| Learns from field confirmations | Capped per-district prior + confirmed-vs-corrected field accuracy (not retraining — stated as such) |
+| Dashboards for officials | `/officer`: KPIs, gate breakdown, risk outlook, district table, IMD rainfall vs normal, MoSPI pesticide baseline, model card |
+
+## Principles that are enforced in code
+
+- **Never a confident wrong answer.** One gate (`engine/gate.py`) returns exactly one of advise / clarify / escalate / retake. Tests cover every band.
+- **Uncertainty is shown.** The farmer sees the confidence against the gate's own thresholds and the alternatives.
+- **Chemical last.** The knowledge base refuses to load a ladder that isn't cultural → biological → chemical.
+- **Veto, never endorse.** The spray check has no vocabulary for "safe".
+- **Every alert carries a task.** The database refuses an alert without inspection tasks.
+- **Labelled stub.** Without a trained model the API says `is_stub: true` and the app shows a banner.
+
+## The model, measured
+
+Held-out ICAR test set (126 photos never seen in training, duplicates removed before splitting). Full report: `ml/reports/MODEL_REPORT.md`.
+
+| Method | Test accuracy | Macro-F1 |
+|---|---|---|
+| DenseNet201 + ANN head, frozen (paper 2's approach) | 81.7% | 0.818 |
+| EfficientNetV2-S + ANN head, frozen | 82.5% | 0.823 |
+| MobileNetV3 + ANN head, frozen | 79.4% | 0.791 |
+| **EfficientNetV2-S fine-tuned (paper 1's approach) — deployed** | **89.7%** | **0.896** |
+
+With the confidence gate on top: it advises on 86.5% of photos and is right on **97.2%** of those; the rest get one field question or go to an expert. Calibration error 0.134 → 0.055 after temperature scaling. ~50 photos per class — treat per-class numbers as indicative; field accuracy is tracked separately from expert verdicts.
 
 ## Layout
 
-- `backend/` — FastAPI app
-- `frontend/landing/` — showcase/pitch site
-- `frontend/farmer-app/` — lightweight PWA for farmers
-- `frontend/officer-dashboard/` — district-level console
-- `ml/` — training scripts, notebooks, model artifacts
-- `data/` — ingestion/ETL scripts, raw data stays out of git
-
-## Run
-
-Backend (port 8010 — 8000 is taken on this machine):
-
 ```
-python3 -m venv .venv
-. .venv/bin/activate
-pip install -r backend/requirements.txt
-uvicorn app.main:app --reload --port 8010 --app-dir backend
+backend/            FastAPI app (port 8010)
+  app/engine/       gate, doubt doctor, advisory, risk, weather, prior, vision, label check
+  app/routers/      farmer, expert, officials APIs
+  kb/               knowledge base: crops, 28 targets, advisories, cues, risk rules, pesticides,
+                    IMD rainfall normals, MoSPI pesticide baseline
+  tests/            156 tests for the guarantees above
+  seed.py           demo farms
+  demo_story.py     plays a history through the real API on held-out ICAR photos
+frontend/landing/   React app: landing (/), farmer PWA (/app), expert (/expert), officials (/officer)
+ml/                 train.py, sample_outcomes.py, reports/ (model report, confusion matrix, Grad-CAM gallery)
+data/               ingest.py, DATASETS.md, MANUAL_DOWNLOADS.md (raw data is gitignored)
+docs/               INTEGRATIONS.md — external APIs and keys
 ```
 
-Frontend, from the repo root:
+## Run it
 
+```bash
+python3.12 -m venv .venv
+.venv/bin/pip install -r ml/requirements.txt   # API + training/ingest deps (API alone: backend/requirements.txt)
+cp .env.example .env              # add SARVAM_API_KEY for voice
+.venv/bin/python data/ingest.py   # needs the datasets in data/raw — see data/DATASETS.md
+.venv/bin/python ml/train.py      # ~1 h on an M-series Mac (MPS); writes ml/artifacts/
+.venv/bin/python ml/sample_outcomes.py   # tags demo photos with the path the gate takes
+.venv/bin/python backend/seed.py --reset
+.venv/bin/uvicorn app.main:app --port 8010 --app-dir backend
+npm install && npm run dev:landing   # http://localhost:5173
 ```
-npm install
-npm run dev:landing   # :5173
-npm run dev:farmer    # :5174
-npm run dev:officer   # :5175
-```
 
-## Status
+Optional: `.venv/bin/python backend/demo_story.py` to fill the dashboards by running the real flows.
 
-- [x] Repo skeleton
-- [ ] Dataset #1 (ICAR crop disease/pest images) ingestion
-- [ ] CNN training, /predict, Grad-CAM
-- [ ] Risk forecast, geospatial hotspots, dosage calculator
-- [ ] Bhashini voice/multilingual, SMS/IVR fallback, expert validation
-- [ ] Landing showcase, nearby-outbreak signal, demo script
+Tests: `cd backend && ../.venv/bin/python -m pytest -q` (always on the deterministic stub, never the paid voice API)
 
-## Real vs mocked
+## Data
 
-Tracked in `DEMO.md` once Day 1's model lands. Every stub gets flagged in code
-and in the demo script.
+ICAR crop disease & insect-pest images (rice, maize), IMD rainfall (subdivision monthly 1901–2017, normals, monsoon departures), MoSPI ENVSTATS pesticide consumption, ICAR technology repository (24 entries linked to our pests), live Open-Meteo weather. Provenance, hashes and caveats in `data/DATASETS.md`.
