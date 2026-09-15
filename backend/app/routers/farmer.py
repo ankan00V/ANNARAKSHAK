@@ -246,6 +246,15 @@ class FollowUpIn(BaseModel):
     lang: Lang = "en"
 
 
+@router.get("/problems/{problem_id}/result")
+def problem_result(problem_id: int, lang: Lang = "en", db: Session = Depends(get_db), kb: KB = Depends(get_kb)):
+    """The photo result screen again in `lang` — for a language switch on it."""
+    try:
+        return services.result_view(db, kb, _problem(db, problem_id), lang)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+
 @router.post("/followups/{followup_id}")
 def followup(followup_id: int, body: FollowUpIn, db: Session = Depends(get_db), kb: KB = Depends(get_kb)):
     fu = db.get(FollowUp, followup_id)

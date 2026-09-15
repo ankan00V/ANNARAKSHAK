@@ -12,6 +12,7 @@ import type {
   Hotspots,
   KccPanel,
   LabelVerdict,
+  LiveSummary,
   Lang,
   ModelCard,
   NoticeItem,
@@ -109,6 +110,10 @@ export const api = {
       method: 'POST',
     }),
   problem: (problemId: number, lang: Lang) => req<ProblemView>(`/api/problems/${problemId}?lang=${lang}`),
+  problemResult: (problemId: number, lang: Lang) =>
+    req<DiagnoseResult>(`/api/problems/${problemId}/result?lang=${lang}`),
+  liveSummary: (farmId: number, scanId: number, lang: Lang) =>
+    req<LiveSummary>(`/api/farms/${farmId}/live/${scanId}?lang=${lang}`),
   followup: (id: number, response: 'improved' | 'no_change' | 'got_worse', lang: Lang) =>
     req<{ case?: CaseListItem; message?: string }>(`/api/followups/${id}`, json({ response, lang })),
 

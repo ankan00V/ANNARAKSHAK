@@ -20,8 +20,8 @@ const CROP_TINT: Record<string, string> = {
 
 export default function Onboard() {
   const { lang, t, setFarmId, setLang } = useFarmer()
-  const farms = useAsync(() => api.farms(lang), [lang])
-  const crops = useAsync(() => api.crops(lang), [lang])
+  const farms = useAsync(() => api.farms(lang), [lang], ['farms', lang].join(':'))
+  const crops = useAsync(() => api.crops(lang), [lang], ['crops', lang].join(':'))
   const [adding, setAdding] = useState(false)
   const [cropFilter, setCropFilter] = useState<string | null>(null)
   const shown = (farms.data ?? []).filter((f) => !cropFilter || f.crop === cropFilter)
@@ -39,7 +39,7 @@ export default function Onboard() {
         <LanguagePicker variant="grid" onPick={setLang} />
       </section>
 
-      {farms.loading && <Spinner />}
+      {farms.loading && !farms.data && <Spinner />}
       {farms.error && <ErrorBox error={farms.error} onRetry={farms.reload} retryLabel={t('retry')} />}
 
       {crops.data && farms.data && (

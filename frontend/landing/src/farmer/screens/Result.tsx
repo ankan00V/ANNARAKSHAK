@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArrowLeft, ArrowRightLeft, Camera, CheckCircle2, Clock, FlaskConical, HelpCircle, Loader2, PhoneCall, RefreshCw, ShieldQuestion, UserRound,
 } from 'lucide-react'
@@ -33,6 +33,18 @@ function ResultView({ r }: { r: DiagnoseResult }) {
   const outcome = r.gate.outcome
   const top = r.gate.alternatives[0]
   const [escalating, setEscalating] = useState(false)
+
+  // Language switched on this screen: the same result, re-rendered in the new language.
+  const langSeen = useRef(lang)
+  useEffect(() => {
+    if (langSeen.current === lang) return
+    langSeen.current = lang
+    let on = true
+    api.problemResult(r.problem_id, lang).then((fresh) => on && setResult({ ...r, ...fresh })).catch(() => undefined)
+    return () => {
+      on = false
+    }
+  }, [lang, r, setResult])
 
   const askExpert = async () => {
     setEscalating(true)
@@ -281,8 +293,8 @@ function Escalated({ message, kase, alternatives }: { message: string; kase?: Ca
 function CropMismatch({ r, top }: { r: DiagnoseResult; top: TargetView }) {
   const { t, lang, setFarmId, setResult } = useFarmer()
   const navigate = useNavigate()
-  const farms = useAsync(() => api.farms(lang), [lang])
-  const crops = useAsync(() => api.crops(lang), [lang])
+  const farms = useAsync(() => api.farms(lang), [lang], ['farms', lang].join(':'))
+  const crops = useAsync(() => api.crops(lang), [lang], ['crops', lang].join(':'))
   const [busy, setBusy] = useState<number | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const cropName = crops.data?.find((c) => c.id === top.crop)?.name ?? top.crop

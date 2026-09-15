@@ -65,7 +65,7 @@ const hhmm = (iso: string) => iso.slice(11, 16)
 
 export default function Weather() {
   const { farmId, lang, t } = useFarmer()  // lang also feeds dates and the KCC month name
-  const w = useAsync(() => api.weather(farmId!, lang), [farmId, lang])
+  const w = useAsync(() => api.weather(farmId!, lang), [farmId, lang], ['weather', farmId!, lang].join(':'))
   if (w.loading && !w.data) return <Spinner label={t('loading')} />
   if (w.error) return <ErrorBox error={w.error} onRetry={w.reload} retryLabel={t('retry')} />
   const v = w.data!
@@ -381,7 +381,7 @@ function SoilWater({ v }: { v: WeatherView }) {
 /** Compact card for Home: now, the top advice, and the way in. */
 export function WeatherNowCard() {
   const { farmId, lang, t } = useFarmer()
-  const w = useAsync(() => api.weather(farmId!, lang), [farmId, lang])
+  const w = useAsync(() => api.weather(farmId!, lang), [farmId, lang], ['weather', farmId!, lang].join(':'))
   const v = w.data
   if (!v) return null
   const c = v.current
@@ -414,7 +414,7 @@ const NDVI_COLOR = { sparse: 'bg-ochre/20 text-[#8a5a17]', low: 'bg-lime-100 tex
 /** Greenness from clear Sentinel-2 / Landsat 8 images, and satellite soil data. */
 function SatelliteCard() {
   const { farmId, lang, t } = useFarmer()
-  const s = useAsync(() => api.satellite(farmId!), [farmId])
+  const s = useAsync(() => api.satellite(farmId!), [farmId], ['satellite', farmId!].join(':'))
   const d = s.data
   if (!d || !d.available || !d.latest) return null
   const date = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString(bcp47(lang), { day: 'numeric', month: 'short' })

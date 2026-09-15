@@ -42,7 +42,7 @@ export default function Scan() {
   const [step, setStep] = useState(0)
   const [error, setError] = useState<Error | null>(null)
   const [scenario, setScenario] = useState('')
-  const home = useAsync(() => api.home(farmId!, lang), [farmId])
+  const home = useAsync(() => api.home(farmId!, lang), [farmId, lang], ['home', farmId!, lang].join(':'))
   const farm = home.data?.farm
   const isStub = home.data?.model.is_stub ?? true
   const samples = useAsync(() => (farm ? api.samples(farm.crop) : Promise.resolve([])), [farm?.crop])

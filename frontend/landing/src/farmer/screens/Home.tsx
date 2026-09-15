@@ -13,8 +13,8 @@ import { useFarmer } from '../FarmerContext'
 
 export default function Home() {
   const { farmId, lang, t } = useFarmer()
-  const home = useAsync(() => api.home(farmId!, lang), [farmId, lang])
-  const crops = useAsync(() => api.crops(lang), [lang])
+  const home = useAsync(() => api.home(farmId!, lang), [farmId, lang], ['home', farmId!, lang].join(':'))
+  const crops = useAsync(() => api.crops(lang), [lang], ['crops', lang].join(':'))
 
   if (home.loading && !home.data) return <Spinner label={t('loading')} />
   if (home.error) return <ErrorBox error={home.error} onRetry={home.reload} retryLabel={t('retry')} />

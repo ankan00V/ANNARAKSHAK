@@ -218,3 +218,27 @@ def test_rate_limit_counts_per_window_without_redis():
     assert e.value.status_code == 429 and e.value.headers["Retry-After"] == "60"
     assert cache.leader("watch", 60)  # no Redis: this process is its own leader
     assert not cache.publish(1, {"type": "notice"})  # no Redis: caller delivers locally
+
+
+def test_result_reopens_in_another_language(client):
+    """Switching language on the result screen re-renders it from what was stored."""
+    r = client.post("/api/farms/1/diagnose", files={"image": ("x.jpg", _leaf_jpeg(), "image/jpeg")},
+                    data={"lang": "hi", "demo_scenario": "clear"}).json()
+    assert r["gate"]["outcome"] == "advise"
+    en = client.get(f"/api/problems/{r['problem_id']}/result?lang=en").json()
+    assert en["gate"] | {"alternatives": None} == r["gate"] | {"alternatives": None}
+    assert [a["id"] for a in en["gate"]["alternatives"]] == [a["id"] for a in r["gate"]["alternatives"]]
+    assert en["advisory"]["target"] == r["advisory"]["target"] and en["advisory"]["name"] != r["advisory"]["name"]
+    assert en["advisory"]["name"].isascii() and en["followup"] == r["followup"]
+
+
+def test_result_reopens_as_things_stand_now(client):
+    r = diagnose(client, 1, "torn")
+    first = client.get(f"/api/problems/{r['problem_id']}/result?lang=mr").json()
+    assert first["gate"]["outcome"] == "clarify" and first["clarify"]["cue_id"] == r["clarify"]["cue_id"]
+    client.post(f"/api/problems/{r['problem_id']}/clarify", json={"cue_id": r["clarify"]["cue_id"], "answer": "yes"})
+    after = client.get(f"/api/problems/{r['problem_id']}/result?lang=mr").json()
+    assert after["gate"]["outcome"] == "advise" and after["advisory"]["ladder"]
+    client.post(f"/api/problems/{r['problem_id']}/escalate?lang=mr")
+    asked = client.get(f"/api/problems/{r['problem_id']}/result?lang=en").json()
+    assert asked["gate"]["outcome"] == "escalate" and asked["case"]["id"]

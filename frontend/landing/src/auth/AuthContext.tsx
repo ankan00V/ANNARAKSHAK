@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { api, ApiError, UNAUTHORIZED } from '../api/client'
 import type { Me } from '../api/types'
+import { clearCache } from '../lib/hooks'
 
 interface AuthState {
   me: Me | null
@@ -58,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signIn = useCallback((m: Me) => {
+    clearCache()
     remember(m)
     try {
       // The farmer app reads these when it opens: their language, and their field
@@ -72,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await api.logout().catch(() => undefined)
+    clearCache()
     remember(null)
     try {
       localStorage.removeItem('ar.farm')

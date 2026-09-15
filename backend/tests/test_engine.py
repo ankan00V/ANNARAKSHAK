@@ -290,3 +290,25 @@ def test_familiarity_rejects_what_is_far_from_every_training_photo():
     assert clf.is_familiar(near) and not clf.is_familiar(far)
     clf.bank = None
     assert clf.is_familiar(clf.familiarity(torch.tensor([0.0, 0.0, 1.0])))  # no bank: no opinion
+
+
+def test_translation_memory_refuses_broken_placeholders(tmp_path, monkeypatch):
+    """A machine translation that mangles {name} or {dep:+.0f} must show the
+    English, not crash the request that formats it (Home in Telugu once did)."""
+    import json
+
+    from app import i18n
+    from app.kb import tr
+
+    src = "{month} so far: {obs} mm ({dep:+.0f}%)."
+    (tmp_path / "te.json").write_text(json.dumps({"strings": {
+        src: "{month} వరకు: {obs} మిమీ ({డిప్ః +.0f}%).", "Rain": "వర్షం"}}), encoding="utf-8")
+    monkeypatch.setattr(i18n, "MEMORY_DIR", tmp_path)
+    i18n.memory.cache_clear()
+    try:
+        assert tr({"en": src, "hi": "x"}, "te") == src
+        assert tr({"en": src, "hi": "x"}, "te").format(month="Sep", obs=1, dep=-2.0) == "Sep so far: 1 mm (-2%)."
+        assert tr({"en": "Rain", "hi": "x"}, "te") == "వర్షం"
+        assert i18n.protect(src)[1] == ["month", "obs", "dep:+.0f"]
+    finally:
+        i18n.memory.cache_clear()

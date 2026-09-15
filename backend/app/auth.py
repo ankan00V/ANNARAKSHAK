@@ -171,17 +171,30 @@ def end_session(db: Session, token: str | None, response: Response) -> None:
 def user_from_token(db: Session, token: str | None) -> User | None:
     if not token:
         return None
-    s = db.scalar(select(UserSession).where(UserSession.token_hash == _token_hash(token)))
-    if s is None or s.revoked_at is not None or s.expires_at < now():
+    row = db.execute(select(UserSession, User).join(User, User.id == UserSession.user_id)
+                     .where(UserSession.token_hash == _token_hash(token))).first()  # one round trip
+    if row is None:
+        return None
+    s, user = row
+    if s.revoked_at is not None or s.expires_at < now():
         return None
     if s.last_seen_at is None or (now() - s.last_seen_at) > timedelta(hours=1):
         s.last_seen_at = now()
         db.commit()
-    return db.get(User, s.user_id)
+    return user
 
 
-def current_user(request: Request, db: Session) -> User | None:
-    return user_from_token(db, request.cookies.get(COOKIE))
+_UNSET = object()
+
+
+def current_user(request: HTTPConnection, db: Session) -> User | None:
+    """The signed-in user, looked up once per request (the router guard and the
+    handler both ask)."""
+    cached = getattr(request.state, "ar_user", _UNSET)
+    if cached is _UNSET:
+        cached = user_from_token(db, request.cookies.get(COOKIE))
+        request.state.ar_user = cached
+    return cached
 
 
 def ws_user(ws: WebSocket, db: Session) -> User | None:

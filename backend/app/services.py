@@ -189,7 +189,7 @@ def alert_view(kb: KB, a: Alert, lang: str) -> dict:
         "tier": t["tier"],
         "trigger": a.trigger,
         "level": a.level,
-        "reason": tr(a.reason, lang),
+        "reason": risk.reason_text(a.reason, lang),
         "tasks": trl(a.tasks, lang),
         "issued_on": a.issued_on.isoformat(),
         "outcome": a.outcome,
@@ -358,6 +358,45 @@ def diagnose(
 
     db.commit()
     return result
+
+
+def result_view(db: Session, kb: KB, problem: Problem, lang: str) -> dict:
+    """A photo check's result again, in `lang` and as things stand now (the
+    question answered, or sent to an expert since). Same shape as diagnose()."""
+    diag = db.scalars(select(Diagnosis).where(Diagnosis.problem_id == problem.id).order_by(Diagnosis.id)).first()
+    if diag is None:
+        raise ValueError("no photo check on this problem")
+    preds = [gate.Prediction(p["target"], p["confidence"]) for p in diag.topk]
+    top = preds[0].target if preds else None
+    out = {
+        "problem_id": problem.id, "image_url": _image_url(diag.image_path), "diagnosis_id": diag.id,
+        "is_stub": diag.is_stub, "model_version": diag.model_version, "heatmap": diag.heatmap,
+        "gate": {"outcome": diag.gate_outcome, "reason": diag.gate_reason, "confidence": round(diag.confidence, 4),
+                 "threshold": gate.threshold_of(diag.gate_reason, top),
+                 "alternatives": [_pred_view(kb, p, lang) for p in preds]},
+        "message": msg(diag.gate_reason, lang),
+    }
+    case = db.scalars(select(Case).where(Case.problem_id == problem.id).order_by(Case.id.desc())).first()
+    advisory = db.scalars(select(Advisory).where(Advisory.problem_id == problem.id)
+                          .order_by(Advisory.id.desc())).first()
+    if case is not None:  # asked for an expert, or the answer didn't settle it
+        out["gate"] |= {"outcome": "escalate", "reason": case.reason}
+        out |= {"message": msg(case.reason, lang), "case": case_brief(db, case)}
+    elif advisory is not None:
+        fu = db.scalars(select(FollowUp).where(FollowUp.problem_id == problem.id).order_by(FollowUp.id.desc())).first()
+        out["gate"]["outcome"] = "advise"
+        out |= {"advisory": advisory_engine.compose(kb, advisory.target, lang, problem.farm.area_acres),
+                "followup": {"id": fu.id, "due_on": fu.due_on.isoformat()} if fu else None}
+        if advisory.source == "doubt_doctor":
+            out["resolved_target"] = advisory.target
+    elif diag.gate_outcome == "advise" and top and gate.is_healthy(top):
+        out["healthy_note"] = advisory_engine.healthy_note(lang)
+    elif diag.gate_outcome == "clarify" and len(preds) > 1:
+        cue = kb.cue_for(preds[0].target, preds[1].target)
+        if cue:
+            out["clarify"] = {"cue_id": cue["id"], "question": tr(cue["question"], lang),
+                              "candidates": [kb.target_view(preds[0].target, lang), kb.target_view(preds[1].target, lang)]}
+    return out
 
 
 def answer_clarify(db: Session, kb: KB, problem: Problem, cue_id: str, answer: str, lang: str) -> dict:

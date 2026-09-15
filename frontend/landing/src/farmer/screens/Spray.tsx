@@ -14,8 +14,8 @@ export default function Spray() {
   const [busy, setBusy] = useState(false)
   const [v, setV] = useState<LabelVerdict | null>(null)
   const [error, setError] = useState<Error | null>(null)
-  const home = useAsync(() => api.home(farmId!, lang), [farmId, lang])
-  const weather = useAsync(() => api.weather(farmId!, lang), [farmId, lang])
+  const home = useAsync(() => api.home(farmId!, lang), [farmId, lang], ['home', farmId!, lang].join(':'))
+  const weather = useAsync(() => api.weather(farmId!, lang), [farmId, lang], ['weather', farmId!, lang].join(':'))
   const [logged, setLogged] = useState<string | null>(null)
   const logSpray = async () => {
     const r = await api.logSpray(farmId!, v?.product ?? (q.trim() || null), lang)

@@ -30,7 +30,7 @@ from app import auth, live
 from app.db import SessionLocal, get_db
 from app.engine.livescan import decode
 from app.kb import KB, get_kb, tr
-from app.models import Farm
+from app.models import Farm, LiveScan
 
 router = APIRouter(prefix="/api", tags=["live"], dependencies=[Depends(auth.require())])
 MAX_FRAME_BYTES = 400_000
@@ -46,6 +46,16 @@ def live_context(farm_id: int, lat: float | None = None, lon: float | None = Non
     if farm is None:
         raise HTTPException(404, "farm not found")
     return live.context(db, kb, farm, lat, lon, accuracy, lang if lang in LANGS else "en")
+
+
+@router.get("/farms/{farm_id}/live/{scan_id}")
+def live_summary(farm_id: int, scan_id: int, lang: str = "en", db: Session = Depends(get_db),
+                 kb: KB = Depends(get_kb)):
+    """A finished walk's summary in `lang` — for a language switch on the summary screen."""
+    scan = db.get(LiveScan, scan_id)
+    if scan is None or scan.farm_id != farm_id:
+        raise HTTPException(404, "live check not found")
+    return live.render(db, kb, db.get(Farm, farm_id), scan, lang if lang in LANGS else "en")
 
 
 @router.websocket("/live/{farm_id}")
@@ -118,6 +128,11 @@ async def live_ws(ws: WebSocket, farm_id: int):
                 await ws.send_json({"type": "summary", "summary": summary})
                 await ws.close()
                 return
+            elif kind == "lang" and msg.get("lang") in LANGS:  # switched language mid-call
+                lang = msg["lang"]
+                live.relang(kb, sess, lang)
+                ctx = live.localize_context(kb, ctx, lang)
+                await ws.send_json({"type": "lang", "lang": lang, "context": ctx, "guide": sess.guide()})
             elif kind == "ping":
                 await ws.send_json({"type": "pong"})
     except WebSocketDisconnect:
