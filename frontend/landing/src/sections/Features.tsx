@@ -1,35 +1,46 @@
-import { Bell, Calculator, Languages, MessageSquare, UserCheck, ZoomIn } from 'lucide-react'
+import { Ban, Bug, CloudRain, Gauge, Languages, Map, UserCheck, ZoomIn } from 'lucide-react'
 
+// Every card here is a shipped, demoable feature — no roadmap items.
 const FEATURES = [
   {
-    icon: Languages,
-    title: 'Multilingual Voice',
-    line: 'Ask questions and hear advisories in Hindi, Marathi, or English.',
+    icon: Gauge,
+    title: 'Never a confident wrong answer',
+    line: 'A confidence gate decides: advise, ask one field question, or send to an expert. Uncertainty is shown, not hidden.',
   },
   {
-    icon: MessageSquare,
-    title: 'Works Without a Smartphone',
-    line: 'SMS and call-based support reach farmers on any phone, on any network.',
+    icon: CloudRain,
+    title: 'Alerts before damage shows',
+    line: 'Weather, crop stage, trap counts and confirmed nearby cases tell each farm where to look — with the exact check to do.',
   },
   {
     icon: ZoomIn,
-    title: 'Explainable Diagnosis',
-    line: 'See exactly what the AI noticed on the leaf before you trust it.',
+    title: 'Explainable diagnosis',
+    line: 'Trained on ICAR rice & maize images. Grad-CAM shows the part of the leaf the model looked at.',
   },
   {
-    icon: Bell,
-    title: 'Nearby Outbreak Alerts',
-    line: 'Know when disease is spreading in fields around you, not just your own.',
+    icon: Ban,
+    title: 'Chemical last, veto first',
+    line: 'Advice runs field practice → natural control → chemical. The spray check stops the wrong bottle; it never calls one "safe".',
   },
   {
-    icon: Calculator,
-    title: 'Dosage Calculator',
-    line: 'The right amount of pesticide for your land — nothing wasted, nothing extra.',
+    icon: Languages,
+    title: 'Marathi & Hindi, read aloud',
+    line: 'Every advisory, alert and question in the farmer’s language, spoken with Sarvam AI voice. Speak a product name instead of typing it.',
+  },
+  {
+    icon: Bug,
+    title: 'Traps and field sensors',
+    line: 'Pheromone-trap counts checked against ICAR action levels; a farm’s own sensor overrides the district forecast.',
   },
   {
     icon: UserCheck,
-    title: 'Officer Validation',
-    line: 'Every uncertain case is reviewed by a real expert, not left to the model.',
+    title: 'Expert validation in 3 minutes',
+    line: 'Escalated cases arrive pre-packed for the KVK expert. Each verdict updates the farmer, nearby farms and the model’s field record.',
+  },
+  {
+    icon: Map,
+    title: 'Officials’ surveillance',
+    line: 'Hotspot map, risk outlook, field accuracy, IMD rainfall against normal and the state pesticide-use baseline.',
   },
 ]
 
@@ -38,9 +49,9 @@ export default function Features() {
     <section id="features" className="w-full bg-cream text-soil-dark">
       <div className="max-w-6xl mx-auto px-6 md:px-12 py-16 md:py-24">
         <h2 className="font-instrument-serif text-3xl sm:text-4xl md:text-5xl leading-tight max-w-3xl">
-          Built for how farmers actually work.
+          Built for how farmers actually work — and honest when it isn’t sure.
         </h2>
-        <div className="mt-10 md:mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 md:mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map(({ icon: Icon, title, line }) => (
             <div key={title} className="rounded-2xl border border-soil-dark/10 bg-white/70 p-6">
               <Icon className="w-6 h-6 text-leaf" />
