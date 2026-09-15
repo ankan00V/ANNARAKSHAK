@@ -19,7 +19,10 @@ the officials' surveillance dashboard.
 | Weather-based risk forecasting | `backend/app/engine/risk.py` — Open-Meteo window + crop stage + farm history + IMD rainfall normals |
 | Geospatial hotspot mapping | Officials' map: confirmed / awaiting-expert / AI-advised cases, 5 km spread radius, active risk alerts |
 | Expert validation | `/expert` console: pre-packed case bundles, confirm/correct, lab referral, 3-minute review timer |
-| Multilingual advisories | Marathi, Hindi, English throughout; Sarvam AI text-to-speech and speech-to-text |
+| Multilingual advisories | Seven languages, following the farmer's saved choice: Marathi, Hindi, English (hand-authored) + Bengali, Tamil, Telugu, Kannada (machine translated once, under review); Malayalam, Gujarati, Punjabi, Odia next. Sarvam AI voice in each |
+| Weather-based alerts in real time | Hour-by-hour weather screen (temperature, humidity, rain and its chance, wind, gusts, direction, UV, cloud, visibility, pressure, dew point, soil, ET₀) and 15 weather→action rules (lightning, heavy rain, gusts, frost, heat at flowering, fungal weather, spray window, irrigation by FAO-56 water balance…) — delivered in the app instantly, as phone notifications and by email |
+| Crop health from space | Satellite greenness (NDVI, Sentinel-2/Landsat 8) and soil moisture per field; a greenness drop becomes an alert |
+| Farmer demand signal | 262,778 Kisan Call Centre calls → when and where Maharashtra's farmers ask about each pest |
 | IPM + safe input usage | Advice ladder is cultural → biological → chemical (enforced at load and at composition); veto-only spray check |
 | Referral to extension / labs | Escalation queue with ETA, lab-referral flag, Kisan Call Centre one-tap call |
 | Follow-up monitoring | Day-4 check-in; "got worse" re-escalates automatically |
@@ -46,7 +49,16 @@ Held-out ICAR test set (126 photos never seen in training, duplicates removed be
 | MobileNetV3 + ANN head, frozen | 79.4% | 0.791 |
 | **EfficientNetV2-S fine-tuned (paper 1's approach) — deployed** | **89.7%** | **0.896** |
 
-With the confidence gate on top: it advises on 86.5% of photos and is right on **97.2%** of those; the rest get one field question or go to an expert. Calibration error 0.134 → 0.055 after temperature scaling. ~50 photos per class — treat per-class numbers as indicative; field accuracy is tracked separately from expert verdicts.
+Deployed now: **v3** (`icar+extra-efficientnet_v2_s-warmstart`) — continual learning from the model above adds rice blast (leaf and neck) and maize common rust; ICAR test 88.9%, and lab-trained classes must clear their own higher gate (0.90).
+
+**End to end, as a farmer uses it** (`ml/live_eval.py` → `ml/reports/LIVE_EVAL.md`; real API, real gate, held-out images only):
+
+| | Result |
+|---|---|
+| Photo diagnosis, 469 held-out photos | advised 84%, **right on 97.5%** of those; the rest get one field question or go to an expert |
+| Live video call, one full walk per class (20 classes) | **20/20 right, 0 wrong**; look-alikes and minority readings go to the expert as "possible" |
+
+Calibration error 0.134 → 0.055 after temperature scaling. ~50 photos per class — treat per-class numbers as indicative; field accuracy is tracked separately from expert verdicts.
 
 ## Layout
 
@@ -56,7 +68,7 @@ backend/            FastAPI app (port 8010)
   app/routers/      farmer, expert, officials APIs
   kb/               knowledge base: crops, 28 targets, advisories, cues, risk rules, pesticides,
                     IMD rainfall normals, MoSPI pesticide baseline
-  tests/            169 tests for the guarantees above
+  tests/            203 tests for the guarantees above
   seed.py           demo farms
   demo_story.py     plays a history through the real API on held-out ICAR photos
 frontend/landing/   React app: landing (/), farmer PWA (/app), expert (/expert), officials (/officer)
