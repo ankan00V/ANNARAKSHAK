@@ -37,7 +37,25 @@ def get_db() -> Iterator[Session]:
         db.close()
 
 
+# Columns added after the first release. create_all() does not alter existing
+# tables, so add any that an older database lacks (SQLite ADD COLUMN is cheap).
+ADDED_COLUMNS = {
+    "farm": {"soil_ph": "FLOAT", "soil_ph_on": "DATE"},
+    "sensor_reading": {"soil_ph": "FLOAT", "soil_moisture_pct": "FLOAT"},
+}
+
+
 def init_db(bind=None) -> None:
+    from sqlalchemy import inspect, text  # noqa: PLC0415
+
     from app import models  # noqa: F401  registers the tables
 
-    Base.metadata.create_all(bind=bind or engine)
+    eng = bind or engine
+    Base.metadata.create_all(bind=eng)
+    insp = inspect(eng)
+    with eng.begin() as conn:
+        for table, cols in ADDED_COLUMNS.items():
+            have = {c["name"] for c in insp.get_columns(table)}
+            for col, typ in cols.items():
+                if col not in have:
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {typ}"))

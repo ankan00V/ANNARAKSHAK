@@ -127,7 +127,7 @@ class Classifier:
         self.model.train(False)  # inference mode: dropout off, batch-norm frozen
         self.tf = test_transform(self.size)
 
-    def predict(self, img: Image.Image, k: int = 3) -> tuple[list[tuple[str, float]], dict]:
+    def predict(self, img: Image.Image, k: int = 3, with_heatmap: bool = True) -> tuple[list[tuple[str, float]], dict | None]:
         x = self.tf(img.convert("RGB")).unsqueeze(0)
         with torch.no_grad():
             logits = self.model(x)[0]
@@ -138,6 +138,8 @@ class Classifier:
             by_target[t] = by_target.get(t, 0.0) + float(p)
         ranked = sorted(by_target.items(), key=lambda kv: kv[1], reverse=True)[:k]
         top_class = int(np.argmax(probs))
+        if not with_heatmap:  # live frames: ~3x faster without the backward pass
+            return [(t, round(c, 4)) for t, c in ranked], None
         with torch.enable_grad():
             cam = gradcam(self.model, x.requires_grad_(True), top_class)
         return [(t, round(c, 4)) for t, c in ranked], {

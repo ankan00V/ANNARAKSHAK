@@ -11,7 +11,7 @@ from app.db import init_db
 from app.engine import vision
 from app.kb import get_kb
 from app import voice
-from app.routers import expert, farmer, officials
+from app.routers import expert, farmer, live, officials
 
 
 @asynccontextmanager
@@ -42,6 +42,7 @@ if _EXTRA.exists():  # held-out photos from the extra sources (blast, rust, fiel
 app.include_router(farmer.router)
 app.include_router(expert.router)
 app.include_router(officials.router)
+app.include_router(live.router)
 app.include_router(voice.router)
 
 

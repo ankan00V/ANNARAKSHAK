@@ -13,9 +13,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
-load_dotenv(BACKEND_DIR.parent / ".env")  # secrets only (SARVAM_API_KEY); never thresholds
+load_dotenv(BACKEND_DIR.parent / ".env")  # secrets only (API keys); never thresholds
 
 SARVAM_API_KEY = os.environ.get("SARVAM_API_KEY")
+OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY")  # optional; Open-Meteo is the keyless fallback
 SARVAM_TTS_MODEL = "bulbul:v3"
 SARVAM_STT_MODEL = "saaras:v3"
 SARVAM_TRANSLATE_MODEL = "sarvam-translate:v1"

@@ -112,6 +112,8 @@ class FarmIn(BaseModel):
     lon: float = Field(ge=-180, le=180)
     area_acres: float = Field(gt=0, le=1000)
     soil: str | None = None
+    soil_ph: float | None = Field(default=None, ge=3, le=11)  # from the Soil Health Card, if the farmer has one
+    soil_ph_on: date | None = None
 
 
 @router.get("/farms")
@@ -287,6 +289,8 @@ class SensorIn(BaseModel):
     t_max: float | None = Field(default=None, ge=-10, le=55)
     rain_mm: float | None = Field(default=None, ge=0, le=1000)
     leaf_wetness_h: float | None = Field(default=None, ge=0, le=24)
+    soil_ph: float | None = Field(default=None, ge=3, le=11)
+    soil_moisture_pct: float | None = Field(default=None, ge=0, le=100)
 
 
 @router.post("/farms/{farm_id}/sensor", status_code=201)
@@ -297,8 +301,8 @@ def add_sensor(farm_id: int, readings: list[SensorIn], db: Session = Depends(get
         if row is None:
             row = SensorReading(farm_id=farm.id, on=r.on)
             db.add(row)
-        for k, v in r.model_dump(exclude={"on"}).items():
-            setattr(row, k, v)
+        for k, v in r.model_dump(exclude={"on"}, exclude_unset=True).items():
+            setattr(row, k, v)  # only what the device sent; a pH-only reading keeps the day's weather
     db.commit()
     return {"stored": len(readings)}
 

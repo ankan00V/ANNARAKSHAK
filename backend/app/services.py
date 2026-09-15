@@ -111,6 +111,11 @@ MESSAGES = {
         "hi": "खेद है कि हालत बिगड़ी। विशेषज्ञ आज आपका मामला देखेंगे।",
         "mr": "परिस्थिती बिघडल्याबद्दल क्षमस्व. तज्ज्ञ आज तुमचे प्रकरण पाहतील.",
     },
+    "LIVE_FEW_VIEWS": {
+        "en": "Seen in the live check, but not in enough views to be sure. An expert will look at the photos.",
+        "hi": "लाइव जाँच में दिखा, पर पक्का होने लायक दृश्यों में नहीं। विशेषज्ञ फोटो देखेंगे।",
+        "mr": "थेट तपासणीत दिसले, पण खात्रीसाठी पुरेशा दृश्यांत नाही. तज्ज्ञ फोटो पाहतील.",
+    },
     "INSPECTION_FOUND": {
         "en": "Thanks for checking. An expert will confirm what you found.",
         "hi": "जाँच के लिए धन्यवाद। विशेषज्ञ आपकी जाँच की पुष्टि करेंगे।",
@@ -617,11 +622,9 @@ def weather_for(db: Session, farm: Farm):
     return window
 
 
-def run_risk(db: Session, kb: KB, farm: Farm, today: date | None = None, window=...) -> dict:
-    today = today or date.today()
+def risk_scores(db: Session, kb: KB, farm: Farm, today: date, window) -> list[risk.Score]:
+    """Every rule that fires for this farm today, highest level first. Read-only."""
     stage, das = kb.stage_for(farm.crop, farm.sowing_date, today)
-    if window is ...:
-        window = weather_for(db, farm)
     history = set(db.scalars(
         select(Problem.target).where(Problem.farm_id == farm.id, Problem.target.is_not(None))
     ).all())
@@ -653,6 +656,14 @@ def run_risk(db: Session, kb: KB, farm: Farm, today: date | None = None, window=
 
     order = {"high": 0, "medium": 1, "low": 2}
     scores.sort(key=lambda s: order[s.level])
+    return scores
+
+
+def run_risk(db: Session, kb: KB, farm: Farm, today: date | None = None, window=...) -> dict:
+    today = today or date.today()
+    if window is ...:
+        window = weather_for(db, farm)
+    scores = risk_scores(db, kb, farm, today, window)
     issued = []
     # The cap is per farm per DAY, so alerts from an earlier run today count.
     calendar_count = db.scalar(select(func.count(Alert.id)).where(

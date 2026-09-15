@@ -46,6 +46,8 @@ class Farm(Base):
     lon: Mapped[float] = mapped_column(Float)
     area_acres: Mapped[float] = mapped_column(Float, default=1.0)
     soil: Mapped[str | None] = mapped_column(String(40))
+    soil_ph: Mapped[float | None] = mapped_column(Float)  # from the farmer's Soil Health Card
+    soil_ph_on: Mapped[date | None] = mapped_column(Date)
     is_demo: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
@@ -81,7 +83,7 @@ class Diagnosis(Base):
     gate_outcome: Mapped[str] = mapped_column(String(10))
     gate_reason: Mapped[str] = mapped_column(String(30))
     confidence: Mapped[float] = mapped_column(Float)
-    model_version: Mapped[str] = mapped_column(String(40))
+    model_version: Mapped[str] = mapped_column(String(80))
     is_stub: Mapped[bool] = mapped_column(default=True)
     heatmap: Mapped[dict | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -223,6 +225,8 @@ class SensorReading(Base):
     t_max: Mapped[float | None] = mapped_column(Float)
     rain_mm: Mapped[float | None] = mapped_column(Float)
     leaf_wetness_h: Mapped[float | None] = mapped_column(Float)
+    soil_ph: Mapped[float | None] = mapped_column(Float)
+    soil_moisture_pct: Mapped[float | None] = mapped_column(Float)
 
     __table_args__ = (UniqueConstraint("farm_id", "on", name="uq_sensor_daily"),)
 
@@ -235,3 +239,25 @@ class LabelPrior(Base):
     target: Mapped[str] = mapped_column(String(60), primary_key=True)
     confirmed: Mapped[int] = mapped_column(Integer, default=0)
     corrected: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class LiveScan(Base):
+    """One guided live walk. Frames are never stored; only the summary and the
+    few evidence frames attached to problems it opened."""
+
+    __tablename__ = "live_scan"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    farm_id: Mapped[int] = mapped_column(ForeignKey("farm.id"))
+    started_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    lat: Mapped[float | None] = mapped_column(Float)
+    lon: Mapped[float | None] = mapped_column(Float)
+    location_source: Mapped[str] = mapped_column(String(10), default="farm")
+    frames: Mapped[int] = mapped_column(default=0)
+    good_frames: Mapped[int] = mapped_column(default=0)
+    classified_views: Mapped[int] = mapped_column(default=0)
+    verdict: Mapped[str] = mapped_column(String(20))
+    findings: Mapped[dict] = mapped_column(JSON)
+    context: Mapped[dict] = mapped_column(JSON)
+    problem_ids: Mapped[list] = mapped_column(JSON, default=list)
+    model_version: Mapped[str] = mapped_column(String(80))
