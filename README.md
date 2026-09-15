@@ -14,6 +14,7 @@ the officials' surveillance dashboard.
 | PS asks for | Where it lives |
 |---|---|
 | Image-based symptom identification | `ml/train.py` → EfficientNetV2-S / DenseNet201 on the ICAR rice & maize set; `/api/farms/{id}/diagnose` |
+| Real-time field scouting | **Live field check** (`/app/live`): a video call with the AI over a WebSocket — it tells the farmer where to point the camera (field, plant, leaf top and underside, base, a second spot), coaches bad frames, and reports only problems seen in two or more separate close-ups, with weather now (OpenWeather), soil pH (sensor → Soil Health Card → SoilGrids), modelled soil moisture, and the forecast risks with prevention. Nothing is recorded except evidence photos of a problem. |
 | Pest-trap or sensor inputs | Trap counts vs ICAR-CICR action levels, field-sensor readings override the district forecast (`/traps`, `/sensor`) |
 | Weather-based risk forecasting | `backend/app/engine/risk.py` — Open-Meteo window + crop stage + farm history + IMD rainfall normals |
 | Geospatial hotspot mapping | Officials' map: confirmed / awaiting-expert / AI-advised cases, 5 km spread radius, active risk alerts |
@@ -55,7 +56,7 @@ backend/            FastAPI app (port 8010)
   app/routers/      farmer, expert, officials APIs
   kb/               knowledge base: crops, 28 targets, advisories, cues, risk rules, pesticides,
                     IMD rainfall normals, MoSPI pesticide baseline
-  tests/            156 tests for the guarantees above
+  tests/            169 tests for the guarantees above
   seed.py           demo farms
   demo_story.py     plays a history through the real API on held-out ICAR photos
 frontend/landing/   React app: landing (/), farmer PWA (/app), expert (/expert), officials (/officer)
