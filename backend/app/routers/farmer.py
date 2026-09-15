@@ -58,7 +58,8 @@ def samples(crop: str | None = None, per_class: int = 1):
         return []
     import json as _json  # noqa: PLC0415
 
-    test = _json.loads(split.read_text()).get("test", [])
+    sp = _json.loads(split.read_text())
+    test = sp.get("test", []) + sp.get("extra_test", [])
     # What the live pipeline does with each photo (ml/sample_outcomes.py), so a
     # presenter can pick the one that asks a question or goes to an expert.
     oc_file = vision.ARTIFACTS / "sample_outcomes.json"
@@ -72,7 +73,9 @@ def samples(crop: str | None = None, per_class: int = 1):
         if crop and not cls.startswith(crop + "_"):
             continue
         key = "/".join(path.split("/")[-2:])
-        item = {"url": "/samples/" + key, "true_class": cls,
+        extra = "/extra_640/" in path
+        url = "/samples-extra/" + "/".join(path.split("/")[-3:]) if extra else "/samples/" + key
+        item = {"url": url, "true_class": cls, "source": path.split("/")[-3] if extra else "icar",
                 "expected": outcomes.get(key, {}).get("outcome")}
         if item["expected"] == "clarify" or (item["expected"] == "escalate" and n_escalate < 2):
             n_escalate += item["expected"] == "escalate"

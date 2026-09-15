@@ -35,6 +35,9 @@ app.mount("/media", StaticFiles(directory=UPLOAD_DIR), name="media")
 _SAMPLES = BACKEND_DIR.parent / "data" / "processed" / "icar_640"
 if _SAMPLES.exists():  # held-out demo images; absent on machines without the dataset
     app.mount("/samples", StaticFiles(directory=_SAMPLES), name="samples")
+_EXTRA = BACKEND_DIR.parent / "data" / "processed" / "extra_640"
+if _EXTRA.exists():  # held-out photos from the extra sources (blast, rust, field FAW)
+    app.mount("/samples-extra", StaticFiles(directory=_EXTRA), name="samples-extra")
 
 app.include_router(farmer.router)
 app.include_router(expert.router)

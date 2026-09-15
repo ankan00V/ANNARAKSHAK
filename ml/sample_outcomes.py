@@ -29,7 +29,8 @@ def main() -> None:
     kb = get_kb()
     meta = json.loads((vision.ARTIFACTS / "meta.json").read_text())
     c2t = meta["class_to_target"]
-    test = json.loads((vision.ARTIFACTS / "split.json").read_text())["test"]
+    sp = json.loads((vision.ARTIFACTS / "split.json").read_text())
+    test = sp["test"] + sp.get("extra_test", [])  # extra: blast, rust, field FAW (v2 models)
 
     out: dict[str, dict] = {}
     tally = Counter()
