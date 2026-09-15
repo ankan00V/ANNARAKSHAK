@@ -24,3 +24,11 @@ ml/artifacts_v1/
 *.log
 
 backend/.data/
+
+# Local editor and AI-assistant settings (per developer, not part of the project)
+.claude/
+.agents/
+.cursor/
+.vscode/
+.idea/
+skills-lock.json
