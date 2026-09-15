@@ -3,7 +3,7 @@
     "id": "rice_blast",
     "crop": "rice",
     "kind": "disease",
-    "tier": "inspection",
+    "tier": "diagnosable",
     "agent": "Magnaporthe oryzae (fungus)",
     "names": {
       "en": "Rice blast",
@@ -15,7 +15,7 @@
       "hi": "दोनों सिरों पर नुकीले, आँख जैसे धब्बे; बीच में राख जैसा सफेद, किनारा भूरा।",
       "mr": "दोन्ही टोकांना टोकदार, डोळ्याच्या आकाराचे ठिपके; मध्यभागी राखाडी-पांढरा, कडा तपकिरी."
     },
-    "note": "Not in the ICAR training images, so a photo cannot settle it yet; handled by risk alerts, inspection tasks and expert review."
+    "note": "Photo model since v3 (2026-09-15): leaf and neck blast from the Crop Diseases compilation, trained with background randomisation; held-out recall 0.91 (leaf) and 1.00 (neck) on unseen field backgrounds. Lab-style source photos — expert confirmations are the field test."
   },
   {
     "id": "rice_brown_spot",
@@ -192,7 +192,7 @@
     "id": "maize_common_rust",
     "crop": "maize",
     "kind": "disease",
-    "tier": "inspection",
+    "tier": "diagnosable",
     "agent": "Puccinia sorghi (fungus)",
     "names": {
       "en": "Common rust",
@@ -204,7 +204,7 @@
       "hi": "पत्ती की दोनों सतहों पर उभरे दालचीनी रंग के चूर्णी दाने, उंगली पर रंग लग जाता है।",
       "mr": "पानाच्या दोन्ही बाजूंवर उंचावलेले दालचिनी रंगाचे भुकटीदार फोड, बोटाला रंग लागतो."
     },
-    "note": "Not in the ICAR training images, so a photo cannot settle it yet; handled by risk alerts, inspection tasks and expert review."
+    "note": "Photo model since v3 (2026-09-15): PlantVillage common rust, trained with background randomisation; held-out recall 1.00 on unseen field backgrounds. Lab-style source photos — expert confirmations are the field test."
   },
   {
     "id": "maize_banded_leaf_sheath_blight",

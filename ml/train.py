@@ -118,17 +118,24 @@ def loader(rows, class_idx, tf, shuffle, bs=16, sampler=None, **ds):
                       sampler=sampler, num_workers=4, persistent_workers=True)
 
 
-def balanced_sampler(rows, epoch_size):
+def balanced_sampler(rows, epoch_size, icar_share=0.5):
     """Every class equally likely per epoch; inside a class that has both ICAR
-    and extra-source photos, each source gets half the class's weight."""
+    and extra-source photos, the ICAR field photos get `icar_share` of the
+    class's weight and the extra sources split the rest."""
     by_class: dict[str, Counter] = {}
     for r in rows:
         by_class.setdefault(r["train_class"], Counter())[r.get("source", "icar")] += 1
     w = []
     for r in rows:
         src = by_class[r["train_class"]]
-        share = 1.0 / len(src)  # split between sources present in this class
-        w.append(share / src[r.get("source", "icar")])
+        s = r.get("source", "icar")
+        if len(src) == 1:
+            share = 1.0
+        elif s == "icar":
+            share = icar_share
+        else:
+            share = (1.0 - icar_share) / (len(src) - 1 if "icar" in src else len(src))
+        w.append(share / src[s])
     return WeightedRandomSampler(torch.tensor(w, dtype=torch.double), num_samples=epoch_size, replacement=True)
 
 
@@ -221,12 +228,37 @@ def train_ann(backbone, train, val, class_idx, device, quick):
 # Paper 1 method: fine-tune end to end
 # --------------------------------------------------------------------------
 
+def warm_start(net, state: dict, old_classes: list[str], class_idx: dict[str, int]) -> list[str]:
+    """Continual learning: load a deployed model's backbone, and copy its head
+    rows for every class it already knows. Only new classes start from scratch,
+    so what the old model learnt from the ICAR photos is kept, not relearnt."""
+    net.features.load_state_dict({k[len("features."):]: v for k, v in state.items() if k.startswith("features.")})
+    w_old, b_old = state["head.1.weight"], state["head.1.bias"]
+    lin = net.head[1]
+    new = []
+    with torch.no_grad():
+        for c, i in class_idx.items():
+            if c in old_classes:
+                j = old_classes.index(c)
+                lin.weight[i].copy_(w_old[j])
+                lin.bias[i].copy_(b_old[j])
+            else:
+                new.append(c)
+    return new
+
+
 def finetune(backbone, train, val, class_idx, device, quick, epochs, backgrounds=None, val_backgrounds=None,
-             epoch_size=None):
+             epoch_size=None, init=None, icar_share=0.5):
     net = Net(backbone, len(class_idx), "finetune").to(device)
+    lr_feat, lr_head, warm = 1.5e-4, 1e-3, 3
+    if init is not None:  # (state_dict, class list) of the deployed model
+        new = warm_start(net, init[0], init[1], class_idx)
+        net.to(device)
+        lr_feat, lr_head, warm = 5e-5, 5e-4, 2  # gentle: don't wash out what it knows
+        print(f"  warm start from the deployed model; new classes: {new}")
     if backgrounds:
         dl_tr = loader(train, class_idx, train_transform(IMG), shuffle=True,
-                       sampler=balanced_sampler(train, epoch_size or len(train)),
+                       sampler=balanced_sampler(train, epoch_size or len(train), icar_share),
                        backgrounds=backgrounds, p=COMPOSITE_P)
         dl_va = loader(val, class_idx, test_transform(IMG), shuffle=False,
                        backgrounds=val_backgrounds, deterministic=True)
@@ -235,14 +267,14 @@ def finetune(backbone, train, val, class_idx, device, quick, epochs, backgrounds
         dl_va = loader(val, class_idx, test_transform(IMG), shuffle=False)
     n_seen = len(dl_tr.sampler) if backgrounds else len(train)
     epochs = 1 if quick else epochs
-    warm = 0 if quick else 3
+    warm = 0 if quick else warm
     params = [
-        {"params": net.features.parameters(), "lr": 1.5e-4},
-        {"params": net.head.parameters(), "lr": 1e-3},
+        {"params": net.features.parameters(), "lr": lr_feat},
+        {"params": net.head.parameters(), "lr": lr_head},
     ]
     opt = torch.optim.AdamW(params, weight_decay=0.02)
     sched = torch.optim.lr_scheduler.OneCycleLR(
-        opt, max_lr=[1.5e-4, 1e-3], total_steps=(epochs + warm) * len(dl_tr), pct_start=0.15)
+        opt, max_lr=[lr_feat, lr_head], total_steps=(epochs + warm) * len(dl_tr), pct_start=0.15)
     best, best_state, history = -1.0, None, []
     t0 = time.time()
     for epoch in range(warm + epochs):
@@ -395,6 +427,8 @@ def main():
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--epochs", type=int, default=22)
     ap.add_argument("--skip-benchmark", action="store_true")
+    ap.add_argument("--warm-start", action="store_true",
+                    help="with --with-extra: continue from the deployed model instead of ImageNet weights")
     ap.add_argument("--with-extra", action="store_true",
                     help="v2: add the extra sources (blast, rust, field FAW) with background randomisation")
     args = ap.parse_args()
@@ -584,9 +618,17 @@ def main_extra(args):
           f"extra {len(e_tr)}/{len(e_va)}/{len(e_te)}  epoch={epoch_size or len(train)} samples  "
           f"backgrounds train={ {c: len(v) for c, v in bgs['train'].items()} }")
 
-    print("fine-tune — EfficientNetV2-S, ICAR + extra sources, background randomisation:")
+    init, icar_share = None, 0.5
+    if args.warm_start:
+        if not prev_meta or not (ART / "model.pt").exists():
+            sys.exit("--warm-start needs a deployed model in ml/artifacts/")
+        init = (torch.load(ART / "model.pt", map_location="cpu"), prev_meta["classes"])
+        icar_share = 0.75  # the ICAR field photos anchor the classes both sources share
+    print("fine-tune — EfficientNetV2-S, ICAR + extra sources, background randomisation"
+          f"{', warm start' if init else ''}:")
     net, f1, hist = finetune("efficientnet_v2_s", train, val, class_idx, device, args.quick, args.epochs,
-                             backgrounds=bgs["train"], val_backgrounds=bgs["val"], epoch_size=epoch_size or None)
+                             backgrounds=bgs["train"], val_backgrounds=bgs["val"], epoch_size=epoch_size or None,
+                             init=init, icar_share=icar_share)
 
     dl_va = loader(val, class_idx, test_transform(IMG), shuffle=False, backgrounds=bgs["val"], deterministic=True)
     lv, yv = logits_of(net, dl_va, device)
@@ -634,7 +676,8 @@ def main_extra(args):
         checks.append((f"{c} recall after background swap >= 0.70", r >= 0.70, f"{r:.3f}"))
     deploy = not args.quick and all(ok for _, ok, _ in checks)
 
-    version = f"icar+extra-efficientnet_v2_s-finetune-{datetime.now(UTC):%Y%m%d}"
+    version = (f"icar+extra-efficientnet_v2_s-{'warmstart' if init else 'finetune'}-"
+               f"{datetime.now(UTC):%Y%m%d}")
     meta = {
         "model_version": version, "backbone": "efficientnet_v2_s", "head": "finetune", "img_size": IMG,
         "classes": classes, "class_to_target": class_to_target, "model_targets": model_targets,
@@ -689,7 +732,10 @@ def main_extra(args):
         f"target). The ICAR train/validation/test split is the one the previous model used, so the ICAR test numbers "
         f"below compare like for like. Extra sources are split per class (70/15/15, seed {SEED}) and capped "
         f"(new classes ≤{EXTRA_CAP_NEW['train']} train images, classes ICAR already has ≤{EXTRA_CAP_EXISTING['train']}); "
-        "training samples classes evenly and, inside a class, gives the ICAR field photos half the weight.",
+        f"training samples classes evenly and, inside a class, gives the ICAR field photos {icar_share:.0%} of the weight."
+        + (" **Warm start:** training continues from the deployed model — its backbone and its head rows for every "
+           "class it already knew — at a third of the usual learning rate, so only the new classes are learnt from "
+           "scratch (continual learning)." if init else ""),
         "",
         "**Why background randomisation:** the extra rice photos are single leaves on white paper and the maize ones "
         "are PlantVillage leaves on black/grey — each class with its own backdrop. A network learns the backdrop. "
