@@ -1,131 +1,165 @@
-import { useEffect, useRef, useState } from 'react'
-import { Camera, ChevronRight, Droplets, MapPin } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Camera, ClipboardCheck, Loader2, ShieldCheck, Sparkles } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { api } from '../../api/client'
+import type { CropInfo, Home as HomeData } from '../../api/types'
+import { useAsync } from '../../lib/hooks'
+import { Card, ErrorBox, SectionTitle, Spinner } from '../../ui/kit'
+import AlertCard from '../components/AlertCard'
+import ProblemRow from '../components/ProblemRow'
+import WeatherStrip from '../components/WeatherStrip'
 import { useFarmer } from '../FarmerContext'
-import { makeT } from '../i18n'
-import {
-  getRecentDiagnoses,
-  getRiskForecast,
-  predictDisease,
-  type RecentDiagnosis,
-  type RiskForecast,
-} from '../mockApi'
-
-const RISK_STYLES: Record<RiskForecast['level'], string> = {
-  low: 'bg-leaf/15 text-leaf-deep border-leaf/40',
-  medium: 'bg-ochre/15 text-ochre border-ochre/40',
-  high: 'bg-soil-dark/10 text-soil-dark border-soil-dark/40',
-}
 
 export default function Home() {
-  const { lang, setDiagnosis } = useFarmer()
-  const t = makeT(lang)
-  const navigate = useNavigate()
-  const fileRef = useRef<HTMLInputElement>(null)
-  const [risk, setRisk] = useState<RiskForecast | null>(null)
-  const [recent, setRecent] = useState<RecentDiagnosis[]>([])
-  const [scanning, setScanning] = useState(false)
+  const { farmId, lang, t } = useFarmer()
+  const home = useAsync(() => api.home(farmId!, lang), [farmId, lang])
+  const crops = useAsync(() => api.crops(lang), [lang])
 
-  useEffect(() => {
-    let on = true
-    // MOCK — replace with real fetches; shapes identical.
-    getRiskForecast('Pune', 'Cotton').then((r) => on && setRisk(r))
-    getRecentDiagnoses().then((r) => on && setRecent(r))
-    return () => {
-      on = false
-    }
-  }, [])
-
-  const onPick = async (file: File | undefined) => {
-    if (!file) return
-    setScanning(true)
-    const result = await predictDisease(file, lang)
-    setDiagnosis(result)
-    navigate('/app/result')
-  }
+  if (home.loading && !home.data) return <Spinner label={t('loading')} />
+  if (home.error) return <ErrorBox error={home.error} onRetry={home.reload} retryLabel={t('retry')} />
+  const d = home.data!
+  const crop = crops.data?.find((c) => c.id === d.farm.crop)
+  const openAlerts = d.alerts.filter((a) => a.outcome === null || a.outcome === 'snoozed')
 
   return (
-    <div className="space-y-5">
-      <button
-        onClick={() => fileRef.current?.click()}
-        disabled={scanning}
-        className="w-full min-h-[112px] rounded-3xl bg-leaf-deep text-cream flex flex-col items-center justify-center gap-2 active:scale-[0.99] transition-transform duration-200 disabled:opacity-80"
-      >
-        <Camera className="w-8 h-8 text-ochre" />
-        <span className="text-base font-medium">
-          {scanning ? '…' : t('takePhoto')}
-        </span>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => {
-            onPick(e.target.files?.[0])
-            e.target.value = ''
-          }}
-        />
-      </button>
+    <div className="space-y-6">
+      <FarmCard data={d} crop={crop} />
 
-      {risk && (
-        <Link
-          to="/app/alerts"
-          className={`flex items-center justify-between rounded-2xl border px-4 min-h-[64px] ${RISK_STYLES[risk.level]}`}
-        >
-          <span className="flex items-center gap-2.5">
-            <MapPin className="w-5 h-5" />
-            <span className="text-sm font-medium">
-              {t('risk')} · {t(risk.level)} — {risk.crop}, {risk.district}
-            </span>
+      {d.followups_due.map((f) => (
+        <FollowUp key={f.id} id={f.id} onDone={home.reload} />
+      ))}
+
+      <Link
+        to="/app/scan"
+        className="relative block w-full rounded-3xl bg-leaf-deep text-cream overflow-hidden p-5 shadow-lg shadow-leaf-deep/25 active:scale-[0.99] transition-transform"
+      >
+        <span aria-hidden className="absolute -top-12 -right-10 w-44 h-44 rounded-full bg-leaf/40 blur-2xl" />
+        <span className="relative flex items-center gap-4">
+          <span className="w-14 h-14 rounded-2xl bg-cream/10 ring-1 ring-ochre/50 flex items-center justify-center">
+            <Camera className="w-7 h-7 text-ochre" />
           </span>
-          <ChevronRight className="w-4 h-4 opacity-60" />
-        </Link>
-      )}
+          <span>
+            <span className="block text-lg font-medium leading-tight">{t('takePhoto')}</span>
+            <span className="block text-xs text-cream/70 mt-0.5">{t('takePhotoSub')}</span>
+          </span>
+        </span>
+        <span className="relative mt-3 flex items-center gap-1.5 text-[11px] text-cream/60">
+          <Sparkles className="w-3 h-3" />
+          {d.model.is_stub ? t('demoModel') : t('realModel')}
+        </span>
+      </Link>
 
       <section>
-        <h2 className="text-sm font-medium text-soil-dark/70 mb-2">{t('recent')}</h2>
-        <ul className="space-y-2">
-          {recent.map((d) => (
-            <li
-              key={d.id}
-              className="flex items-center gap-3 rounded-2xl bg-white border border-soil-dark/10 p-3"
-            >
-              <img src={d.thumb} alt="" className="w-12 h-12 rounded-xl object-cover" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{d.disease}</p>
-                <p className="text-xs font-light text-soil-dark/60">{d.date}</p>
-              </div>
-              <span
-                className={`px-2 py-1 rounded-full text-[11px] font-medium ${
-                  d.confidence >= 70
-                    ? 'bg-leaf/15 text-leaf-deep'
-                    : 'bg-ochre/15 text-ochre'
-                }`}
-              >
-                {d.confidence}% {t('confidence')}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <SectionTitle sub={t('todayChecksSub')}>
+          <span className="flex items-center gap-2">
+            <ClipboardCheck className="w-5 h-5 text-leaf" />
+            {t('todayChecks')}
+          </span>
+        </SectionTitle>
+        {openAlerts.length === 0 ? (
+          <Card className="p-5 text-center text-sm text-soil-dark/60">
+            <ShieldCheck className="w-6 h-6 mx-auto text-leaf mb-2" />
+            {t('noChecks')}
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {openAlerts.slice(0, 4).map((a) => (
+              <AlertCard key={a.id} alert={a} onDone={home.reload} />
+            ))}
+            {openAlerts.length > 4 && (
+              <Link to="/app/alerts" className="block text-center text-sm text-leaf-deep font-medium py-2">
+                +{openAlerts.length - 4} {t('alerts')}
+              </Link>
+            )}
+          </div>
+        )}
       </section>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Link
-          to="/app/dosage"
-          className="min-h-[72px] rounded-2xl bg-ochre/15 border border-ochre/40 text-ochre flex flex-col items-center justify-center gap-1.5"
-        >
-          <Droplets className="w-6 h-6" />
-          <span className="text-sm font-medium">{t('dosage')}</span>
-        </Link>
-        <Link
-          to="/app/alerts"
-          className="min-h-[72px] rounded-2xl bg-leaf/15 border border-leaf/40 text-leaf-deep flex flex-col items-center justify-center gap-1.5"
-        >
-          <MapPin className="w-6 h-6" />
-          <span className="text-sm font-medium">{t('alerts')}</span>
-        </Link>
-      </div>
+      <WeatherStrip weather={d.weather} rain={d.rain_context} />
+
+      <section>
+        <SectionTitle>{t('recentProblems')}</SectionTitle>
+        {d.problems.filter((p) => p.gate_outcome !== 'retake').length === 0 ? (
+          <p className="text-sm text-soil-dark/50">{t('noProblems')}</p>
+        ) : (
+          <div className="space-y-2">
+            {d.problems.filter((p) => p.gate_outcome !== 'retake').slice(0, 5).map((p) => (
+              <ProblemRow key={p.id} p={p} />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
+  )
+}
+
+function FarmCard({ data, crop }: { data: HomeData; crop?: CropInfo }) {
+  const { t } = useFarmer()
+  const f = data.farm
+  const stages = crop?.stages ?? []
+  const lastDas = stages.length ? stages[stages.length - 2]?.das[1] ?? 120 : 120
+  const pct = Math.min(100, Math.max(0, (f.das / lastDas) * 100))
+  return (
+    <Card className="p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs text-soil-dark/50">{f.district} · {f.area_acres} {t('acres')}{f.variety ? ` · ${f.variety}` : ''}</p>
+          <h1 className="font-instrument-serif text-3xl leading-tight">{f.crop_name}</h1>
+        </div>
+        <div className="text-right">
+          <p className="text-3xl font-semibold text-leaf-deep leading-none">{f.das}</p>
+          <p className="text-[11px] text-soil-dark/50">{t('daysOld')}</p>
+        </div>
+      </div>
+      {stages.length > 0 && (
+        <div className="mt-4">
+          <div className="relative h-2 rounded-full bg-soil-dark/10">
+            <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-leaf to-ochre" style={{ width: `${pct}%` }} />
+            <span className="absolute -top-1 w-4 h-4 rounded-full bg-white border-2 border-ochre shadow" style={{ left: `calc(${pct}% - 8px)` }} />
+          </div>
+          <div className="mt-2 flex justify-between gap-1">
+            {stages.slice(0, -1).map((s) => (
+              <span key={s.key} className={`text-[10px] leading-tight text-center flex-1 ${s.key === f.stage ? 'text-leaf-deep font-semibold' : 'text-soil-dark/40'}`}>
+                {s.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function FollowUp({ id, onDone }: { id: number; onDone: () => void }) {
+  const { t, lang } = useFarmer()
+  const [busy, setBusy] = useState<string | null>(null)
+  const [msg, setMsg] = useState<string | null>(null)
+  const send = async (r: 'improved' | 'no_change' | 'got_worse') => {
+    setBusy(r)
+    try {
+      const out = await api.followup(id, r, lang)
+      if (out.message) {
+        setMsg(out.message)
+        setTimeout(onDone, 2500)
+      } else onDone()
+    } finally {
+      setBusy(null)
+    }
+  }
+  return (
+    <Card className="p-4 border-ochre/40 bg-ochre/5">
+      <p className="text-sm font-semibold">{t('followupDue')}</p>
+      {msg ? (
+        <p className="mt-2 text-sm text-ember">{msg}</p>
+      ) : (
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {([['improved', t('improved'), 'bg-leaf text-cream'], ['no_change', t('noChange'), 'bg-white border border-soil-dark/20'], ['got_worse', t('gotWorse'), 'bg-ember text-cream']] as const).map(([r, label, cls]) => (
+            <button key={r} onClick={() => send(r)} disabled={busy !== null} className={`min-h-[44px] rounded-xl text-sm font-medium ${cls}`}>
+              {busy === r ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : label}
+            </button>
+          ))}
+        </div>
+      )}
+    </Card>
   )
 }
