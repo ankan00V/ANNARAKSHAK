@@ -14,7 +14,7 @@ from __future__ import annotations
 from collections import Counter
 from datetime import date, datetime, timedelta
 
-from app.kb import tr
+from app.kb import tr, trl
 
 UV_BANDS = [(3, "low"), (6, "moderate"), (8, "high"), (11, "very_high"), (99, "extreme")]
 SEVERITY_ORDER = {"warning": 0, "advice": 1, "info": 2}
@@ -57,7 +57,7 @@ def day_word(on: date, today: date, words: dict, lang: str) -> str:
         return tr(words["today"], lang)
     if delta == 1:
         return tr(words["tomorrow"], lang)
-    return (words["weekdays"].get(lang) or words["weekdays"]["en"])[on.weekday()]
+    return trl(words["weekdays"], lang)[on.weekday()]
 
 
 def when(t: datetime, now: datetime, words: dict, lang: str) -> str:
@@ -328,6 +328,12 @@ def render(adv: dict, am: dict, lang: str, crop: str, now: datetime) -> dict:
             v[k] = when(t, now, words, lang) if k == "when" else f"{t:%H:%M}"
     if "day" in v:
         v["day"] = day_word(date.fromisoformat(v["day"]), now.date(), words, lang)
+    for k in ("d1", "d2"):
+        if k in v:
+            v[k] = date.fromisoformat(v[k]).strftime("%d/%m")
+    for k in ("before", "after"):
+        if isinstance(v.get(k), float):
+            v[k] = f"{v[k]:.2f}"
     if adv["rule"] == "spray_no_window":
         v["reason"] = reason_text([tuple(x) for x in v.pop("reasons")], words, lang)
     if adv["rule"] == "rain_after_spray":
@@ -335,7 +341,7 @@ def render(adv: dict, am: dict, lang: str, crop: str, now: datetime) -> dict:
         v["product"] = v.get("product") or tr(words["product_unknown"], lang)
     if adv["rule"] == "heat_crop":
         v["why"] = tr(rule["why"][v["why"]], lang)
-    do = list((rule["do"].get(lang) or rule["do"]["en"]))
+    do = trl(rule["do"], lang)
     if crop in rule.get("crop_do", {}):
         do.insert(0, tr(rule["crop_do"][crop], lang))
     return {

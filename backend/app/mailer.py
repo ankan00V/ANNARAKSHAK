@@ -20,6 +20,7 @@ from datetime import datetime
 from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
 
+from app.kb import tr
 from app.config import (
     DATA_DIR,
     EMAIL_BACKEND,
@@ -108,7 +109,7 @@ T = {
 
 
 def t(key: str, lang: str, **kw) -> str:
-    s = T[key].get(lang) or T[key]["en"]
+    s = tr(T[key], lang)
     return s.format(**kw) if kw else s
 
 

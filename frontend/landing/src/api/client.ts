@@ -10,6 +10,7 @@ import type {
   Farm,
   Home,
   Hotspots,
+  KccPanel,
   LabelVerdict,
   Lang,
   ModelCard,
@@ -21,6 +22,7 @@ import type {
   Summary,
   TargetView,
   TrapReading,
+  SatelliteView,
   SprayHour,
   WeatherView,
 } from './types'
@@ -123,6 +125,7 @@ export const api = {
   modelCard: () => req<ModelCard>('/api/officials/model'),
   pesticideBaseline: () => req<PesticideBaseline>('/api/officials/pesticides'),
   outlook: () => req<OutlookRow[]>('/api/officials/outlook'),
+  kcc: () => req<KccPanel>('/api/officials/kcc'),
   addSensor: (farmId: number, readings: Record<string, unknown>[]) =>
     req<{ stored: number }>(`/api/farms/${farmId}/sensor`, json(readings)),
   runAll: () =>
@@ -132,6 +135,7 @@ export const api = {
     ),
 
   weather: (farmId: number, lang: Lang) => req<WeatherView>(`/api/farms/${farmId}/weather?lang=${lang}`),
+  satellite: (farmId: number) => req<SatelliteView>(`/api/farms/${farmId}/satellite`),
   notices: (farmId: number, lang: Lang) =>
     req<{ unread: number; items: NoticeItem[] }>(`/api/farms/${farmId}/notices?lang=${lang}`),
   markRead: (farmId: number, ids?: number[]) =>

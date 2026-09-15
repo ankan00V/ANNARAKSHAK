@@ -306,6 +306,40 @@
       }
     },
     {
+      "id": "greenness_drop",
+      "category": "crop",
+      "severity": "advice",
+      "notify": true,
+      "source": "Sentinel-2 / Landsat 8 NDVI via AgroMonitoring; a fall of 0.10 or more between clear images at most 20 days apart",
+      "title": {
+        "en": "Crop greenness fell: {before} → {after}",
+        "hi": "फसल की हरियाली घटी: {before} → {after}",
+        "mr": "पिकाची हिरवाई घटली: {before} → {after}"
+      },
+      "text": {
+        "en": "Satellite images ({source}) show your field's greenness index (NDVI) fell from {before} on {d1} to {after} on {d2}. Pests, disease, water stress or lodging often show up like this before you notice them.",
+        "hi": "उपग्रह चित्रों ({source}) के अनुसार आपके खेत का हरियाली सूचकांक (NDVI) {d1} को {before} से घटकर {d2} को {after} हो गया। कीट, रोग, पानी की कमी या फसल गिरना अक्सर पहले ऐसे ही दिखता है।",
+        "mr": "उपग्रह प्रतिमांनुसार ({source}) तुमच्या शेताचा हिरवाई निर्देशांक (NDVI) {d1} रोजी {before} वरून {d2} रोजी {after} पर्यंत घटला. कीड, रोग, पाण्याचा ताण किंवा पीक लोळणे अनेकदा आधी असेच दिसते."
+      },
+      "do": {
+        "en": [
+          "Walk the field this week — start where the crop looks paler",
+          "Check leaves and stems for pests and spots, or use the Live field check",
+          "If you find damage, send photos to an expert from the app"
+        ],
+        "hi": [
+          "इस हफ़्ते खेत में घूमें — जहाँ फसल पीली दिखे वहाँ से शुरू करें",
+          "पत्तों और तनों पर कीट व धब्बे देखें, या लाइव खेत जाँच करें",
+          "नुकसान दिखे तो ऐप से विशेषज्ञ को फोटो भेजें"
+        ],
+        "mr": [
+          "या आठवड्यात शेतात फिरा — जिथे पीक फिकट दिसते तिथून सुरू करा",
+          "पाने व खोडांवर कीड व ठिपके पाहा, किंवा थेट शेत तपासणी करा",
+          "नुकसान दिसल्यास ॲपमधून तज्ज्ञांना फोटो पाठवा"
+        ]
+      }
+    },
+    {
       "id": "spray_window", "category": "spray", "severity": "info", "notify": false,
       "source": "Pesticide label guidance on drift and rain-free period; IMD agromet advisories",
       "title": {"en": "Best time to spray: {start}–{end}", "hi": "छिड़काव का सबसे अच्छा समय: {start}–{end}", "mr": "फवारणीची उत्तम वेळ: {start}–{end}"},

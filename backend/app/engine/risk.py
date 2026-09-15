@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 
 from app.engine.weather import Day, Window
+from app.i18n import LANGS
+from app.kb import tr
 
 LEVELS = ("low", "medium", "high")
 
@@ -97,6 +99,14 @@ def longest_run(days: list[Day], w: dict) -> tuple[int, Day | None, Day | None]:
     return best, best_first, best_last
 
 
+def _joined(parts: dict[str, str], lang: str) -> str:
+    """A sentence appended to a reason. Stored with its leading space, which a
+    translation memory keyed by stripped text would lose."""
+    en = parts["en"]
+    text = tr({k: v.strip() for k, v in parts.items()}, lang)
+    return (" " if en[:1].isspace() else "") + text
+
+
 def _fmt_date(d: date, lang: str) -> str:
     return d.strftime("%d %b") if lang == "en" else d.strftime("%d/%m")
 
@@ -139,16 +149,16 @@ def score_rule(
         used_sensor = any(d.from_sensor for d in window.days)
         level = "high" if run >= w["days"] + 3 else "medium"
         reason = {}
-        for lang, tpl in REASONS["weather"].items():
-            text = tpl.format(
+        for lang in LANGS:
+            text = tr(REASONS["weather"], lang).format(
                 rh=w["rh_min"], tlo=w["t_min"], thi=w["t_max"], run=run,
                 first=_fmt_date(first.on, lang), last=_fmt_date(last.on, lang),
-                name=target_name.get(lang) or target_name["en"],
+                name=tr(target_name, lang),
             )
             if includes_forecast:
-                text += REASONS["forecast"][lang]
+                text += _joined(REASONS["forecast"], lang)
             if used_sensor:
-                text += REASONS["sensor"][lang]
+                text += _joined(REASONS["sensor"], lang)
             reason[lang] = text
         detail |= {"first": first.on.isoformat(), "last": last.on.isoformat(),
                    "includes_forecast": includes_forecast, "used_sensor": used_sensor}
@@ -156,15 +166,14 @@ def score_rule(
     else:
         level = "low"
         reason = {
-            lang: tpl.format(das=das, stage=stage_name.get(lang) or stage_name["en"],
-                             name=target_name.get(lang) or target_name["en"])
-            for lang, tpl in REASONS["phenology"].items()
+            lang: tr(REASONS["phenology"], lang).format(das=das, stage=tr(stage_name, lang), name=tr(target_name, lang))
+            for lang in LANGS
         }
         trigger = "phenology"
 
     if has_history:
         level = _bump(level)
-        reason = {k: v + REASONS["history"][k] for k, v in reason.items()}
+        reason = {k: v + _joined(REASONS["history"], k) for k, v in reason.items()}
         detail["history_bump"] = True
 
     return Score(target, True, level, trigger, reason, detail)
@@ -198,13 +207,12 @@ def score_traps(target: str, rule: dict, readings: list[dict], today: date | Non
     if streak < need:
         return Score(target, False, "low", "trap", detail=detail)
     rate = round(sum(rates[:need]) / need, 1)
-    reason = {lang: tpl.format(rate=rate, n=streak, etl=etl) for lang, tpl in REASONS["trap"].items()}
+    reason = {lang: tr(REASONS["trap"], lang).format(rate=rate, n=streak, etl=etl) for lang in LANGS}
     return Score(target, True, "high", "trap", reason, detail | {"rate": rate})
 
 
 def spread_reason(target_name: dict[str, str], crop_name: dict[str, str], km: float) -> dict[str, str]:
     return {
-        lang: tpl.format(name=target_name.get(lang) or target_name["en"],
-                         crop=crop_name.get(lang) or crop_name["en"], km=f"{km:.1f}")
-        for lang, tpl in REASONS["spread"].items()
+        lang: tr(REASONS["spread"], lang).format(name=tr(target_name, lang), crop=tr(crop_name, lang), km=f"{km:.1f}")
+        for lang in LANGS
     }

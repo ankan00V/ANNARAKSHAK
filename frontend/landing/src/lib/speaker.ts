@@ -1,7 +1,10 @@
 import { api } from '../api/client'
 import type { Lang } from '../api/types'
 
-const BCP47: Record<Lang, string> = { en: 'en-IN', hi: 'hi-IN', mr: 'mr-IN' }
+const BCP47: Record<Lang, string> = {
+  en: 'en-IN', hi: 'hi-IN', mr: 'mr-IN', bn: 'bn-IN', ta: 'ta-IN', te: 'te-IN', kn: 'kn-IN', ml: 'ml-IN',
+  gu: 'gu-IN', pa: 'pa-IN', od: 'or-IN',
+}
 
 export function browserVoice(lang: Lang): SpeechSynthesisVoice | null {
   if (!('speechSynthesis' in window)) return null

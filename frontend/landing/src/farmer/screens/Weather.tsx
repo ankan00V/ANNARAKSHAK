@@ -1,5 +1,5 @@
 import {
-  ArrowDown, ArrowUp, CloudFog, CloudRain, CloudSun, Droplets, Eye, Gauge, Minus, Navigation, Snowflake, SprayCan,
+  ArrowDown, ArrowUp, CloudFog, Satellite, CloudRain, CloudSun, Droplets, Eye, Gauge, Minus, Navigation, Snowflake, SprayCan,
   Sprout, Sun, Thermometer, Wind, Zap,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -7,6 +7,7 @@ import { api } from '../../api/client'
 import type { Lang, WeatherAdvisory, WeatherDay, WeatherHour, WeatherView } from '../../api/types'
 import { useAsync } from '../../lib/hooks'
 import { Card, ErrorBox, ListenButton, Pill, SectionTitle, Spinner } from '../../ui/kit'
+import { bcp47 } from '../../lib/i18n'
 import { useFarmer } from '../FarmerContext'
 
 type T = ReturnType<typeof useFarmer>['t']
@@ -46,7 +47,7 @@ function compass(deg: number | null, t: T): string {
   return t('compass').split('|')[Math.round(deg / 45) % 8]
 }
 
-const locale = (lang: Lang) => (lang === 'en' ? 'en-IN' : `${lang}-IN`)
+const locale = (lang: Lang) => bcp47(lang)
 
 function dayLabel(on: string, lang: Lang): string {
   const d = new Date(on + 'T00:00:00')
@@ -63,7 +64,7 @@ function dayLabel(on: string, lang: Lang): string {
 const hhmm = (iso: string) => iso.slice(11, 16)
 
 export default function Weather() {
-  const { farmId, lang, t } = useFarmer()
+  const { farmId, lang, t } = useFarmer()  // lang also feeds dates and the KCC month name
   const w = useAsync(() => api.weather(farmId!, lang), [farmId, lang])
   if (w.loading && !w.data) return <Spinner label={t('loading')} />
   if (w.error) return <ErrorBox error={w.error} onRetry={w.reload} retryLabel={t('retry')} />
@@ -100,12 +101,27 @@ export default function Weather() {
             </div>
           </div>
         )}
+        {v.seasonal.length > 0 && (
+          <div className="rounded-2xl bg-sky-50 border border-sky-100 p-3">
+            <p className="text-xs text-sky-900">
+              {t('kccSeasonal').replace('{month}', new Date().toLocaleDateString(bcp47(lang), { month: 'long' })).replace('{district}', v.location.district)}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {v.seasonal.map((s) => (
+                <span key={s.group} className="rounded-full bg-white border border-sky-200 px-2.5 py-1 text-[11px] text-sky-900">
+                  {s.name}{s.district_calls_this_month > 0 && <span className="text-sky-700/70"> · {s.district_calls_this_month}</span>}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       <SprayCard v={v} />
       <HourlyChart hours={v.hourly.slice(0, 24)} />
       <DailyList days={v.daily} />
       <SoilWater v={v} />
+      <SatelliteCard />
 
       <p className="text-[11px] text-soil-dark/45 leading-relaxed">
         {t('sources')}: {v.source.forecast}; {t('rainNow')}: {v.source.current}; ET₀: {v.source.et0}
@@ -390,5 +406,56 @@ export function WeatherNowCard() {
       )}
       <p className="mt-2 text-xs font-medium text-leaf-deep">{t('fullWeather')} →</p>
     </Link>
+  )
+}
+
+const NDVI_COLOR = { sparse: 'bg-ochre/20 text-[#8a5a17]', low: 'bg-lime-100 text-lime-800', moderate: 'bg-leaf/15 text-leaf-deep', dense: 'bg-leaf text-cream' } as const
+
+/** Greenness from clear Sentinel-2 / Landsat 8 images, and satellite soil data. */
+function SatelliteCard() {
+  const { farmId, lang, t } = useFarmer()
+  const s = useAsync(() => api.satellite(farmId!), [farmId])
+  const d = s.data
+  if (!d || !d.available || !d.latest) return null
+  const date = (iso: string) => new Date(iso + 'T00:00:00').toLocaleDateString(bcp47(lang), { day: 'numeric', month: 'short' })
+  const series = d.series ?? []
+  const W = 300, H = 44
+  const xs = (i: number) => (series.length > 1 ? (i / (series.length - 1)) * (W - 8) + 4 : W / 2)
+  const ys = (v: number) => H - 4 - v * (H - 8)
+  return (
+    <section>
+      <SectionTitle sub={d.source}>
+        <span className="flex items-center gap-2"><Satellite className="w-5 h-5 text-leaf" />{t('satTitle')}</span>
+      </SectionTitle>
+      <Card className="p-4 space-y-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xs text-soil-dark/60">{t('satNdvi')}</p>
+            <p className="text-3xl font-semibold leading-none mt-1">{d.latest.mean.toFixed(2)}</p>
+          </div>
+          {d.band && <span className={`rounded-full px-3 py-1 text-xs font-semibold ${NDVI_COLOR[d.band]}`}>{t(`ndvi_${d.band}`)}</span>}
+        </div>
+        {series.length > 1 && (
+          <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-11" aria-hidden>
+            <path d={series.map((p, i) => `${i ? 'L' : 'M'}${xs(i)},${ys(p.mean)}`).join(' ')} fill="none" strokeWidth={2} className="stroke-leaf" />
+            {series.map((p, i) => <circle key={p.on} cx={xs(i)} cy={ys(p.mean)} r={2.5} className="fill-leaf-deep" />)}
+          </svg>
+        )}
+        <p className="text-xs text-soil-dark/60">{t('satLastClear').replace('{date}', date(d.latest.on)).replace('{source}', d.latest.source)}</p>
+        {d.previous && d.change != null && (
+          <p className={`text-sm font-medium ${d.drop ? 'text-ember' : 'text-soil-dark/70'}`}>
+            {t('satChange').replace('{date}', date(d.previous.on)).replace('{v}', `${d.change > 0 ? '+' : ''}${d.change.toFixed(2)}`)}
+            {d.drop && <span className="block">{t('satDrop')}</span>}
+          </p>
+        )}
+        {(d.age_days ?? 0) > 20 && <p className="text-xs rounded-xl bg-sky-50 text-sky-900 p-2.5">{t('satCloudy')}</p>}
+        {d.soil && (
+          <div className="grid grid-cols-2 gap-3 border-t border-soil-dark/10 pt-3 text-sm">
+            <p><span className="block text-xs text-soil-dark/60">{t('satSoil')}</span><b>{d.soil.moisture_pct}%</b></p>
+            <p><span className="block text-xs text-soil-dark/60">{t('satSoilTemp')}</span><b>{d.soil.t10_c}°C</b></p>
+          </div>
+        )}
+      </Card>
+    </section>
   )
 }

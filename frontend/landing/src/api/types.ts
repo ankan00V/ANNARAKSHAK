@@ -1,4 +1,4 @@
-export type Lang = 'en' | 'hi' | 'mr'
+export type Lang = 'en' | 'hi' | 'mr' | 'bn' | 'ta' | 'te' | 'kn' | 'ml' | 'gu' | 'pa' | 'od'
 export type GateOutcome = 'advise' | 'clarify' | 'escalate' | 'retake'
 
 export interface Farm {
@@ -588,6 +588,21 @@ export interface WeatherView {
   crop: { id: string; name: string; stage: string; stage_name: string; das: number; kc: number | null }
   watch_for: { target: string; name: string; level: 'high' | 'medium' | 'low' }[]
   location: { lat: number; lon: number; district: string }
+  seasonal: { group: string; name: string; targets: string[]; district_calls_this_month: number; state_share_this_month: number; calls: number }[]
+}
+
+export interface KccPanel {
+  available: boolean
+  month: number
+  note: string
+  source: string
+  years: [number, number]
+  coverage: Record<string, { calls: number; matched: number; matched_pct: number }>
+  groups: {
+    id: string; crop: string; label: string; calls: number; month_share: Record<string, number>; peak_months: number[]
+    by_year: Record<string, number>; targets: string[]; target_names: string[]
+    top_districts: { district: string; calls: number }[]; expected_this_month: number
+  }[]
 }
 
 export interface NoticeItem extends WeatherAdvisory {
@@ -613,4 +628,21 @@ export interface Contact {
   email_pref: EmailPref
   phones: number
   email_delivery: 'live' | 'outbox'
+}
+
+export interface NdviScene { on: string; mean: number; p25: number; p75: number; source: string; cloud: number }
+export interface SatelliteView {
+  available: boolean
+  reason?: string
+  latest?: NdviScene
+  previous?: NdviScene | null
+  change?: number | null
+  days_between?: number | null
+  band?: 'sparse' | 'low' | 'moderate' | 'dense'
+  drop?: boolean
+  age_days?: number
+  series?: NdviScene[]
+  soil?: { moisture_pct: number; t0_c: number; t10_c: number; observed_at: string } | null
+  polygon_ha?: number
+  source?: string
 }

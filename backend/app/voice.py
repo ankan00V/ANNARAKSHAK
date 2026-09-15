@@ -143,7 +143,7 @@ def status() -> dict:
 
 class TTSIn(BaseModel):
     text: str = Field(min_length=1, max_length=4000)
-    lang: str = Field(pattern="^(en|hi|mr)$")
+    lang: str = Field(pattern="^(en|hi|mr|bn|ta|te|kn|ml|gu|pa|od)$")
 
 
 @router.get("/status")

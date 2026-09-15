@@ -64,7 +64,7 @@ def compose(kb: KB, target: str, lang: str, area_acres: float | None = None) -> 
                 "class": pest["class"],
                 "timing": tr(rung.get("timing"), lang),
                 "verified": bool(rung.get("verified")),
-                "label_rule": LABEL_RULE.get(lang, LABEL_RULE["en"]),
+                "label_rule": tr(LABEL_RULE, lang),
             }
             dose, unit = rung.get("dose_per_litre"), rung.get("dose_unit")
             if dose is not None and unit:
@@ -73,7 +73,7 @@ def compose(kb: KB, target: str, lang: str, area_acres: float | None = None) -> 
                 if area_acres and water:
                     litres = water * area_acres
                     qty = dose * litres
-                    item["for_field"] = FOR_AREA.get(lang, FOR_AREA["en"]).format(
+                    item["for_field"] = tr(FOR_AREA, lang).format(
                         area=_fmt(area_acres), qty=_fmt(qty), unit=tr(UNIT_SHORT[unit], lang), water=_fmt(litres)
                     )
                     item["quantity"] = {"amount": round(qty, 1), "unit": unit, "water_l": round(litres)}
@@ -101,4 +101,4 @@ def compose(kb: KB, target: str, lang: str, area_acres: float | None = None) -> 
 
 
 def healthy_note(lang: str) -> str:
-    return HEALTHY.get(lang, HEALTHY["en"])
+    return tr(HEALTHY, lang)

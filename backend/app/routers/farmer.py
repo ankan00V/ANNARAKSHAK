@@ -18,7 +18,7 @@ from app.kb import KB, get_kb, tr
 from app.models import Alert, Farm, FollowUp, Problem, SensorReading, TrapReading
 
 router = APIRouter(prefix="/api", tags=["farmer"])
-Lang = Literal["en", "hi", "mr"]
+Lang = Literal["en", "hi", "mr", "bn", "ta", "te", "kn", "ml", "gu", "pa", "od"]
 MAX_UPLOAD_BYTES = 12 * 1024 * 1024
 
 

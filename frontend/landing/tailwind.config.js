@@ -5,7 +5,9 @@ export default {
     extend: {
       fontFamily: {
         'instrument-serif': ['"Instrument Serif"', '"Noto Serif Devanagari"', 'serif'],
-        sans: ['Inter', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'],
+        sans: ['Inter', '"Noto Sans Devanagari"', '"Noto Sans Bengali"', '"Noto Sans Tamil"', '"Noto Sans Telugu"',
+          '"Noto Sans Kannada"', '"Noto Sans Malayalam"', '"Noto Sans Gujarati"', '"Noto Sans Gurmukhi"', '"Noto Sans Oriya"',
+          'system-ui', 'sans-serif'],
       },
       colors: {
         soil: {

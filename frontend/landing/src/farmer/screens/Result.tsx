@@ -8,6 +8,7 @@ import type { CaseBrief, DiagnoseResult, TargetView } from '../../api/types'
 import { ConfidenceMeter, GradCamOverlay, ListenButton, Pill } from '../../ui/kit'
 import AdvisoryView from '../components/AdvisoryView'
 import { useFarmer } from '../FarmerContext'
+import { bcp47 } from '../../lib/i18n'
 
 export default function Result() {
   const { result, t } = useFarmer()
@@ -81,7 +82,7 @@ function ResultView({ r }: { r: DiagnoseResult }) {
           {r.followup && (
             <p className="text-xs text-soil-dark/60 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
-              {t('followupScheduled')} {new Date(r.followup.due_on).toLocaleDateString(lang === 'en' ? 'en-IN' : `${lang}-IN`, { day: 'numeric', month: 'long' })}
+              {t('followupScheduled')} {new Date(r.followup.due_on).toLocaleDateString(bcp47(lang), { day: 'numeric', month: 'long' })}
             </p>
           )}
           <div className="grid grid-cols-1 gap-2">

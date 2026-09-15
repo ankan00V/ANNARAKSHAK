@@ -16,6 +16,7 @@ from datetime import datetime
 import httpx
 
 from app.config import DATA_DIR, OPENWEATHER_API_KEY
+from app.kb import tr
 
 OWM_URL = "https://api.openweathermap.org/data/2.5/weather"
 OM_URL = "https://api.open-meteo.com/v1/forecast"
@@ -44,7 +45,7 @@ def _wmo_text(code: int | None, lang: str) -> str | None:
         return None
     for codes, text in WMO:
         if code in codes:
-            return text.get(lang) or text["en"]
+            return tr(text, lang)
     return None
 
 
@@ -236,5 +237,5 @@ PH_BANDS = [
 def ph_band(ph: float, lang: str) -> str:
     for hi, text in PH_BANDS:
         if ph < hi:
-            return text.get(lang) or text["en"]
+            return tr(text, lang)
     return ""

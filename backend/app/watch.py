@@ -26,17 +26,20 @@ from sqlalchemy.orm import Session
 from app import cache, notify, services
 from app.config import DIGEST_HOUR, WATCH_MINUTES
 from app.db import SessionLocal
-from app.engine import agromet, agroweather
+from app.engine import agromet, agroweather, satellite
 from app.kb import KB, get_kb
 from app.models import Alert, Farm, Notice
 
 log = logging.getLogger("annrakshak.watch")
 
 
-def issue_notices(db: Session, kb: KB, farm: Farm, bundle: dict, now: datetime) -> list[Notice]:
+def issue_notices(db: Session, kb: KB, farm: Farm, bundle: dict | None, now: datetime,
+                  extra: list[dict] | None = None) -> list[Notice]:
     stage, _ = kb.stage_for(farm.crop, farm.sowing_date, now.date())
     advs = agromet.evaluate(bundle, kb.agromet, farm.crop, stage, now,
-                            sprays=notify.recent_sprays(db, farm, now), needs_spray=notify.needs_spray(db, farm))
+                            sprays=notify.recent_sprays(db, farm, now),
+                            needs_spray=notify.needs_spray(db, farm)) if bundle else []
+    advs += extra or []
     have = set(db.scalars(select(Notice.dedupe_key).where(Notice.farm_id == farm.id)).all())
     new = []
     for a in advs:
@@ -54,6 +57,35 @@ def issue_notices(db: Session, kb: KB, farm: Farm, bundle: dict, now: datetime) 
     return new
 
 
+def ensure_polygon(db: Session, farm: Farm) -> str | None:
+    """Create the farm's field polygon at the satellite provider once."""
+    if farm.agro_polygon_id or not satellite.configured():
+        return farm.agro_polygon_id
+    ha = farm.area_acres * 0.4047
+    p = satellite.create_polygon(f"annrakshak-farm-{farm.id}", farm.lat, farm.lon, ha)
+    farm.agro_polygon_id = p["id"]
+    db.flush()
+    return farm.agro_polygon_id
+
+
+def satellite_summary(db: Session, kb: KB, farm: Farm, now: datetime) -> dict:
+    stage, _ = kb.stage_for(farm.crop, farm.sowing_date, now.date())
+    polyid = ensure_polygon(db, farm)
+    if not polyid:
+        return {"available": False, "reason": "not configured"}
+    return satellite.summarize(satellite.ndvi_series(polyid, now.date()), farm.crop, stage, now.date())
+
+
+def satellite_advisory(db: Session, kb: KB, farm: Farm, now: datetime) -> dict | None:
+    if not satellite.configured():
+        return None
+    try:
+        return satellite.evaluate(satellite_summary(db, kb, farm, now), now)
+    except satellite.SatelliteUnavailable as e:
+        log.info("watch: satellite for farm %s: %s", farm.id, e)
+        return None
+
+
 def farm_cycle(db: Session, kb: KB, farm: Farm, now: datetime, fetch=agroweather.bundle) -> dict:
     out = Counter()
     try:
@@ -61,7 +93,9 @@ def farm_cycle(db: Session, kb: KB, farm: Farm, now: datetime, fetch=agroweather
     except agroweather.AgroWeatherUnavailable:
         out["no_weather"] += 1
         bundle = None
-    new = issue_notices(db, kb, farm, bundle, now) if bundle else []
+    sat = satellite_advisory(db, kb, farm, now)
+    out["satellite"] += sat is not None
+    new = issue_notices(db, kb, farm, bundle, now, [sat] if sat else [])
     out["notices"] += len(new)
     before = set(db.scalars(select(Alert.id).where(Alert.farm_id == farm.id)).all())
     services.run_risk(db, kb, farm, now.date())

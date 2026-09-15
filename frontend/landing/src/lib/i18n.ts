@@ -68,6 +68,23 @@ const en = {
   soilPhCard: "Soil pH from your Soil Health Card (optional)",
   soilPhCardHint: "Leave empty if you don't have one — we use the soil map and say so.",
   liveLost: 'The call with the AI dropped. Check your network and start again.',
+  comingSoon: 'Coming soon',
+  kccSeasonal: 'In {month}, farmers in {district} call Kisan Call Centre most about:',
+  kccCalls: '{n} calls in past {month}s',
+  satTitle: 'Crop health from space',
+  satNdvi: 'Greenness (NDVI)',
+  ndvi_sparse: 'Sparse or bare',
+  ndvi_low: 'Low',
+  ndvi_moderate: 'Moderate',
+  ndvi_dense: 'Dense and green',
+  satLastClear: 'Last clear image {date} · {source}',
+  satCloudy: 'Clouds have hidden your field since then — common in the monsoon. The next clear image will update this.',
+  satChange: 'Change since {date}: {v}',
+  satDrop: 'Greenness fell — walk the field this week',
+  satSoil: 'Satellite soil moisture',
+  satSoilTemp: 'Soil at 10 cm',
+  chooseLanguage: 'Choose your language',
+  machineNote: 'This language is translated by machine from English and is being checked by native speakers. Voice, alerts and emails work in it.',
   weatherNav: 'Weather',
   weatherTitle: 'Weather & what to do',
   updatedAt: 'Updated {t}',
@@ -372,6 +389,23 @@ const hi: Partial<Record<Key, string>> = {
   soilPhCard: "मृदा स्वास्थ्य कार्ड से मिट्टी का pH (वैकल्पिक)",
   soilPhCardHint: "कार्ड नहीं है तो खाली छोड़ें — हम मिट्टी के नक्शे से अनुमान लगाएँगे और बताएँगे।",
   liveLost: 'AI से कॉल कट गई। नेटवर्क देखें और फिर से शुरू करें।',
+  comingSoon: 'जल्द आ रहा है',
+  kccSeasonal: '{month} में {district} के किसान किसान कॉल सेंटर पर सबसे ज़्यादा इनके बारे में पूछते हैं:',
+  kccCalls: 'पिछले {month} महीनों में {n} कॉल',
+  satTitle: 'अंतरिक्ष से फसल की सेहत',
+  satNdvi: 'हरियाली (NDVI)',
+  ndvi_sparse: 'विरल या खाली',
+  ndvi_low: 'कम',
+  ndvi_moderate: 'मध्यम',
+  ndvi_dense: 'घनी और हरी',
+  satLastClear: 'आख़िरी साफ़ चित्र {date} · {source}',
+  satCloudy: 'तब से बादलों ने खेत ढक रखा है — मानसून में आम है। अगला साफ़ चित्र आते ही यह अपडेट होगा।',
+  satChange: '{date} से बदलाव: {v}',
+  satDrop: 'हरियाली घटी — इस हफ़्ते खेत देखें',
+  satSoil: 'उपग्रह से मिट्टी की नमी',
+  satSoilTemp: '10 सेमी पर मिट्टी',
+  chooseLanguage: 'अपनी भाषा चुनें',
+  machineNote: 'यह भाषा अंग्रेज़ी से मशीन द्वारा अनुवादित है और मातृभाषी जाँच रहे हैं। आवाज़, अलर्ट और ईमेल इसमें काम करते हैं।',
   weatherNav: 'मौसम',
   weatherTitle: 'मौसम और क्या करें',
   updatedAt: '{t} पर अपडेट',
@@ -670,6 +704,23 @@ const mr: Partial<Record<Key, string>> = {
   soilPhCard: "मृदा आरोग्य पत्रिकेतील जमिनीचा सामू (pH) (ऐच्छिक)",
   soilPhCardHint: "पत्रिका नसेल तर रिकामे ठेवा — आम्ही मातीच्या नकाशावरून अंदाज घेऊ आणि तसे सांगू.",
   liveLost: 'AI सोबतचा कॉल तुटला. नेटवर्क तपासा आणि पुन्हा सुरू करा.',
+  comingSoon: 'लवकरच',
+  kccSeasonal: '{month} मध्ये {district} मधील शेतकरी किसान कॉल सेंटरला सर्वाधिक याबद्दल विचारतात:',
+  kccCalls: 'मागील {month} महिन्यांत {n} कॉल',
+  satTitle: 'उपग्रहावरून पिकाचे आरोग्य',
+  satNdvi: 'हिरवाई (NDVI)',
+  ndvi_sparse: 'विरळ किंवा उघडी',
+  ndvi_low: 'कमी',
+  ndvi_moderate: 'मध्यम',
+  ndvi_dense: 'दाट आणि हिरवी',
+  satLastClear: 'शेवटची स्वच्छ प्रतिमा {date} · {source}',
+  satCloudy: 'तेव्हापासून ढगांनी शेत झाकले आहे — पावसाळ्यात हे सामान्य आहे. पुढची स्वच्छ प्रतिमा आल्यावर हे बदलेल.',
+  satChange: '{date} पासून बदल: {v}',
+  satDrop: 'हिरवाई घटली — या आठवड्यात शेत पाहा',
+  satSoil: 'उपग्रहाद्वारे मातीतील ओलावा',
+  satSoilTemp: '10 सेंमीवर माती',
+  chooseLanguage: 'तुमची भाषा निवडा',
+  machineNote: 'ही भाषा इंग्रजीतून यंत्राद्वारे अनुवादित आहे आणि मातृभाषक तपासत आहेत. आवाज, सूचना व ईमेल या भाषेत चालतात.',
   weatherNav: 'हवामान',
   weatherTitle: 'हवामान आणि काय करावे',
   updatedAt: '{t} ला अद्ययावत',
@@ -904,16 +955,43 @@ const mr: Partial<Record<Key, string>> = {
   acres: 'एकर',
 }
 
-const TABLES: Record<Lang, Partial<Record<Key, string>>> = { en, hi, mr }
+// English, Hindi and Marathi are authored here. The other eight are machine
+// translated from English (backend/translate_i18n.py -> src/locales/<lang>.json,
+// pending native review) and loaded on demand, so the app stays small.
+const TABLES: Partial<Record<Lang, Partial<Record<Key, string>>>> = { en, hi, mr }
+export const AUTHORED: Lang[] = ['en', 'hi', 'mr']
+const LOCALES = import.meta.glob<{ default: Record<string, string> }>('../locales/*.json')
+
+/** Fetch a machine-translated language's strings; resolves at once for authored ones. */
+export async function loadLocale(lang: Lang): Promise<boolean> {
+  if (TABLES[lang]) return false
+  const load = LOCALES[`../locales/${lang}.json`]
+  if (!load) return false
+  TABLES[lang] = (await load()).default as Partial<Record<Key, string>>
+  return true
+}
 
 export type TKey = Key
 export function makeT(lang: Lang) {
   return (key: Key | string): string =>
-    (TABLES[lang] as Record<string, string>)[key] ?? (en as Record<string, string>)[key] ?? key
+    ((TABLES[lang] ?? {}) as Record<string, string>)[key] ?? (en as Record<string, string>)[key] ?? key
 }
 
-export const LANGS: { code: Lang; label: string }[] = [
-  { code: 'mr', label: 'मराठी' },
-  { code: 'hi', label: 'हिंदी' },
-  { code: 'en', label: 'EN' },
+/** Browser locale for dates and speech (Odia is 'or' in BCP 47, 'od' in Sarvam). */
+export const bcp47 = (lang: Lang): string => (lang === 'od' ? 'or-IN' : `${lang}-IN`)
+
+/** Every language a farmer can choose, in their own script (Sarvam speaks all of them). */
+export const LANGS: { code: Lang; label: string; english: string; ready: boolean }[] = [
+  { code: 'mr', label: 'मराठी', english: 'Marathi', ready: true },
+  { code: 'hi', label: 'हिन्दी', english: 'Hindi', ready: true },
+  { code: 'en', label: 'English', english: 'English', ready: true },
+  { code: 'bn', label: 'বাংলা', english: 'Bengali', ready: true },
+  { code: 'ta', label: 'தமிழ்', english: 'Tamil', ready: true },
+  { code: 'te', label: 'తెలుగు', english: 'Telugu', ready: true },
+  { code: 'kn', label: 'ಕನ್ನಡ', english: 'Kannada', ready: true },
+  // Next: translation memory not built yet (backend/translate_i18n.py --lang ml,gu,pa,od)
+  { code: 'ml', label: 'മലയാളം', english: 'Malayalam', ready: false },
+  { code: 'gu', label: 'ગુજરાતી', english: 'Gujarati', ready: false },
+  { code: 'pa', label: 'ਪੰਜਾਬੀ', english: 'Punjabi', ready: false },
+  { code: 'od', label: 'ଓଡ଼ିଆ', english: 'Odia', ready: false },
 ]

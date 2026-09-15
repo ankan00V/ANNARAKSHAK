@@ -3,9 +3,9 @@ import { AlertTriangle, Bell, Camera, CloudSun, FlaskConical, Home as HomeIcon, 
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import type { Farm, LiveEvent } from '../api/types'
-import { LANGS } from '../lib/i18n'
 import { registerWorker } from '../lib/push'
 import { FarmerProvider, useFarmer } from './FarmerContext'
+import LanguagePicker from './components/LanguagePicker'
 import Onboard from './screens/Onboard'
 
 const NAV = [
@@ -117,22 +117,10 @@ function Shell() {
                 <Repeat className="w-4 h-4" />
               </button>
             )}
-            <div className="flex rounded-full bg-cream/10 p-0.5">
-              {LANGS.map(({ code, label }) => (
-                <button
-                  key={code}
-                  onClick={() => {
-                    setLang(code)
-                    if (farmId != null) api.setFarmLang(farmId, code).catch(() => undefined)
-                  }}
-                  className={`px-2.5 py-1.5 rounded-full text-[11px] font-medium min-h-[32px] transition-colors ${
-                    lang === code ? 'bg-cream text-leaf-deep' : 'text-cream/70 hover:text-cream'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            <LanguagePicker onPick={(code) => {
+              setLang(code)
+              if (farmId != null) api.setFarmLang(farmId, code).catch(() => undefined)
+            }} />
           </div>
         </div>
       </header>

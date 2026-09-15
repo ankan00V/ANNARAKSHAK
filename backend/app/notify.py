@@ -37,7 +37,7 @@ from app.config import (
     VAPID_SUBJECT,
 )
 from app.engine import agromet
-from app.kb import KB, tr
+from app.kb import KB, tr, trl
 from app.models import Alert, EmailLog, Farm, Notice, Problem, PushSubscription, SprayLog
 
 LEVEL_LABEL = {
@@ -168,7 +168,7 @@ def alert_card(kb: KB, a: Alert, lang: str) -> dict:
     level = tr(LEVEL_LABEL.get(a.level, LEVEL_LABEL["medium"]), lang)
     prev = live.prevention_for(kb, a.target, lang)
     return {"title": tr(ALERT_TITLE, lang).format(name=name, level=level), "text": tr(a.reason, lang),
-            "do": (a.tasks.get(lang) or a.tasks["en"])[:2] + prev["do"][:1], "severity": "warning" if a.level == "high" else "advice"}
+            "do": trl(a.tasks, lang)[:2] + prev["do"][:1], "severity": "warning" if a.level == "high" else "advice"}
 
 
 def _payload(title: str, body: str, url: str, tag: str, severity: str) -> dict:

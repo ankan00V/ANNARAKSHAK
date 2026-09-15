@@ -29,7 +29,7 @@ from starlette.concurrency import run_in_threadpool
 from app import notify, services, watch
 from app.config import EMAIL_BACKEND
 from app.db import get_db
-from app.engine import agromet, agroweather
+from app.engine import agromet, agroweather, satellite
 from app.kb import KB, get_kb, tr
 from app.limits import limit as rate_limit
 from app.mailer import valid_address
@@ -39,6 +39,11 @@ router = APIRouter(prefix="/api", tags=["weather"])
 
 EMAIL_PREFS = ("warnings", "all", "digest", "off")
 SSE_MAX_SECONDS = 300
+PUSH_TEST_TITLE = {"en": "AnnRakshak notifications are on", "hi": "AnnRakshak सूचनाएँ चालू हैं",
+                   "mr": "AnnRakshak सूचना सुरू आहेत"}
+PUSH_TEST_BODY = {"en": "Weather warnings for your {crop} will reach this phone.",
+                  "hi": "आपकी {crop} के लिए मौसम चेतावनी इस फ़ोन पर आएगी।",
+                  "mr": "तुमच्या {crop} साठी हवामान इशारे या फोनवर येतील."}
 
 
 def _farm(db: Session, farm_id: int) -> Farm:
@@ -71,7 +76,26 @@ def weather(farm_id: int, lang: str = "en", db: Session = Depends(get_db), kb: K
         "watch_for": [{"target": s.target, "name": tr(kb.targets[s.target]["names"], lang), "level": s.level}
                       for s in risks[:4]],
         "location": {"lat": b["lat"], "lon": b["lon"], "district": farm.district},
+        "seasonal": services.kcc_seasonal(kb, farm, now.month, lang),
     }
+
+
+@router.get("/farms/{farm_id}/satellite")
+def satellite_view(farm_id: int, db: Session = Depends(get_db), kb: KB = Depends(get_kb)):
+    """Crop greenness (NDVI) from clear Sentinel-2 / Landsat 8 scenes and satellite
+    soil data for this field. Numbers only — provider image URLs carry our key."""
+    farm = _farm(db, farm_id)
+    if not satellite.configured():
+        return {"available": False, "reason": "not_configured"}
+    now = agroweather.now_ist()
+    try:
+        s = watch.satellite_summary(db, kb, farm, now)
+        db.commit()  # a newly created field polygon
+        soil = satellite.soil(farm.agro_polygon_id) if farm.agro_polygon_id else None
+    except satellite.SatelliteUnavailable:
+        raise HTTPException(503, "satellite data unavailable right now") from None
+    return s | {"soil": soil, "polygon_ha": round(max(farm.area_acres * 0.4047, satellite.MIN_HA), 2),
+                "source": "AgroMonitoring — Sentinel-2 / Landsat 8"}
 
 
 # --------------------------------------------------------------------------
@@ -181,13 +205,8 @@ def push_test(farm_id: int, lang: str | None = None, db: Session = Depends(get_d
     farm = _farm(db, farm_id)
     rate_limit(f"push-test:{farm_id}", 10, 3600)
     lang = lang or farm.lang
-    title = {"en": "AnnRakshak notifications are on", "hi": "AnnRakshak सूचनाएँ चालू हैं",
-             "mr": "AnnRakshak सूचना सुरू आहेत"}
-    body = {"en": "Weather warnings for your {crop} will reach this phone.",
-            "hi": "आपकी {crop} के लिए मौसम चेतावनी इस फ़ोन पर आएगी।",
-            "mr": "तुमच्या {crop} साठी हवामान इशारे या फोनवर येतील."}
     crop = tr(kb.crops[farm.crop]["names"], lang)
-    out = notify.push(db, farm.id, {"title": tr(title, lang), "body": tr(body, lang).format(crop=crop),
+    out = notify.push(db, farm.id, {"title": tr(PUSH_TEST_TITLE, lang), "body": tr(PUSH_TEST_BODY, lang).format(crop=crop),
                                     "url": "/app/weather", "tag": "test", "severity": "info"})
     db.commit()
     return out

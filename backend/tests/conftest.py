@@ -15,6 +15,7 @@ os.environ["ANNRAKSHAK_VISION"] = "stub"
 # No background watcher, no real weather key, no real email in tests.
 os.environ["ANNRAKSHAK_WATCH"] = "off"
 os.environ["OPENWEATHER_API_KEY"] = ""
+os.environ["AGRO_API_KEY"] = ""
 os.environ["EMAIL_BACKEND"] = "outbox"
 os.environ["SMTP_HOST"] = ""
 os.environ["REDIS_URL"] = ""  # in-process fallbacks; never the shared Redis

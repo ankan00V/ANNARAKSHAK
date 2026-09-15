@@ -52,6 +52,8 @@ class Farm(Base):
     email_pref: Mapped[str] = mapped_column(String(10), default="warnings")
     """Which emails: 'warnings' (right away) + daily summary, 'all', 'digest' (summary only) or 'off'."""
     email_token: Mapped[str | None] = mapped_column(String(40))
+    agro_polygon_id: Mapped[str | None] = mapped_column(String(40))
+    """This farm's field polygon at AgroMonitoring (satellite NDVI and soil)."""
     """Secret for the one-click unsubscribe link; never shown in the app."""
     is_demo: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

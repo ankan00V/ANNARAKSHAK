@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import type { ProblemView } from '../../api/types'
 import { Pill } from '../../ui/kit'
 import { useFarmer } from '../FarmerContext'
+import { bcp47 } from '../../lib/i18n'
 
 export function problemStatus(p: ProblemView, t: (k: string) => string) {
   if (p.expert) return { label: t('advisedByExpert'), tone: 'leaf' as const, icon: UserCheck }
@@ -17,7 +18,7 @@ export default function ProblemRow({ p }: { p: ProblemView }) {
   const { t, lang } = useFarmer()
   const s = problemStatus(p, t)
   const Icon = s.icon
-  const date = p.opened_at ? new Date(p.opened_at + 'Z').toLocaleDateString(lang === 'en' ? 'en-IN' : `${lang}-IN`, { day: 'numeric', month: 'short' }) : ''
+  const date = p.opened_at ? new Date(p.opened_at + 'Z').toLocaleDateString(bcp47(lang), { day: 'numeric', month: 'short' }) : ''
   return (
     <Link to={`/app/history/${p.id}`} className="flex items-center gap-3 rounded-2xl bg-white border border-soil-dark/10 p-3 hover:border-leaf/40">
       <span className="shrink-0 w-12 h-12 rounded-xl overflow-hidden bg-cream">

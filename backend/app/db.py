@@ -56,7 +56,8 @@ def get_db() -> Iterator[Session]:
 # tables, so add any that an older database lacks (SQLite ADD COLUMN is cheap).
 ADDED_COLUMNS = {
     "farm": {"soil_ph": "FLOAT", "soil_ph_on": "DATE", "email": "VARCHAR(200)",
-             "email_pref": "VARCHAR(10) DEFAULT 'warnings'", "email_token": "VARCHAR(40)"},
+             "email_pref": "VARCHAR(10) DEFAULT 'warnings'", "email_token": "VARCHAR(40)",
+             "agro_polygon_id": "VARCHAR(40)"},
     "alert": {"notified_at": "DATETIME", "emailed_at": "DATETIME"},
     "sensor_reading": {"soil_ph": "FLOAT", "soil_moisture_pct": "FLOAT"},
 }

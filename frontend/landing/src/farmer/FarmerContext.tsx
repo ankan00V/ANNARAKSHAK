@@ -1,6 +1,6 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { DiagnoseResult, Lang, LiveEvent } from '../api/types'
-import { makeT } from '../lib/i18n'
+import { loadLocale, makeT } from '../lib/i18n'
 import { usePersistent } from '../lib/hooks'
 
 interface FarmerState {
@@ -25,7 +25,16 @@ export function FarmerProvider({ children }: { children: ReactNode }) {
   const [result, setResult] = useState<DiagnoseResult | null>(null)
   const [unread, setUnread] = useState(0)
   const [toast, setToast] = useState<LiveEvent | null>(null)
-  const t = useMemo(() => makeT(lang), [lang])
+  const [loaded, setLoaded] = useState(0)
+  useEffect(() => {
+    let on = true
+    loadLocale(lang).then((fresh) => on && fresh && setLoaded((n) => n + 1)).catch(() => undefined)
+    return () => {
+      on = false
+    }
+  }, [lang])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const t = useMemo(() => makeT(lang), [lang, loaded])
   return (
     <Ctx.Provider value={{ lang, setLang, farmId, setFarmId, result, setResult, t, unread, setUnread, toast, setToast }}>
       {children}

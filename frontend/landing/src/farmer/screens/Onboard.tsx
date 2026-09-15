@@ -5,6 +5,7 @@ import type { Farm } from '../../api/types'
 import { DISTRICTS } from '../../lib/districts'
 import { useAsync } from '../../lib/hooks'
 import { Card, ErrorBox, Pill, Spinner } from '../../ui/kit'
+import LanguagePicker from '../components/LanguagePicker'
 import { useFarmer } from '../FarmerContext'
 
 const CROP_TINT: Record<string, string> = {
@@ -15,7 +16,7 @@ const CROP_TINT: Record<string, string> = {
 }
 
 export default function Onboard() {
-  const { lang, t, setFarmId } = useFarmer()
+  const { lang, t, setFarmId, setLang } = useFarmer()
   const farms = useAsync(() => api.farms(lang), [lang])
   const crops = useAsync(() => api.crops(lang), [lang])
   const [adding, setAdding] = useState(false)
@@ -29,6 +30,11 @@ export default function Onboard() {
         <h1 className="mt-2 font-instrument-serif text-3xl leading-tight">{t('welcome')}</h1>
         <p className="mt-1 text-sm text-soil-dark/60">{t('welcomeSub')}</p>
       </div>
+
+      <section className="space-y-2">
+        <h2 className="text-sm font-semibold">{t('chooseLanguage')}</h2>
+        <LanguagePicker variant="grid" onPick={setLang} />
+      </section>
 
       {farms.loading && <Spinner />}
       {farms.error && <ErrorBox error={farms.error} onRetry={farms.reload} retryLabel={t('retry')} />}

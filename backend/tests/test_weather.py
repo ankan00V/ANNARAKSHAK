@@ -167,6 +167,7 @@ def test_every_rule_renders_in_every_language():
         "heat_people": {"day": "2026-09-15", "uv": 9, "tmax": 37, "feels": 42}, "cold": {"day": "2026-09-16", "tmin": 8},
         "fog": {"when": "2026-09-16T06:00", "vis": 300},
         "spray_window": {"start": "2026-09-15T16:00", "end": "2026-09-15T18:00", "wind": 7},
+        "greenness_drop": {"before": 0.71, "after": 0.55, "d1": "2026-09-01", "d2": "2026-09-11", "source": "Sentinel-2"},
     }
     assert set(fake_values) == {r["id"] for r in AM["rules"]}
     for rid, values in fake_values.items():
@@ -358,3 +359,59 @@ def test_push_key_is_a_p256_point(world):
     k = c.get("/api/push/key").json()["public_key"]
     raw = base64.urlsafe_b64decode(k + "=" * (-len(k) % 4))
     assert len(raw) == 65 and raw[0] == 4
+
+
+# --- satellite (NDVI) ----------------------------------------------------------
+
+def _scene(day: str, mean: float, cloud: int = 5, cover: int = 100, kind: str = "s2") -> dict:
+    ts = int(datetime.fromisoformat(day + "T05:30:00").timestamp())
+    return {"dt": ts, "type": kind, "cl": cloud, "dc": cover, "data": {"mean": mean, "p25": mean - .05, "p75": mean + .05}}
+
+
+def test_cloudy_scenes_never_count():
+    from app.engine import satellite
+    rows = [_scene("2026-09-01", 0.70), _scene("2026-09-05", 0.20, cloud=90), _scene("2026-09-07", 0.25, cover=40),
+            _scene("2026-09-09", 0.72, kind="l8")]
+    s = satellite.parse_history(rows)
+    assert [x["on"] for x in s] == ["2026-09-01", "2026-09-09"] and s[1]["source"] == "Landsat 8"
+
+
+def test_a_greenness_drop_is_a_notice_but_not_while_ripening():
+    from app.engine import satellite
+    today = date.today()
+    series = [{"on": (today - timedelta(days=12)).isoformat(), "mean": 0.72, "p25": 0.7, "p75": 0.75, "source": "Sentinel-2", "cloud": 3},
+              {"on": (today - timedelta(days=2)).isoformat(), "mean": 0.55, "p25": 0.5, "p75": 0.6, "source": "Sentinel-2", "cloud": 8}]
+    s = satellite.summarize(series, "rice", "flowering", today)
+    assert s["drop"] and s["change"] == -0.17 and s["band"] == "moderate"
+    adv = satellite.evaluate(s, NOW)
+    assert adv["rule"] == "greenness_drop" and adv["values"]["before"] == 0.72
+    r = agromet.render(adv, AM, "en", "rice", NOW)
+    assert "0.72 → 0.55" in r["title"] and "Sentinel-2" in r["text"]
+    assert not satellite.summarize(series, "rice", "maturity", today)["drop"]  # ripening: NDVI falls anyway
+    assert satellite.evaluate(satellite.summarize(series[:1], "rice", "flowering"), NOW) is None
+
+
+def test_field_polygon_is_the_farm_area_but_never_below_the_minimum():
+    import math
+
+    from app.engine import satellite
+    ring = satellite.square(21.17, 79.65, 0.4)["geometry"]["coordinates"][0]
+    side_m = (ring[2][1] - ring[0][1]) * 111_320
+    assert ring[0] == ring[-1] and math.isclose(side_m ** 2 / 10_000, satellite.MIN_HA, rel_tol=0.01)
+
+
+def test_watch_creates_the_polygon_once_and_issues_a_greenness_notice(world, monkeypatch):
+    from app.engine import satellite
+    monkeypatch.setattr(satellite, "configured", lambda: True)
+    made = []
+    monkeypatch.setattr(satellite, "create_polygon", lambda name, lat, lon, ha: made.append(name) or {"id": "poly-1"})
+    today = NOW.date()
+    monkeypatch.setattr(satellite, "ndvi_series", lambda pid, d: [
+        {"on": (today - timedelta(days=11)).isoformat(), "mean": 0.74, "p25": 0.7, "p75": 0.8, "source": "Sentinel-2", "cloud": 2},
+        {"on": (today - timedelta(days=1)).isoformat(), "mean": 0.58, "p25": 0.5, "p75": 0.6, "source": "Sentinel-2", "cloud": 4}])
+    stats = run(bundle())
+    run(bundle())
+    assert made == ["annrakshak-farm-1"] and stats["satellite"] == 1
+    with SessionLocal() as db:
+        n = db.query(Notice).filter(Notice.rule == "greenness_drop").one()
+        assert db.get(Farm, 1).agro_polygon_id == "poly-1" and n.values["after"] == 0.58

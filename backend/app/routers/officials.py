@@ -229,6 +229,26 @@ def risk_outlook(lang: str = "en", db: Session = Depends(get_db), kb: KB = Depen
     return sorted(rows, key=lambda r: (-r["high"], -r["farms"]))
 
 
+@router.get("/kcc")
+def kcc(month: int | None = None, kb: KB = Depends(get_kb)):
+    """When and where farmers call the Kisan Call Centre about each pest group —
+    an independent check on the risk calendar, and where to expect calls."""
+    data = services.kcc_signals()
+    if not data:
+        return {"available": False}
+    m = month or date.today().month
+    groups = []
+    for g in data["groups"]:
+        names = [tr(kb.targets[t]["names"], "en") for t in g["targets"] if t in kb.targets]
+        groups.append({k: g[k] for k in ("id", "crop", "label", "calls", "month_share", "peak_months", "by_year")}
+                      | {"targets": g["targets"], "target_names": names, "top_districts": g["top_districts"][:5],
+                         "expected_this_month": round(g["calls"] * g["month_share"][str(m)]
+                                                      / max(1, data["years"][1] - data["years"][0] + 1))})
+    groups.sort(key=lambda g: -g["expected_this_month"])
+    return {"available": True, "month": m, "note": data["_note"], "source": data["source"], "years": data["years"],
+            "coverage": data["coverage"], "groups": groups}
+
+
 @router.get("/model")
 def model_card():
     """Test-set report of the deployed model, straight from ml/artifacts/meta.json."""

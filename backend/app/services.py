@@ -30,7 +30,7 @@ from app.config import (
 from app.engine import advisory as advisory_engine
 from app.engine import doubt, gate, prior, risk, vision
 from app.engine.weather import WeatherUnavailable, fetch_month_rain, fetch_window, merge_sensor
-from app.kb import KB, tr
+from app.kb import KB, tr, trl
 from app.models import (
     Advisory,
     Alert,
@@ -161,7 +161,7 @@ def _pred_view(kb: KB, p: gate.Prediction, lang: str) -> dict:
     if p.target in kb.targets:
         v = kb.target_view(p.target, lang)
     elif gate.is_healthy(p.target) and crop in kb.crops:
-        name = HEALTHY_NAME.get(lang, HEALTHY_NAME["en"]).format(crop=tr(kb.crops[crop]["names"], lang))
+        name = tr(HEALTHY_NAME, lang).format(crop=tr(kb.crops[crop]["names"], lang))
         v = {"id": p.target, "name": name, "signature": "", "crop": crop}
     else:
         v = {"id": p.target, "name": p.target.replace("_", " "), "signature": "", "crop": gate.crop_of(p.target)}
@@ -180,7 +180,7 @@ def alert_view(kb: KB, a: Alert, lang: str) -> dict:
         "trigger": a.trigger,
         "level": a.level,
         "reason": tr(a.reason, lang),
-        "tasks": a.tasks.get(lang) or a.tasks["en"],
+        "tasks": trl(a.tasks, lang),
         "issued_on": a.issued_on.isoformat(),
         "outcome": a.outcome,
         "can_photo": t["tier"] == "diagnosable" and kb.crops[t["crop"]]["photo_diagnosis"],
@@ -725,6 +725,31 @@ def rainfall_normals() -> dict:
     return json.loads((KB_DIR / "imd_rainfall_normals.json").read_text(encoding="utf-8"))
 
 
+@lru_cache
+def kcc_signals() -> dict | None:
+    """Kisan Call Centre call patterns (built by data/kcc_signals.py); None if absent."""
+    path = KB_DIR / "kcc_signals.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
+
+
+def kcc_seasonal(kb: KB, farm: Farm, month: int, lang: str) -> list[dict]:
+    """Pest groups on this farm's crop whose KCC calls peak this month, the
+    farm's own district first."""
+    data = kcc_signals()
+    if not data:
+        return []
+    out = []
+    for g in data["groups"]:
+        if g["crop"] != farm.crop or month not in g["peak_months"]:
+            continue
+        local = (g.get("district_months", {}).get(farm.district) or {}).get(str(month), 0)
+        name = tr(kb.targets[g["targets"][0]]["names"], lang) if g["targets"] and g["targets"][0] in kb.targets \
+            else g["label"]
+        out.append({"group": g["id"], "name": name, "targets": g["targets"], "district_calls_this_month": local,
+                    "state_share_this_month": g["month_share"][str(month)], "calls": g["calls"]})
+    return sorted(out, key=lambda x: (-x["district_calls_this_month"], -x["calls"]))[:4]
+
+
 def rain_vs_normal(district: str, lat: float, lon: float, today: date | None = None) -> dict | None:
     """This month's rain so far against the IMD 1901-2015 normal for the
     district's subdivision, prorated to today's date."""
@@ -755,7 +780,7 @@ def rain_context(kb: KB, farm: Farm, lang: str) -> dict | None:
         return rc
     month_name = date.today().strftime("%B")
     sub_name = rc["subdivision"].title().replace("&", "and")
-    rc["text"] = RAIN_CONTEXT.get(lang, RAIN_CONTEXT["en"]).format(
+    rc["text"] = tr(RAIN_CONTEXT, lang).format(
         month=month_name, obs=rc["observed_mm"], exp=rc["expected_to_date_mm"], sub=sub_name,
         dep=rc["departure_pct"],
     )

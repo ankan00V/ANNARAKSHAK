@@ -36,7 +36,7 @@ router = APIRouter(prefix="/api", tags=["live"])
 MAX_FRAME_BYTES = 400_000
 MAX_FRAMES = 600
 MAX_SECONDS = 600
-LANGS = ("en", "hi", "mr")
+from app.i18n import LANGS  # noqa: E402
 
 
 @router.get("/farms/{farm_id}/live/context")

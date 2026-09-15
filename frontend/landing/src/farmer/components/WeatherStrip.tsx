@@ -2,6 +2,7 @@ import { CloudRain, Droplets } from 'lucide-react'
 import type { Home } from '../../api/types'
 import { Pill } from '../../ui/kit'
 import { useFarmer } from '../FarmerContext'
+import { bcp47 } from '../../lib/i18n'
 
 export default function WeatherStrip({ weather, rain }: { weather: Home['weather']; rain: Home['rain_context'] }) {
   const { t, lang } = useFarmer()
@@ -32,7 +33,7 @@ export default function WeatherStrip({ weather, rain }: { weather: Home['weather
                 }`}
               >
                 <p className="text-[10px] text-soil-dark/50">
-                  {date.toLocaleDateString(lang === 'en' ? 'en-IN' : `${lang}-IN`, { day: 'numeric', month: 'short' })}
+                  {date.toLocaleDateString(bcp47(lang), { day: 'numeric', month: 'short' })}
                 </p>
                 <p className="text-xs font-semibold mt-0.5">{d.t_max != null ? Math.round(d.t_max) : '–'}°</p>
                 <p className="text-[10px] text-soil-dark/50">{d.t_min != null ? Math.round(d.t_min) : '–'}°</p>

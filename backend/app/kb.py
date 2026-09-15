@@ -13,6 +13,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from app.config import KB_DIR
+from app.i18n import AUTHORED, lookup
 
 LANGS = ("en", "hi", "mr")
 TIER_ORDER = {"cultural": 0, "biological": 1, "chemical": 2}
@@ -26,13 +27,32 @@ class KBError(ValueError):
 
 
 def tr(text: dict | str | None, lang: str) -> str:
-    """Pick a language, falling back to English. Never returns another
-    language's text silently mislabelled — English is the only fallback."""
+    """Pick a language. Authored languages come from the dict; the machine-
+    translated ones from the reviewed translation memory (app.i18n), keyed by
+    the English. English is the only fallback — never another language's text
+    silently mislabelled."""
     if text is None:
         return ""
     if isinstance(text, str):
         return text
-    return text.get(lang) or text.get("en", "")
+    if text.get(lang):
+        return text[lang]
+    en = text.get("en", "")
+    if lang not in AUTHORED and isinstance(en, str):
+        return lookup(en, lang) or en
+    return en
+
+
+def trl(texts: dict | None, lang: str) -> list[str]:
+    """tr() for per-language lists (inspection tasks, what-to-do steps)."""
+    if not texts:
+        return []
+    if texts.get(lang):
+        return list(texts[lang])
+    en = list(texts.get("en", []))
+    if lang not in AUTHORED:
+        return [lookup(x, lang) or x for x in en]
+    return en
 
 
 @dataclass
@@ -260,7 +280,7 @@ def validate(kb: KB) -> list[str]:
 
 
 AGROMET_SEVERITIES = ("warning", "advice", "info")
-AGROMET_CATEGORIES = ("safety", "rain", "wind", "cold", "heat", "spray", "disease", "irrigation", "fog")
+AGROMET_CATEGORIES = ("safety", "rain", "wind", "cold", "heat", "spray", "disease", "irrigation", "fog", "crop")
 
 
 def _fields(text: str) -> set[str]:

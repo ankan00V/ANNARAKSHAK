@@ -19,12 +19,14 @@ SARVAM_API_KEY = os.environ.get("SARVAM_API_KEY")
 SARVAM_API_KEYS = list(dict.fromkeys(
     k.strip() for k in [*(os.environ.get("SARVAM_API_KEYS") or "").split(","), SARVAM_API_KEY or ""] if k.strip()))
 """Every Sarvam key we may use, rotated; one out of credits is benched and the next takes over."""
-OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY")  # optional; Open-Meteo is the keyless fallback
+OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY")
+AGRO_API_KEY = os.environ.get("AGRO_API_KEY")  # AgroMonitoring: satellite NDVI and soil per field  # optional; Open-Meteo is the keyless fallback
 SARVAM_TTS_MODEL = "bulbul:v3"
 SARVAM_STT_MODEL = "saaras:v3"
 SARVAM_TRANSLATE_MODEL = "sarvam-translate:v1"
 SARVAM_SPEAKER = "shubh"  # bulbul:v3 default; v2 voices are rejected by v3
-SARVAM_LANG = {"en": "en-IN", "hi": "hi-IN", "mr": "mr-IN"}
+SARVAM_LANG = {"en": "en-IN", "hi": "hi-IN", "mr": "mr-IN", "bn": "bn-IN", "ta": "ta-IN", "te": "te-IN",
+               "kn": "kn-IN", "ml": "ml-IN", "gu": "gu-IN", "pa": "pa-IN", "od": "od-IN"}
 KB_DIR = BACKEND_DIR / "kb"
 DATA_DIR = Path(os.environ.get("ANNRAKSHAK_DATA_DIR", BACKEND_DIR / ".data"))
 UPLOAD_DIR = DATA_DIR / "uploads"
