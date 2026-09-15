@@ -4,8 +4,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        'instrument-serif': ['"Instrument Serif"', 'serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        'instrument-serif': ['"Instrument Serif"', '"Noto Serif Devanagari"', 'serif'],
+        sans: ['Inter', '"Noto Sans Devanagari"', '"Noto Sans Bengali"', '"Noto Sans Tamil"', '"Noto Sans Telugu"',
+          '"Noto Sans Kannada"', '"Noto Sans Malayalam"', '"Noto Sans Gujarati"', '"Noto Sans Gurmukhi"', '"Noto Sans Oriya"',
+          'system-ui', 'sans-serif'],
       },
       colors: {
         soil: {
@@ -18,11 +20,17 @@ export default {
         },
         ochre: '#c8862d',
         cream: '#f7f3ec',
+        ember: '#b0472a',
       },
       keyframes: {
         fadein: {
           from: { opacity: '0', transform: 'translateY(4px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        scan: {
+          '0%': { top: '-20%' },
+          '50%': { top: '85%' },
+          '100%': { top: '-20%' },
         },
       },
       animation: {

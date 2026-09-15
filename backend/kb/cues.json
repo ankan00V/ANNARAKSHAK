@@ -1,0 +1,242 @@
+[
+  {
+    "id": "blast_vs_brown_spot_shape",
+    "pair": [
+      "rice_blast",
+      "rice_brown_spot"
+    ],
+    "yes_means": "rice_blast",
+    "question": {
+      "en": "Look closely at one spot. Is it pointed at both ends, like an eye or a narrow diamond — not round?",
+      "hi": "एक धब्बे को ध्यान से देखें। क्या वह दोनों सिरों पर नुकीला है, आँख या पतले हीरे जैसा — गोल नहीं?",
+      "mr": "एक ठिपका नीट पाहा. तो दोन्ही टोकांना टोकदार आहे का, डोळ्यासारखा किंवा अरुंद हिऱ्यासारखा — गोल नाही?"
+    },
+    "why": "Blast lesions are spindle-shaped and pointed at both ends; brown spot lesions are round to oval. Shape is more reliable in field light than colour.",
+    "source": "IRRI Rice Knowledge Bank fact sheets (Blast; Brown spot)"
+  },
+  {
+    "id": "blb_vs_blast_tip",
+    "pair": [
+      "rice_bacterial_leaf_blight",
+      "rice_blast"
+    ],
+    "yes_means": "rice_bacterial_leaf_blight",
+    "question": {
+      "en": "Does the yellowing start at the leaf tip or edge and run down the leaf as a long wavy stripe?",
+      "hi": "क्या पीलापन पत्ती की नोक या किनारे से शुरू होकर लंबी लहरदार पट्टी में नीचे बढ़ता है?",
+      "mr": "पिवळेपणा पानाच्या टोकापासून किंवा कडेपासून सुरू होऊन लांब लहरी पट्टीने खाली वाढतो का?"
+    },
+    "why": "Bacterial blight advances from the tip/margin as a continuous stripe; blast forms separate spindle spots in the leaf blade.",
+    "source": "IRRI Rice Knowledge Bank fact sheet (Bacterial blight)"
+  },
+  {
+    "id": "blb_vs_brown_spot_tip",
+    "pair": [
+      "rice_bacterial_leaf_blight",
+      "rice_brown_spot"
+    ],
+    "yes_means": "rice_bacterial_leaf_blight",
+    "question": {
+      "en": "Does the yellowing start at the leaf tip or edge and run down the leaf as a long wavy stripe?",
+      "hi": "क्या पीलापन पत्ती की नोक या किनारे से शुरू होकर लंबी लहरदार पट्टी में नीचे बढ़ता है?",
+      "mr": "पिवळेपणा पानाच्या टोकापासून किंवा कडेपासून सुरू होऊन लांब लहरी पट्टीने खाली वाढतो का?"
+    },
+    "why": "Bacterial blight is a spreading stripe from the tip; brown spot is many separate round spots.",
+    "source": "IRRI Rice Knowledge Bank fact sheets (Bacterial blight; Brown spot)"
+  },
+  {
+    "id": "sheath_blight_vs_blast_position",
+    "pair": [
+      "rice_sheath_blight",
+      "rice_blast"
+    ],
+    "yes_means": "rice_sheath_blight",
+    "question": {
+      "en": "Are the patches on the stem sheath near the water line, rather than on the flat leaf blade?",
+      "hi": "क्या धब्बे पानी की सतह के पास तने के आवरण पर हैं, पत्ती के चपटे भाग पर नहीं?",
+      "mr": "चट्टे पाण्याच्या पातळीजवळ खोडाच्या आवरणावर आहेत का, पानाच्या सपाट भागावर नाहीत?"
+    },
+    "why": "Sheath blight starts on sheaths at the water line and climbs; blast lesions sit on leaf blades.",
+    "source": "ICAR-IIRR Rice Knowledge Management Portal (Sheath blight)"
+  },
+  {
+    "id": "tungro_vs_blb_stunting",
+    "pair": [
+      "rice_tungro",
+      "rice_bacterial_leaf_blight"
+    ],
+    "yes_means": "rice_tungro",
+    "question": {
+      "en": "Are the yellow plants clearly shorter than their neighbours, in patches, with fewer tillers?",
+      "hi": "क्या पीले पौधे पास वाले पौधों से साफ़ छोटे हैं, टुकड़ों में, और कल्ले कम हैं?",
+      "mr": "पिवळी रोपे शेजारच्या रोपांपेक्षा स्पष्टपणे खुजी, पट्ट्यांत आणि कमी फुटव्यांची आहेत का?"
+    },
+    "why": "Tungro stunts whole plants in patches; bacterial blight dries leaves without stunting.",
+    "source": "IRRI Rice Knowledge Bank fact sheet (Tungro)"
+  },
+  {
+    "id": "leaf_folder_vs_blb_fold",
+    "pair": [
+      "rice_leaf_folder",
+      "rice_bacterial_leaf_blight"
+    ],
+    "yes_means": "rice_leaf_folder",
+    "question": {
+      "en": "Are the damaged leaves folded lengthwise into a tube, with a small caterpillar or droppings inside?",
+      "hi": "क्या क्षतिग्रस्त पत्तियाँ लंबाई में नली जैसी मुड़ी हैं, अंदर छोटी इल्ली या मल है?",
+      "mr": "बाधित पाने लांबीने नळीसारखी गुंडाळलेली आहेत का, आत लहान अळी किंवा विष्ठा आहे?"
+    },
+    "why": "Leaf folder whitening sits inside folded leaves with the larva present; blight stripes are on flat leaves.",
+    "source": "ICAR-IIRR Rice Knowledge Management Portal (Leaf folder)"
+  },
+  {
+    "id": "stem_borer_vs_planthopper_pull",
+    "pair": [
+      "rice_yellow_stem_borer",
+      "rice_brown_planthopper"
+    ],
+    "yes_means": "rice_yellow_stem_borer",
+    "question": {
+      "en": "Tug the dried central shoot. Does it pull out easily, leaving a rotten base?",
+      "hi": "सूखी बीच की पत्ती को खींचें। क्या वह आसानी से निकल आती है, नीचे सड़ा हुआ भाग?",
+      "mr": "वाळलेला मधला कोंब ओढा. तो सहज निघतो का, खाली कुजलेला भाग?"
+    },
+    "why": "A borer-killed shoot (dead heart) pulls out easily; hopper burn dries whole hills in circular patches without loosening the shoot.",
+    "source": "ICAR-IIRR Rice Knowledge Management Portal (Yellow stem borer; Brown planthopper)"
+  },
+  {
+    "id": "turcicum_vs_maydis_length",
+    "pair": [
+      "maize_turcicum_leaf_blight",
+      "maize_maydis_leaf_blight"
+    ],
+    "yes_means": "maize_turcicum_leaf_blight",
+    "question": {
+      "en": "Are most spots long — longer than your thumb — and cigar-shaped, rather than small boxes between the veins?",
+      "hi": "क्या ज़्यादातर धब्बे लंबे हैं — अंगूठे से भी लंबे — सिगार जैसे, नसों के बीच छोटे डिब्बों जैसे नहीं?",
+      "mr": "बहुतेक चट्टे लांब आहेत का — अंगठ्यापेक्षा लांब — सिगारसारखे, शिरांमधील लहान चौकटींसारखे नाहीत?"
+    },
+    "why": "Turcicum lesions are 3–15 cm elliptical; maydis lesions are 1–3 cm and limited by veins.",
+    "source": "CIMMYT Maize Doctor; ICAR-IIMR maize disease pages"
+  },
+  {
+    "id": "rust_vs_maydis_rub",
+    "pair": [
+      "maize_common_rust",
+      "maize_maydis_leaf_blight"
+    ],
+    "yes_means": "maize_common_rust",
+    "question": {
+      "en": "Rub a spot with your finger. Does reddish-brown powder come off?",
+      "hi": "एक धब्बे को उंगली से रगड़ें। क्या लाल-भूरा चूर्ण निकलता है?",
+      "mr": "एक ठिपका बोटाने चोळा. लालसर-तपकिरी भुकटी निघते का?"
+    },
+    "why": "Rust pustules release powdery urediniospores; blight lesions are flat and dry.",
+    "source": "CIMMYT Maize Doctor (Common rust)"
+  },
+  {
+    "id": "rust_vs_turcicum_rub",
+    "pair": [
+      "maize_common_rust",
+      "maize_turcicum_leaf_blight"
+    ],
+    "yes_means": "maize_common_rust",
+    "question": {
+      "en": "Rub a spot with your finger. Does reddish-brown powder come off?",
+      "hi": "एक धब्बे को उंगली से रगड़ें। क्या लाल-भूरा चूर्ण निकलता है?",
+      "mr": "एक ठिपका बोटाने चोळा. लालसर-तपकिरी भुकटी निघते का?"
+    },
+    "why": "Rust pustules release powder; turcicum lesions are flat, long and dry.",
+    "source": "CIMMYT Maize Doctor (Common rust; Northern corn leaf blight)"
+  },
+  {
+    "id": "faw_vs_stem_borer_frass",
+    "pair": [
+      "maize_fall_armyworm",
+      "maize_stem_borer"
+    ],
+    "yes_means": "maize_fall_armyworm",
+    "question": {
+      "en": "Look into the whorl. Is it packed with wet, sawdust-like droppings and ragged holes?",
+      "hi": "गोभ के अंदर देखें। क्या वह गीले बुरादे जैसे मल और फटे छेदों से भरी है?",
+      "mr": "पोंग्यात पाहा. तो ओल्या भुशासारख्या विष्ठेने व फाटक्या छिद्रांनी भरलेला आहे का?"
+    },
+    "why": "Fall armyworm leaves heavy moist frass and ragged feeding in the whorl; stem borer leaves neat rows of shot holes and tunnels.",
+    "source": "ICAR-IIMR Fall armyworm advisory"
+  },
+  {
+    "id": "blsb_vs_turcicum_bands",
+    "pair": [
+      "maize_banded_leaf_sheath_blight",
+      "maize_turcicum_leaf_blight"
+    ],
+    "yes_means": "maize_banded_leaf_sheath_blight",
+    "question": {
+      "en": "Are the patches on the lower leaf sheaths, with rings or bands of light and dark brown?",
+      "hi": "क्या धब्बे निचले आवरणों पर हैं, हल्की और गहरी भूरी पट्टियों या छल्लों के साथ?",
+      "mr": "चट्टे खालच्या आवरणांवर आहेत का, फिकट व गडद तपकिरी पट्टे किंवा वलयांसह?"
+    },
+    "why": "BLSB forms banded patches on sheaths near the base; turcicum forms separate cigar lesions on blades.",
+    "source": "ICAR-IIMR maize disease pages (Banded leaf and sheath blight)"
+  },
+  {
+    "id": "wsb_vs_ysb_wing_dot",
+    "pair": [
+      "rice_white_stem_borer",
+      "rice_yellow_stem_borer"
+    ],
+    "yes_means": "rice_yellow_stem_borer",
+    "question": {
+      "en": "Look at a moth on the leaves. Is it straw-yellow with a small black dot in the middle of each front wing?",
+      "hi": "पत्तियों पर बैठे पतंगे को देखें। क्या वह भूसे जैसा पीला है और हर अगले पंख के बीच एक छोटा काला बिंदु है?",
+      "mr": "पानांवरील पतंग पाहा. तो गवताळ-पिवळा आहे का आणि प्रत्येक पुढच्या पंखाच्या मध्यभागी लहान काळा ठिपका आहे का?"
+    },
+    "why": "Yellow stem borer females are yellowish with a black spot on each forewing; white stem borer moths are pure white without spots.",
+    "source": "ICAR-IIRR Rice Knowledge Management Portal (stem borers)"
+  },
+  {
+    "id": "leaf_folder_vs_skipper_fold",
+    "pair": [
+      "rice_leaf_folder",
+      "rice_skipper"
+    ],
+    "yes_means": "rice_leaf_folder",
+    "question": {
+      "en": "Are leaves folded lengthwise into long tubes with white papery streaks inside, rather than just the tip rolled?",
+      "hi": "क्या पत्तियाँ लंबाई में लंबी नली जैसी मुड़ी हैं और अंदर सफेद कागज़ जैसी धारियाँ हैं, सिर्फ नोक नहीं?",
+      "mr": "पाने लांबीने लांब नळीसारखी गुंडाळलेली आहेत का व आत पांढरे कागदासारखे पट्टे आहेत का, फक्त टोक नव्हे?"
+    },
+    "why": "Leaf folder larvae fold the blade lengthwise and scrape the green inside, leaving white streaks; skipper larvae roll and eat leaf tips from the edge.",
+    "source": "ICAR-IIRR Rice Knowledge Management Portal (leaf folder; skipper)"
+  },
+  {
+    "id": "curvularia_vs_maydis_shape",
+    "pair": [
+      "maize_curvularia_leaf_spot",
+      "maize_maydis_leaf_blight"
+    ],
+    "yes_means": "maize_curvularia_leaf_spot",
+    "question": {
+      "en": "Are the spots small and round with a pale centre and a yellow ring, rather than tan boxes between the veins?",
+      "hi": "क्या धब्बे छोटे और गोल हैं, बीच में हल्के और पीले घेरे वाले, नसों के बीच भूरे डिब्बों जैसे नहीं?",
+      "mr": "ठिपके लहान व गोल आहेत का, मध्यभागी फिकट व पिवळ्या वलयाचे, शिरांमधील तपकिरी चौकटींसारखे नाहीत?"
+    },
+    "why": "Curvularia spots are small, round and haloed; maydis lesions are rectangular and bounded by veins.",
+    "source": "ICAR-IIMR maize disease pages"
+  },
+  {
+    "id": "turcicum_vs_curvularia_length",
+    "pair": [
+      "maize_turcicum_leaf_blight",
+      "maize_curvularia_leaf_spot"
+    ],
+    "yes_means": "maize_turcicum_leaf_blight",
+    "question": {
+      "en": "Are most spots long — longer than your thumb — and cigar-shaped, rather than small and round?",
+      "hi": "क्या ज़्यादातर धब्बे लंबे हैं — अंगूठे से भी लंबे — सिगार जैसे, छोटे गोल नहीं?",
+      "mr": "बहुतेक चट्टे लांब आहेत का — अंगठ्यापेक्षा लांब — सिगारसारखे, लहान गोल नाहीत?"
+    },
+    "why": "Turcicum lesions are 3–15 cm elliptical; curvularia spots are a few millimetres and round.",
+    "source": "CIMMYT Maize Doctor; ICAR-IIMR"
+  }
+]

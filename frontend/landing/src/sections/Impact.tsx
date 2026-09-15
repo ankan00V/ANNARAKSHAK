@@ -1,14 +1,15 @@
 const FARMER_POINTS = [
-  'Act the same day symptoms appear, not weeks later.',
-  'Safer pesticide use — the right chemical, at the right dose.',
-  'Advice in your own language, heard out loud, not just read.',
-  'No waiting on a lab result before starting treatment.',
+  'Know where to look before symptoms spread, from your own weather and crop stage.',
+  'Fewer wasted sprays — wrong-class, wrong-crop and weed-killer sprays are stopped.',
+  'Advice in Marathi or Hindi, heard out loud, not just read.',
+  'An honest “I’m not sure” and a real expert, instead of a confident wrong answer.',
 ]
 
 const OFFICIAL_POINTS = [
-  'District-wide visibility into outbreaks as they emerge.',
-  'A validation queue instead of blind trust in AI outputs.',
-  'Better planning for preventive response and surveillance.',
+  'Hotspots from expert-confirmed cases, not rumours — with a 5 km spread radius.',
+  'A validation queue that measures field accuracy instead of trusting the model.',
+  'A weekly risk outlook by pest and district to plan preventive interventions.',
+  'IMD rainfall against normal and the state pesticide-use baseline on one screen.',
 ]
 
 function PointList({ points, dotClass }: { points: string[]; dotClass: string }) {

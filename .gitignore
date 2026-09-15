@@ -16,8 +16,11 @@ build/
 data/raw/
 data/processed/
 ml/artifacts/*
+ml/artifacts_v1/
 !ml/artifacts/.gitkeep
 
 .ipynb_checkpoints/
 .DS_Store
 *.log
+
+backend/.data/

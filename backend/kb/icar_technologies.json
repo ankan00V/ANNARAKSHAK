@@ -1,0 +1,332 @@
+{
+  "_source": {
+    "dataset": "ICAR Technology repository (data.gov.in catalog 'ICAR Technologies'; columns: Technology Name, Brief Description, Benefits/Utility, Contact Details)",
+    "received": "2026-09-15, rows pasted by the team; the full CSV is not yet in data/raw (see data/MANUAL_DOWNLOADS.md)",
+    "selection": "Only rows for our four crops and their pests/diseases, plus decision tools and Maharashtra crop-weather calendars. 'source_name' is the repository's Technology Name, kept verbatim (mojibake removed) so data/ingest.py can cross-check it against the CSV.",
+    "wording": "Summaries are ours, written from the repository's description. 'claim' fields repeat only what the repository states and say who reported it. 'link_reason' marks a link we drew ourselves.",
+    "licence": "Government Open Data License - India"
+  },
+  "institutes": {
+    "nrri": {"name": "ICAR-National Rice Research Institute", "city": "Cuttack", "state": "Odisha", "phone": "0671-2367757", "email": "director.nrri@icar.gov.in"},
+    "iirr": {"name": "ICAR-Indian Institute of Rice Research", "city": "Hyderabad", "state": "Telangana", "phone": "040-24591216", "email": "director.iirr@icar.gov.in"},
+    "nbair": {"name": "ICAR-National Bureau of Agricultural Insect Resources", "city": "Bengaluru", "state": "Karnataka", "phone": "080-23412983", "email": "director.nbair@icar.gov.in"},
+    "ncipm": {"name": "ICAR-National Centre for Integrated Pest Management", "city": "New Delhi", "state": "Delhi", "phone": "011-25843936", "email": "dirctor.ncipm@icar.gov.in", "email_note": "as published in the repository; the spelling 'dirctor' looks like a typo - confirm by phone"},
+    "cicr": {"name": "ICAR-Central Institute for Cotton Research", "city": "Nagpur", "state": "Maharashtra", "phone": "07103-275536", "email": "director.cicr@icar.gov.in"},
+    "iisr": {"name": "ICAR-Indian Institute of Soybean Research", "city": "Indore", "state": "Madhya Pradesh", "phone": "0731-2476188", "email": "director.soybean@icar.gov.in"},
+    "crida": {"name": "ICAR-Central Research Institute for Dryland Agriculture", "city": "Hyderabad", "state": "Telangana", "phone": "040-24530177", "email": "director.crida@icar.gov.in"}
+  },
+  "technologies": [
+    {
+      "id": "nbair_bt25_faw", "short": "Bt NBAIR-BT25",
+      "source_name": "Liquid Based Formulation of Bacillus thuringiensis var. kurstaki (NBAIR-BT-25 strain) (10% Water Miscible Liquid for control of Spodoptera frugiperda (fall army worm).",
+      "institute": "nbair", "type": "biocontrol", "audience": "farmer",
+      "crops": ["maize"], "targets": ["maize_fall_armyworm"],
+      "summary": {
+        "en": "Indian Bt (Bacillus thuringiensis kurstaki NBAIR-BT25) liquid made for fall armyworm. Sprayed at 2% (20 ml per litre); harmless to predators and other beneficial insects.",
+        "hi": "फॉल आर्मीवर्म के लिए बना भारतीय बीटी (बैसिलस थुरिंजिएन्सिस NBAIR-BT25) घोल। 2% (20 मिली प्रति लीटर) छिड़काव; मित्र कीटों को नुकसान नहीं।",
+        "mr": "लष्करी अळीसाठी बनवलेले भारतीय बीटी (बॅसिलस थुरिंजिएन्सिस NBAIR-BT25) द्रावण. 2% (20 मिली प्रति लिटर) फवारणी; मित्रकीटकांना हानी नाही."
+      },
+      "claim": {
+        "en": "ICAR-NBAIR field trials in Karnataka and Andhra Pradesh (2018): 70-80% efficacy against fall armyworm. Shelf life one year.",
+        "hi": "ICAR-NBAIR के कर्नाटक व आंध्र प्रदेश खेत परीक्षण (2018): फॉल आर्मीवर्म पर 70-80% असर। एक साल तक टिकाऊ।",
+        "mr": "ICAR-NBAIR च्या कर्नाटक व आंध्र प्रदेशातील शेत चाचण्या (2018): लष्करी अळीवर 70-80% परिणाम. एक वर्ष टिकते."
+      }
+    },
+    {
+      "id": "nbair_ma35_faw", "short": "Metarhizium Ma-35",
+      "source_name": "Metarhizium anisopliae ICAR-NBAIR Ma-35 for management of Fall armyworm Spodoptera frugiperda in Maize",
+      "institute": "nbair", "type": "biocontrol", "audience": "farmer",
+      "crops": ["maize"], "targets": ["maize_fall_armyworm"],
+      "summary": {
+        "en": "Fungus that infects fall armyworm larvae. Talc formulation sprayed into the whorl three times: 20, 30 and 40 days after sowing.",
+        "hi": "फॉल आर्मीवर्म की इल्लियों को संक्रमित करने वाली फफूँद। टैल्क फॉर्मूलेशन गोभ में तीन बार छिड़कें: बुवाई के 20, 30 और 40 दिन बाद।",
+        "mr": "लष्करी अळ्यांना संसर्ग करणारी बुरशी. टाल्क फॉर्म्युलेशन पोंग्यात तीन वेळा फवारा: पेरणीनंतर 20, 30 व 40 दिवसांनी."
+      },
+      "claim": {
+        "en": "ICAR-NBAIR trials, Bengaluru (2018-20): 63-76% less plant damage and 38-53% more yield than untreated maize.",
+        "hi": "ICAR-NBAIR परीक्षण, बेंगलुरु (2018-20): बिना उपचार की तुलना में 63-76% कम पौध क्षति और 38-53% अधिक उपज।",
+        "mr": "ICAR-NBAIR चाचण्या, बंगळुरू (2018-20): उपचार न केलेल्या मक्यापेक्षा 63-76% कमी नुकसान व 38-53% जास्त उत्पादन."
+      }
+    },
+    {
+      "id": "nbair_spfrnpv_faw", "short": "SpfrNPV virus",
+      "source_name": "Aqueous formulation of Spodoptera frugiperda nucleopolyhedrovirus NBAIR-1 (SpfrNPV NBAIR-1) for the management of invasive fall armyworm",
+      "institute": "nbair", "type": "biocontrol", "audience": "farmer",
+      "crops": ["maize"], "targets": ["maize_fall_armyworm"],
+      "summary": {
+        "en": "A virus that kills only fall armyworm larvae. Spray 4 ml per litre twice, 20 and 35 days after sowing.",
+        "hi": "केवल फॉल आर्मीवर्म की इल्लियों को मारने वाला वायरस। 4 मिली प्रति लीटर दो बार छिड़कें, बुवाई के 20 और 35 दिन बाद।",
+        "mr": "फक्त लष्करी अळ्यांना मारणारा विषाणू. 4 मिली प्रति लिटर दोन वेळा फवारा, पेरणीनंतर 20 व 35 दिवसांनी."
+      },
+      "claim": {
+        "en": "ICAR-NBAIR kharif and rabi trials: 69-83% fewer fall armyworm larvae; safe to mammals.",
+        "hi": "ICAR-NBAIR खरीफ व रबी परीक्षण: फॉल आर्मीवर्म इल्लियाँ 69-83% कम; स्तनधारियों के लिए सुरक्षित।",
+        "mr": "ICAR-NBAIR खरीप व रब्बी चाचण्या: लष्करी अळ्या 69-83% कमी; सस्तन प्राण्यांसाठी सुरक्षित."
+      }
+    },
+    {
+      "id": "ncipm_faw_ipm_app", "short": "Faw_ipm app",
+      "source_name": "Mobile App on Fall Armyworm Integrated Pest Management (Faw_ipm)",
+      "institute": "ncipm", "type": "app", "audience": "farmer",
+      "crops": ["maize"], "targets": ["maize_fall_armyworm"],
+      "summary": {
+        "en": "Free ICAR app (Faw_ipm): fall armyworm control step by step, and how much of each product to buy for your field area.",
+        "hi": "मुफ्त ICAR ऐप (Faw_ipm): फॉल आर्मीवर्म नियंत्रण कदम-दर-कदम, और आपके खेत के लिए कितनी दवा खरीदें।",
+        "mr": "मोफत ICAR ॲप (Faw_ipm): लष्करी अळी नियंत्रण टप्प्याटप्प्याने, आणि तुमच्या शेतासाठी किती औषध घ्यावे."
+      }
+    },
+    {
+      "id": "ncipm_maize_pc", "short": "Maize-PC app",
+      "source_name": "Mobile app on Maize Pesticide Calculator (Maize-PC)",
+      "institute": "ncipm", "type": "app", "audience": "farmer",
+      "crops": ["maize"], "targets": [],
+      "summary": {
+        "en": "Free ICAR app (Maize-PC): pesticides with a label claim on maize, their dose and how to dilute them.",
+        "hi": "मुफ्त ICAR ऐप (Maize-PC): मक्का पर लेबल-मान्य कीटनाशक, उनकी मात्रा और घोल बनाने का तरीका।",
+        "mr": "मोफत ICAR ॲप (Maize-PC): मक्यावर लेबल-मान्य कीटकनाशके, त्यांची मात्रा व द्रावण कसे करावे."
+      }
+    },
+    {
+      "id": "nbair_faw_lure", "short": "FAW slow-release lure",
+      "source_name": "Adsorption and delivery of molecules using nanoporous materials  for management of Fall Army Worm, Spodoptera frugiperda",
+      "institute": "nbair", "type": "monitoring", "audience": "official",
+      "crops": ["maize"], "targets": ["maize_fall_armyworm"],
+      "summary": {
+        "en": "Slow-release pheromone dispenser for fall armyworm traps; releases lure more evenly and lasts longer in the field than rubber septa. Available for licensing, not yet a shop product."
+      }
+    },
+    {
+      "id": "nrri_tricho_tc", "short": "Tricho-card (T.c)",
+      "source_name": "Management of rice leaf folder using NRRI Tricho card (T.c)",
+      "institute": "nrri", "type": "biocontrol", "audience": "farmer",
+      "crops": ["rice"], "targets": ["rice_leaf_folder"],
+      "summary": {
+        "en": "Tricho-card: 18,000-20,000 eggs parasitised by Trichogramma chilonis wasps, which then destroy leaf folder eggs in your field.",
+        "hi": "ट्राइको-कार्ड: ट्राइकोग्रामा चिलोनिस से परजीवीकृत 18,000-20,000 अंडे; निकलने वाले मित्र कीट पत्ती लपेटक के अंडे नष्ट करते हैं।",
+        "mr": "ट्रायको-कार्ड: ट्रायकोग्रामा चिलोनिसने परोपजीवीग्रस्त 18,000-20,000 अंडी; बाहेर पडणारे मित्रकीटक पाने गुंडाळणाऱ्या अळीची अंडी नष्ट करतात."
+      },
+      "supply": {
+        "en": "Sold at ICAR-NRRI, Cuttack: Rs 60 per card. Orders above 50 cards need 45 days' notice; collected in person.",
+        "hi": "ICAR-NRRI, कटक में उपलब्ध: 60 रुपये प्रति कार्ड। 50 से अधिक कार्ड के लिए 45 दिन पहले ऑर्डर; स्वयं लेना होता है।",
+        "mr": "ICAR-NRRI, कटक येथे उपलब्ध: 60 रुपये प्रति कार्ड. 50 पेक्षा जास्त कार्डसाठी 45 दिवस आधी मागणी; स्वतः घ्यावे लागते."
+      },
+      "lead_time_days": 45
+    },
+    {
+      "id": "nrri_bracon", "short": "Bracon card",
+      "source_name": "Management of rice leaf folder using NRRI Bracon card (B.h)",
+      "institute": "nrri", "type": "biocontrol", "audience": "farmer",
+      "crops": ["rice"], "targets": ["rice_leaf_folder"],
+      "summary": {
+        "en": "Bracon card: about 500 pupae of the wasp Bracon hebetor, which attacks leaf folder caterpillars.",
+        "hi": "ब्रैकॉन कार्ड: ब्रैकॉन हेबेटर मित्र कीट के लगभग 500 प्यूपा, जो पत्ती लपेटक की इल्लियों पर हमला करते हैं।",
+        "mr": "ब्रॅकॉन कार्ड: ब्रॅकॉन हेबेटर मित्रकीटकाचे सुमारे 500 कोष, जे पाने गुंडाळणाऱ्या अळ्यांवर हल्ला करतात."
+      },
+      "supply": {
+        "en": "Sold at ICAR-NRRI, Cuttack: Rs 70 per card. Orders above 50 cards need 45 days' notice.",
+        "hi": "ICAR-NRRI, कटक में उपलब्ध: 70 रुपये प्रति कार्ड। 50 से अधिक कार्ड के लिए 45 दिन पहले ऑर्डर।",
+        "mr": "ICAR-NRRI, कटक येथे उपलब्ध: 70 रुपये प्रति कार्ड. 50 पेक्षा जास्त कार्डसाठी 45 दिवस आधी मागणी."
+      },
+      "lead_time_days": 45
+    },
+    {
+      "id": "nrri_tricho_tj", "short": "Tricho-card (T.j)",
+      "source_name": "NRRI Tricho card (T.j)",
+      "institute": "nrri", "type": "biocontrol", "audience": "farmer",
+      "crops": ["rice"], "targets": ["rice_yellow_stem_borer"],
+      "summary": {
+        "en": "Trichogramma japonicum cards against yellow stem borer: 3 cards per hectare from 30 days after transplanting, released 5 times at 7-10 day intervals. No insecticide where cards are placed.",
+        "hi": "पीले तना छेदक के लिए ट्राइकोग्रामा जैपोनिकम कार्ड: रोपाई के 30 दिन बाद से 3 कार्ड प्रति हेक्टेयर, 7-10 दिन के अंतर पर 5 बार। कार्ड वाले खेत में कीटनाशक न डालें।",
+        "mr": "पिवळ्या खोडकिड्यासाठी ट्रायकोग्रामा जॅपोनिकम कार्ड: लावणीनंतर 30 दिवसांपासून हेक्टरी 3 कार्ड, 7-10 दिवसांच्या अंतराने 5 वेळा. कार्ड लावलेल्या शेतात कीटकनाशक वापरू नका."
+      },
+      "supply": {
+        "en": "ICAR-NRRI, Cuttack. Large orders need 45 days' notice.",
+        "hi": "ICAR-NRRI, कटक। बड़े ऑर्डर के लिए 45 दिन पहले सूचना।",
+        "mr": "ICAR-NRRI, कटक. मोठ्या मागणीसाठी 45 दिवस आधी कळवा."
+      },
+      "lead_time_days": 45
+    },
+    {
+      "id": "nbair_tc_mits", "short": "T. chilonis, spray-tolerant",
+      "source_name": "Multiple insecticide tolerant strain egg parasitoid, Trichogramma chilonis",
+      "institute": "nbair", "type": "biocontrol", "audience": "farmer",
+      "crops": ["rice", "maize", "cotton"],
+      "targets": ["rice_yellow_stem_borer", "rice_leaf_folder", "maize_stem_borer", "cotton_pink_bollworm", "cotton_american_bollworm"],
+      "summary": {
+        "en": "A Trichogramma strain bred to survive insecticide sprays, so egg parasitism continues in fields that are also sprayed.",
+        "hi": "कीटनाशक छिड़काव में भी जीवित रहने वाला ट्राइकोग्रामा स्ट्रेन, ताकि छिड़काव वाले खेतों में भी अंडों पर परजीवीकरण चलता रहे।",
+        "mr": "कीटकनाशक फवारणीतही टिकणारा ट्रायकोग्रामा स्ट्रेन, त्यामुळे फवारणी झालेल्या शेतातही अंड्यांवर परोपजीवीकरण सुरू राहते."
+      },
+      "claim": {
+        "en": "ICAR-NBAIR: parasitises about 60% of pest eggs in sprayed fields, where ordinary strains manage under 5%.",
+        "hi": "ICAR-NBAIR: छिड़काव वाले खेतों में लगभग 60% कीट अंडों पर परजीवीकरण, जहाँ साधारण स्ट्रेन 5% से कम।",
+        "mr": "ICAR-NBAIR: फवारणी झालेल्या शेतात सुमारे 60% किडींच्या अंड्यांवर परोपजीवीकरण, सामान्य स्ट्रेन 5% पेक्षा कमी."
+      }
+    },
+    {
+      "id": "nbair_tc_htts", "short": "T. chilonis, heat-tolerant",
+      "source_name": "High temperature tolerant strain of egg parasitoid Trichogramma chilonis",
+      "institute": "nbair", "type": "biocontrol", "audience": "farmer",
+      "crops": ["rice", "maize", "cotton"],
+      "targets": ["rice_yellow_stem_borer", "rice_leaf_folder", "maize_stem_borer", "cotton_pink_bollworm", "cotton_american_bollworm"],
+      "summary": {
+        "en": "A Trichogramma strain that keeps working at 32-40 °C, for hot regions where ordinary egg parasitoids fail.",
+        "hi": "32-40 °C तापमान पर भी काम करने वाला ट्राइकोग्रामा स्ट्रेन, गर्म क्षेत्रों के लिए जहाँ साधारण परजीवी काम नहीं करते।",
+        "mr": "32-40 °C तापमानातही काम करणारा ट्रायकोग्रामा स्ट्रेन, उष्ण भागांसाठी जिथे सामान्य परोपजीवी निकामी ठरतात."
+      },
+      "claim": {
+        "en": "ICAR-NBAIR: developed for high-temperature regions; parasitises eggs of most caterpillar pests including cotton bollworms, corn borers, rice stem borer and leaf folder.",
+        "hi": "ICAR-NBAIR: अधिक तापमान वाले क्षेत्रों के लिए विकसित; कपास की सुंडियों, मक्का तना छेदक, धान तना छेदक व पत्ती लपेटक के अंडों पर परजीवीकरण।",
+        "mr": "ICAR-NBAIR: उष्ण प्रदेशांसाठी विकसित; कापसाच्या बोंडअळ्या, मका खोडकिडा, भात खोडकिडा व पाने गुंडाळणारी अळी यांच्या अंड्यांवर परोपजीवीकरण."
+      }
+    },
+    {
+      "id": "nbair_chrysoperla", "short": "Chrysoperla, spray-tolerant",
+      "source_name": "Pesticide tolerant strain of aphid lion, Chrysoperla zastrowi sillemi, an important predator of sucking pests",
+      "institute": "nbair", "type": "biocontrol", "audience": "farmer",
+      "crops": ["cotton", "maize"], "targets": ["cotton_whitefly", "cotton_jassid", "maize_aphid"],
+      "summary": {
+        "en": "Green lacewing (aphid lion) strain that survives insecticide sprays and heat; its larvae eat sucking pests and the eggs and young larvae of caterpillars.",
+        "hi": "कीटनाशक और गर्मी सहने वाला क्राइसोपर्ला (एफिड लायन) स्ट्रेन; इसकी इल्लियाँ रस चूसक कीट और इल्लियों के अंडे व छोटी इल्लियाँ खाती हैं।",
+        "mr": "कीटकनाशक व उष्णता सहन करणारा क्रायसोपर्ला (मावा सिंह) स्ट्रेन; त्याच्या अळ्या रसशोषक किडी व अळ्यांची अंडी आणि लहान अळ्या खातात."
+      },
+      "claim": {
+        "en": "ICAR-NBAIR: the existing lacewing strains are not effective in sprayed fields; this one keeps feeding under pesticide and high-temperature stress.",
+        "hi": "ICAR-NBAIR: मौजूदा स्ट्रेन छिड़काव वाले खेतों में असरदार नहीं; यह कीटनाशक व अधिक तापमान में भी खाता रहता है।",
+        "mr": "ICAR-NBAIR: सध्याचे स्ट्रेन फवारणी झालेल्या शेतात प्रभावी नाहीत; हा कीटकनाशक व जास्त तापमानातही खात राहतो."
+      }
+    },
+    {
+      "id": "nbair_btg4", "short": "Bt NBAIR-BTG4",
+      "source_name": "Liquid formulation of Bacillus thuringiensis var. kurstaki (NBAIR-BTG4) for control of lepidopteran insect pests.",
+      "institute": "nbair", "type": "biocontrol", "audience": "farmer",
+      "crops": ["cotton", "soybean"], "targets": ["cotton_american_bollworm", "soybean_tobacco_caterpillar"],
+      "summary": {
+        "en": "Indian Bt liquid (NBAIR-BTG4) sprayed at 2% against caterpillars such as Helicoverpa armigera and Spodoptera litura.",
+        "hi": "भारतीय बीटी घोल (NBAIR-BTG4), हेलिकोवर्पा आर्मिजेरा और स्पोडोप्टेरा लिटूरा जैसी इल्लियों पर 2% छिड़काव।",
+        "mr": "भारतीय बीटी द्रावण (NBAIR-BTG4), हेलिकोव्हर्पा आर्मिजेरा व स्पोडोप्टेरा लिटूरा सारख्या अळ्यांवर 2% फवारणी."
+      },
+      "claim": {
+        "en": "ICAR-NBAIR: supplied to AICRP centres since 2012; about 500 ha of pigeonpea and 500 acres of vegetables covered in trials.",
+        "hi": "ICAR-NBAIR: 2012 से AICRP केंद्रों को आपूर्ति; परीक्षणों में लगभग 500 हेक्टेयर अरहर और 500 एकड़ सब्जियाँ।",
+        "mr": "ICAR-NBAIR: 2012 पासून AICRP केंद्रांना पुरवठा; चाचण्यांत सुमारे 500 हेक्टर तूर व 500 एकर भाजीपाला."
+      }
+    },
+    {
+      "id": "cicr_suraj", "short": "Suraj (variety)",
+      "source_name": "Suraj  - Cotton Variety",
+      "institute": "cicr", "type": "variety", "audience": "farmer",
+      "crops": ["cotton"], "targets": ["cotton_jassid", "cotton_whitefly"],
+      "summary": {
+        "en": "Suraj: long-staple cotton variety with sucking-pest tolerance, grown in South and Central zone states (Maharashtra is Central zone). Yield potential 25 q/ha.",
+        "hi": "सूरज: रस चूसक कीट सहनशील लंबे रेशे वाली कपास किस्म, दक्षिण व मध्य क्षेत्र के राज्यों में (महाराष्ट्र मध्य क्षेत्र में)। उपज क्षमता 25 क्विंटल/हेक्टेयर।",
+        "mr": "सूरज: रसशोषक किडींना सहनशील लांब धाग्याची कापूस जात, दक्षिण व मध्य विभागातील राज्यांत (महाराष्ट्र मध्य विभागात). उत्पादन क्षमता 25 क्विंटल/हेक्टर."
+      }
+    },
+    {
+      "id": "cicr_anjali", "short": "Anjali (variety)",
+      "source_name": "Anjali - Cotton Variety",
+      "institute": "cicr", "type": "variety", "audience": "farmer",
+      "crops": ["cotton"], "targets": ["cotton_jassid"],
+      "summary": {
+        "en": "Anjali: compact, early cotton variety tolerant to jassids; suits high-density planting. Yield potential 20 q/ha.",
+        "hi": "अंजलि: जैसिड सहनशील, छोटी और जल्दी पकने वाली कपास किस्म; सघन रोपण के लिए उपयुक्त। उपज क्षमता 20 क्विंटल/हेक्टेयर।",
+        "mr": "अंजली: तुडतुड्यांना सहनशील, आटोपशीर व लवकर येणारी कापूस जात; सघन लागवडीस योग्य. उत्पादन क्षमता 20 क्विंटल/हेक्टर."
+      }
+    },
+    {
+      "id": "cicr_sumangala", "short": "Sumangala (variety)",
+      "source_name": "Sumangala - Cotton Variety",
+      "institute": "cicr", "type": "variety", "audience": "farmer",
+      "crops": ["cotton"], "targets": ["cotton_jassid", "cotton_whitefly"],
+      "summary": {
+        "en": "Sumangala: medium-staple cotton variety with resistance to sucking pests. Yield potential 25-30 q/ha.",
+        "hi": "सुमंगला: रस चूसक कीटों के प्रति प्रतिरोधी मध्यम रेशे वाली कपास किस्म। उपज क्षमता 25-30 क्विंटल/हेक्टेयर।",
+        "mr": "सुमंगला: रसशोषक किडींना प्रतिकारक मध्यम धाग्याची कापूस जात. उत्पादन क्षमता 25-30 क्विंटल/हेक्टर."
+      }
+    },
+    {
+      "id": "nrri_clcc", "short": "Leaf colour chart",
+      "source_name": "Customized Leaf Colour Chart for real time  nitrogen management in rice",
+      "institute": "nrri", "type": "practice", "audience": "farmer",
+      "crops": ["rice"], "targets": ["rice_bacterial_leaf_blight", "rice_sheath_blight", "rice_blast", "rice_brown_planthopper"],
+      "summary": {
+        "en": "Leaf colour chart: hold a rice leaf against it to see whether the crop needs urea now and how much (kg urea per acre), in Odia, Hindi and English.",
+        "hi": "पत्ती रंग चार्ट: धान की पत्ती को चार्ट से मिलाकर देखें कि अभी यूरिया चाहिए या नहीं और कितना (किलो यूरिया प्रति एकड़)।",
+        "mr": "पान रंग तक्ता: भाताचे पान तक्त्याशी जुळवून पाहा की आत्ता युरिया लागतो का आणि किती (किलो युरिया प्रति एकर)."
+      },
+      "link_reason": {
+        "en": "Excess nitrogen invites these problems; the chart stops urea being added when the crop does not need it.",
+        "hi": "अधिक नाइट्रोजन इन समस्याओं को बढ़ाता है; चार्ट बताता है कि कब यूरिया की ज़रूरत नहीं है।",
+        "mr": "जास्त नत्रामुळे या समस्या वाढतात; तक्ता सांगतो की युरियाची गरज कधी नाही."
+      }
+    },
+    {
+      "id": "nrri_ricexpert", "short": "riceXpert app",
+      "source_name": "Android based mobile app RiceXpert",
+      "institute": "nrri", "type": "app", "audience": "farmer",
+      "crops": ["rice"], "targets": [],
+      "summary": {
+        "en": "Free ICAR-NRRI app (riceXpert): send a photo, text or voice note of a rice problem and get a reply by SMS from rice scientists.",
+        "hi": "मुफ्त ICAR-NRRI ऐप (riceXpert): धान की समस्या की फोटो, संदेश या आवाज़ भेजें, धान वैज्ञानिकों से SMS पर जवाब पाएँ।",
+        "mr": "मोफत ICAR-NRRI ॲप (riceXpert): भाताच्या समस्येचा फोटो, संदेश किंवा आवाज पाठवा, भात शास्त्रज्ञांकडून SMS वर उत्तर मिळवा."
+      }
+    },
+    {
+      "id": "iirr_rice_expert", "short": "Rice Expert system",
+      "source_name": "Rice Expert system",
+      "institute": "iirr", "type": "app", "audience": "official",
+      "crops": ["rice"], "targets": [],
+      "summary": {
+        "en": "ICAR-IIRR rule-based expert system for diagnosing rice pests and diseases, with a database of newly emerging problems; a second opinion for extension staff."
+      }
+    },
+    {
+      "id": "iisr_bbf", "short": "BBF seed drill",
+      "source_name": "Broad Bed Furrow (BBF) seed drill",
+      "institute": "iisr", "type": "practice", "audience": "farmer",
+      "crops": ["soybean"], "targets": [],
+      "summary": {
+        "en": "Broad bed and furrow sowing: furrows hold rain during dry spells and drain it in heavy rain, so the crop gets through both.",
+        "hi": "चौड़ी क्यारी-नाली बुवाई: सूखे में नालियाँ पानी रोकती हैं और भारी बारिश में निकालती हैं, फसल दोनों में बचती है।",
+        "mr": "रुंद वरंबा-सरी पेरणी: कोरड्या काळात सऱ्या पाणी धरून ठेवतात व जोरदार पावसात निचरा करतात, पीक दोन्हीत टिकते."
+      }
+    },
+    {
+      "id": "crida_cwc_cotton_parbhani", "short": "Crop-weather calendar, Parbhani cotton",
+      "source_name": "crop weather calendars of cotton-parbhani",
+      "institute": "crida", "type": "reference", "audience": "official",
+      "crops": ["cotton"], "targets": [],
+      "summary": {
+        "en": "AICRPAM crop-weather calendar, Parbhani cotton: weekly weather normals, crop stages, the weather in high-yield years, and the weather that favours major pests and diseases. Use it to cross-check risk-rule thresholds for Marathwada."
+      }
+    },
+    {
+      "id": "crida_cwc_soybean_akola", "short": "Crop-weather calendar, Akola soybean",
+      "source_name": "Crop Weather Calendar of soybean-Akola,Maharashtra",
+      "institute": "crida", "type": "reference", "audience": "official",
+      "crops": ["soybean"], "targets": [],
+      "summary": {
+        "en": "AICRPAM crop-weather calendar, Akola soybean: weekly weather normals, crop stages and pest/disease-favourable weather for Vidarbha."
+      }
+    },
+    {
+      "id": "crida_cwc_rice_dapoli", "short": "Crop-weather calendar, Dapoli rice",
+      "source_name": "Crop Weather Calendar of Rice-Dapoli,Maharashtra",
+      "institute": "crida", "type": "reference", "audience": "official",
+      "crops": ["rice"], "targets": [],
+      "summary": {
+        "en": "AICRPAM crop-weather calendar, Dapoli rice: weekly weather normals, crop stages and pest/disease-favourable weather for the Konkan."
+      }
+    },
+    {
+      "id": "crida_cwc_rice_solapur", "short": "Crop-weather calendar, Solapur rice",
+      "source_name": "Crop Weather Calendar of Rice-Solapur,Maharashtra",
+      "institute": "crida", "type": "reference", "audience": "official",
+      "crops": ["rice"], "targets": [],
+      "summary": {
+        "en": "AICRPAM crop-weather calendar, Solapur rice: weekly weather normals, crop stages and pest/disease-favourable weather for south-western Maharashtra."
+      }
+    }
+  ]
+}

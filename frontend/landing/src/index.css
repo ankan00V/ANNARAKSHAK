@@ -18,3 +18,29 @@ body,
   height: 100%;
   width: 100%;
 }
+
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* Leaflet panes sit above sticky headers otherwise. */
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 0 !important;
+}
+.leaflet-container {
+  font-family: Inter, system-ui, sans-serif;
+  background: #eef0ea;
+}
+/* Calm the OSM basemap so case markers carry the colour. */
+.leaflet-tile-pane {
+  filter: saturate(0.3) brightness(1.04) contrast(0.92);
+}

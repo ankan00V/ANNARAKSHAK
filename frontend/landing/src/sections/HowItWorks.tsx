@@ -1,10 +1,11 @@
-import { Camera, Droplets, Microscope, Volume2 } from 'lucide-react'
+import { BellRing, Camera, HelpCircle, Sprout, UserCheck } from 'lucide-react'
 
 const STEPS = [
-  { icon: Camera, label: 'Photo', line: 'Snap or upload a picture of the affected crop.' },
-  { icon: Microscope, label: 'Diagnosis', line: 'AI identifies the disease or pest, and shows exactly why.' },
-  { icon: Volume2, label: 'Advisory', line: 'Treatment steps, read aloud in your language.' },
-  { icon: Droplets, label: 'Action', line: 'The right dosage for your land size, or a referral if it is serious.' },
+  { icon: BellRing, label: 'Alert', line: 'Weather, crop stage, traps and nearby cases say where to look — before damage shows.' },
+  { icon: Camera, label: 'Photo', line: 'The AI names the disease or pest and shows where it looked.' },
+  { icon: HelpCircle, label: 'Ask or escalate', line: 'Torn between two? One field question. Unsure? A KVK expert, not a guess.' },
+  { icon: Sprout, label: 'Act', line: 'Safest steps first, a dose for your field, and a spray check before you buy.' },
+  { icon: UserCheck, label: 'Follow up', line: 'Day 4 check-in. Confirmed cases warn neighbours and teach the system.' },
 ]
 
 export default function HowItWorks() {
@@ -12,9 +13,9 @@ export default function HowItWorks() {
     <section id="how-it-works" className="w-full bg-leaf-deep text-cream">
       <div className="max-w-6xl mx-auto px-6 md:px-12 py-16 md:py-24">
         <h2 className="font-instrument-serif text-3xl sm:text-4xl md:text-5xl leading-tight max-w-3xl">
-          From a photo to a plan, in seconds.
+          From an early warning to a checked treatment.
         </h2>
-        <div className="mt-12 grid gap-10 md:grid-cols-4 md:gap-6">
+        <div className="mt-12 grid gap-10 md:grid-cols-5 md:gap-6">
           {STEPS.map(({ icon: Icon, label, line }, i) => (
             <div
               key={label}

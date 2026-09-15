@@ -1,3 +1,18 @@
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 python-multipart==0.0.20
+sqlalchemy==2.0.36
+httpx==0.28.1
+pillow==11.0.0
+numpy==2.1.3
+pytest==8.3.4
+# Inference with the trained model (optional: without them the API serves the labelled stub)
+torch==2.14.0
+torchvision==0.29.0
+# Voice + translation (Sarvam AI, server-side only) and .env loading
+sarvamai==0.1.31a4
+python-dotenv==1.2.3
+# Postgres (Neon) driver; SQLite needs nothing
+psycopg[binary]==3.3.5
+# Web Push notifications (VAPID)
+pywebpush==2.5.0

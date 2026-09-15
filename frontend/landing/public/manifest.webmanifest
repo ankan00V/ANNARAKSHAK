@@ -1,0 +1,14 @@
+{
+  "name": "AnnRakshak — crop health",
+  "short_name": "AnnRakshak",
+  "description": "Photo diagnosis, weather risk alerts and expert help for crop diseases and pests.",
+  "start_url": "./app",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f3ec",
+  "theme_color": "#1f3d2b",
+  "lang": "mr",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

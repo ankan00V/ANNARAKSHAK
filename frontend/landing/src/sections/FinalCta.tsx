@@ -19,7 +19,13 @@ export default function FinalCta() {
             to="/officer"
             className="w-full sm:w-auto border border-cream/60 text-cream rounded-full px-8 py-4 text-sm font-medium hover:bg-cream/10 transition-colors"
           >
-            I&apos;m an Extension Officer
+            I&apos;m an Agriculture Official
+          </Link>
+          <Link
+            to="/expert"
+            className="w-full sm:w-auto border border-cream/30 text-cream/80 rounded-full px-8 py-4 text-sm font-medium hover:bg-cream/10 transition-colors"
+          >
+            I&apos;m an Expert / KVK
           </Link>
         </div>
 
