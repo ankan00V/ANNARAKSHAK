@@ -12,3 +12,7 @@ torchvision==0.29.0
 # Voice + translation (Sarvam AI, server-side only) and .env loading
 sarvamai==0.1.31a4
 python-dotenv==1.2.3
+# Postgres (Neon) driver; SQLite needs nothing
+psycopg[binary]==3.3.5
+# Web Push notifications (VAPID)
+pywebpush==2.5.0

@@ -169,3 +169,52 @@ def test_outlook_lists_icar_inputs_to_stock(client):
     for row in rows:
         assert all(x["type"] in ("biocontrol", "variety", "monitoring") for x in row["icar_inputs"])
     assert any(row["icar_inputs"] for row in rows)
+
+
+def test_sarvam_key_pool_benches_an_exhausted_key_and_fails_over():
+    from app.voice import KeyPool, VoiceUnavailable
+
+    class Err(Exception):
+        def __init__(self, code):
+            self.status_code = code
+
+    pool = KeyPool(["k1", "k2", "k3"])
+    pool._client = lambda i: i  # the "client" is just the key index
+    used = []
+
+    def call(i):
+        used.append(i)
+        if i == 0:
+            raise Err(402)  # out of credits
+        return f"ok{i}"
+
+    assert pool.call(call) == "ok1" and used == [0, 1]
+    assert pool.status() == {"keys": 3, "benched": 1}
+    used.clear()
+    for _ in range(3):
+        pool.call(call)
+    assert 0 not in used  # benched key is skipped while others work
+
+    with pytest.raises(ValueError):  # a bad request is not the key's fault: raised, nothing benched
+        pool.call(lambda i: (_ for _ in ()).throw(ValueError("bad input")))
+    assert pool.status()["benched"] == 1
+
+    rate = KeyPool(["a"])
+    rate._client = lambda i: i
+    with pytest.raises(VoiceUnavailable):
+        rate.call(lambda i: (_ for _ in ()).throw(Err(429)))
+
+
+def test_rate_limit_counts_per_window_without_redis():
+    from fastapi import HTTPException
+
+    from app import cache
+    from app.limits import limit
+
+    for _ in range(3):
+        limit("unit-test-key", 3, 60)
+    with pytest.raises(HTTPException) as e:
+        limit("unit-test-key", 3, 60)
+    assert e.value.status_code == 429 and e.value.headers["Retry-After"] == "60"
+    assert cache.leader("watch", 60)  # no Redis: this process is its own leader
+    assert not cache.publish(1, {"type": "notice"})  # no Redis: caller delivers locally

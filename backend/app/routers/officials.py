@@ -10,7 +10,7 @@ from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app import services
 from app.db import get_db
@@ -121,7 +121,7 @@ def hotspots(days: int = 45, lang: str = "en", db: Session = Depends(get_db), kb
     advised = {a.problem_id for a in db.scalars(select(Advisory)).all()}
     open_case = {c.problem_id for c in db.scalars(select(Case).where(Case.status == "open")).all()}
     points = []
-    for p in db.scalars(select(Problem).where(Problem.opened_at >= since)).all():
+    for p in db.scalars(select(Problem).options(joinedload(Problem.farm)).where(Problem.opened_at >= since)).all():
         f = p.farm
         if p.id in confs:
             status, target = "confirmed", confs[p.id].final_label

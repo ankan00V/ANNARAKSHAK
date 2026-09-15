@@ -387,19 +387,32 @@ def translate_note(text: str, lang: str) -> tuple[str, bool]:
         return text, False
 
 
+def _latest(db: Session, model, ids: list[int], *where) -> dict:
+    """{problem_id: newest row} for many problems in one query."""
+    rows = db.scalars(select(model).where(model.problem_id.in_(ids), *where).order_by(model.id)).all()
+    return {r.problem_id: r for r in rows}  # ascending ids: the newest one wins
+
+
+def problem_views(db: Session, kb: KB, problems: list[Problem], lang: str) -> list[dict]:
+    """Views for a list of problems in five queries, not five per problem — the
+    database may be a network hop away (Postgres in the cloud)."""
+    ids = [p.id for p in problems]
+    if not ids:
+        return []
+    diags = _latest(db, Diagnosis, ids)
+    advs = _latest(db, Advisory, ids)
+    cases = _latest(db, Case, ids)
+    confs = _latest(db, Confirmation, ids)
+    fus = _latest(db, FollowUp, ids, FollowUp.response.is_(None))
+    return [_problem_view(db, kb, p, lang, diags.get(p.id), advs.get(p.id), cases.get(p.id),
+                          confs.get(p.id), fus.get(p.id)) for p in problems]
+
+
 def problem_view(db: Session, kb: KB, problem: Problem, lang: str) -> dict:
-    last_diag = problem.diagnoses[-1] if problem.diagnoses else None
-    advisory_row = db.scalar(
-        select(Advisory).where(Advisory.problem_id == problem.id).order_by(Advisory.id.desc())
-    )
-    case = db.scalar(select(Case).where(Case.problem_id == problem.id).order_by(Case.id.desc()))
-    conf = db.scalar(
-        select(Confirmation).where(Confirmation.problem_id == problem.id).order_by(Confirmation.id.desc())
-    )
-    fu = db.scalar(
-        select(FollowUp).where(FollowUp.problem_id == problem.id, FollowUp.response.is_(None))
-        .order_by(FollowUp.id.desc())
-    )
+    return problem_views(db, kb, [problem], lang)[0]
+
+
+def _problem_view(db: Session, kb: KB, problem: Problem, lang: str, last_diag, advisory_row, case, conf, fu) -> dict:
     target = problem.target
     return {
         "id": problem.id,
