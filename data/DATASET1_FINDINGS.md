@@ -24,7 +24,22 @@ the resource to be an archive (zip) download and/or a linked external host —
 not a CSV-style data.gov.in table API. The real format/size/classes get
 confirmed from the resource record itself (see blocker).
 
-## Blocker
+## Resolved Sep 14, 2026 — resource identified
+
+The catalog has exactly one resource (via `backend/dmspublic/v1/resources`,
+read from the in-app browser):
+
+- Title: ICAR Crop Disease and Insect-pest Image Dataset for Rice and Maize
+- nid 604953507, uuid 1d946612-d771-49dc-a11c-a68c7bca091f
+- `application/zip`, 970,886,204 bytes (~926 MB), one-time
+- Access: Registered ("Only registered users can download the dataset."),
+  licence: ICAR Data Use License
+- Scope: **rice and maize only** — class list comes from the zip itself
+
+Download is manual (login), see `MANUAL_DOWNLOADS.md`. The blocker below is
+kept for history.
+
+## Blocker (Sep 12, superseded)
 
 The page is a Nuxt SPA whose resource list loads client-side from:
 
