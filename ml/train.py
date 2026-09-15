@@ -126,16 +126,21 @@ def balanced_sampler(rows, epoch_size, icar_share=0.5):
     for r in rows:
         by_class.setdefault(r["train_class"], Counter())[r.get("source", "icar")] += 1
     w = []
+    def field(s):  # real field photos: ICAR's, and farmers' photos an expert labelled
+        return s in ("icar", "confirmed")
+
     for r in rows:
         src = by_class[r["train_class"]]
         s = r.get("source", "icar")
-        if len(src) == 1:
-            share = 1.0
-        elif s == "icar":
-            share = icar_share
+        n_field = sum(v for k, v in src.items() if field(k))
+        n_other = sum(v for k, v in src.items() if not field(k))
+        if not n_field or not n_other:
+            share, pool = 1.0, (n_field or n_other)
+        elif field(s):
+            share, pool = icar_share, n_field
         else:
-            share = (1.0 - icar_share) / (len(src) - 1 if "icar" in src else len(src))
-        w.append(share / src[s])
+            share, pool = 1.0 - icar_share, n_other
+        w.append(share / pool)
     return WeightedRandomSampler(torch.tensor(w, dtype=torch.double), num_samples=epoch_size, replacement=True)
 
 
@@ -427,6 +432,8 @@ def main():
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--epochs", type=int, default=22)
     ap.add_argument("--skip-benchmark", action="store_true")
+    ap.add_argument("--with-confirmed", action="store_true",
+                    help="with --with-extra: add expert-labelled field photos from ml/export_confirmed.py")
     ap.add_argument("--warm-start", action="store_true",
                     help="with --with-extra: continue from the deployed model instead of ImageNet weights")
     ap.add_argument("--with-extra", action="store_true",
@@ -600,6 +607,13 @@ def main_extra(args):
     else:
         i_tr, i_va, i_te = load_split()
     e_tr, e_va, e_te = load_extra_split()
+    if getattr(args, "with_confirmed", False):
+        conf_csv = ROOT / "data" / "processed" / "confirmed.csv"
+        if conf_csv.exists():
+            known = {r["train_class"] for r in list(icar.values()) + e_tr}
+            confirmed = [r for r in csv.DictReader(conf_csv.open()) if r["train_class"] in known]
+            e_tr = e_tr + confirmed  # all to training: the held-out sets stay comparable across runs
+            print(f"with {len(confirmed)} expert-labelled field photos (ml/export_confirmed.py)")
     train, val = i_tr + e_tr, i_va + e_va
     classes = sorted({r["train_class"] for r in train + val + i_te + e_te})
     class_idx = {c: i for i, c in enumerate(classes)}
