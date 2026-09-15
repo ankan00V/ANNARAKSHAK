@@ -29,7 +29,7 @@ from statistics import median
 import numpy as np
 from PIL import Image
 
-from app.config import FLOOR, GATE, MARGIN
+from app.config import FLOOR, GATE, MARGIN, gate_for
 from app.engine.gate import crop_of, is_healthy
 from app.engine.vision import vegetation_fraction
 from app.kb import tr
@@ -246,12 +246,12 @@ class LiveSession:
         # only a sliver of them — two frames among fifteen that agree on something
         # else — is more likely a misread than a second disease: it goes to an
         # expert as 'possible', never to the farmer as 'seen'.
-        total_strong = sum(sum(c >= GATE for c in confs) for t, confs in by_target.items()
+        total_strong = sum(sum(c >= gate_for(t) for c in confs) for t, confs in by_target.items()
                            if not is_healthy(t) and crop_of(t) == self.crop)
         for t, confs in sorted(by_target.items(), key=lambda kv: -max(kv[1])):
             if is_healthy(t) or crop_of(t) != self.crop:
                 continue
-            strong = [c for c in confs if c >= GATE]
+            strong = [c for c in confs if c >= gate_for(t)]
             tier = kb.targets.get(t, {}).get("tier")
             share = len(strong) / total_strong if total_strong else 0.0
             item = {"target": t, "views": len(confs), "strong_views": len(strong),
@@ -264,6 +264,17 @@ class LiveSession:
                 reason = "NOT_PHOTO_DIAGNOSABLE" if tier != "diagnosable" else \
                     "MINORITY_VIEWS" if len(strong) >= 2 else "FEW_VIEWS"
                 possible.append(item | {"reason": reason})
+        # Look-alikes (a Doubt Doctor pair, e.g. blast and brown spot) are exactly what
+        # the model confuses; unless the farmer's answer settled it, only the one
+        # with more strong views is 'seen' — the other goes to the expert.
+        for a in sorted(seen, key=lambda x: -x["strong_views"]):
+            for b in list(seen):
+                if b is a or b not in seen or a not in seen or b.get("settled_by_answer"):
+                    continue
+                if kb.cue_for(a["target"], b["target"]) and b["strong_views"] <= a["strong_views"] \
+                        and settled != b["target"]:
+                    seen.remove(b)
+                    possible.append({k: v for k, v in b.items() if k != "settled_by_answer"} | {"reason": "LOOKALIKE"})
         healthy_views = sum(1 for s in self.sightings if is_healthy(s.target) and crop_of(s.target) == self.crop)
         return {
             "seen": seen,
@@ -308,7 +319,7 @@ class LiveSession:
             return
         remaining_close = any(s.kind == "close" for s in self.steps[self.idx + 1:])
         for t, confs in self._by_target().items():
-            strong = sum(c >= GATE for c in confs)
+            strong = sum(c >= gate_for(t) for c in confs)
             if strong < 2 and max(confs) >= FLOOR and not remaining_close:
                 self.steps.insert(self.idx + 1, Step("confirm", "close", CONFIRM_NEED, name=self.target_name(t)))
                 self.confirm_added = True

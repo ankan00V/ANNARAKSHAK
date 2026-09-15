@@ -53,6 +53,25 @@ reject class always puts its mass somewhere, even on a photo of a shoe.
 Measured on the 835 ICAR images: 10 (1.2%) fall below it, mostly insects shot
 off the plant; flat wood, cardboard, soil, skin and grey all score 0."""
 
+TARGET_GATE = {
+    "rice_blast": 0.90,
+    "maize_common_rust": 0.90,
+}
+"""Classes learnt only from lab photos (single leaves on plain backdrops) must
+clear a higher bar before the app advises them — in the photo gate and for a
+'strong' view in the live walk. Measured on held-out images (2026-09-15):
+rice blast precision 0.868 at the global 0.70 -> 0.957 at 0.90 (recall 0.844);
+maize rust 0.963 -> 1.000 (recall 1.000); every other class 0.972 at 0.70.
+Between GATE and this bar the gate asks the look-alike question or sends the
+photo to an expert. Drop an entry once expert confirmations show the class
+holds up on farmers' field photos."""
+assert all(v >= GATE for v in TARGET_GATE.values())
+
+
+def gate_for(target: str) -> float:
+    return TARGET_GATE.get(target, GATE)
+
+
 # --- Learning from field confirmations -------------------------------------
 
 PRIOR_FULL_COUNT = 10

@@ -66,6 +66,16 @@ MESSAGES = {
         "hi": "मेरे पास संभावित उत्तर है, पर छिड़काव की सलाह देने लायक भरोसा नहीं। विशेषज्ञ पुष्टि करेंगे।",
         "mr": "माझ्याकडे संभाव्य उत्तर आहे, पण फवारणीचा सल्ला देण्याइतकी खात्री नाही. तज्ज्ञ खात्री करतील.",
     },
+    "LAB_CLASS_CONFIRM": {
+        "en": "This looks like a disease I learnt from lab photos, so I want one quick check in your field before advising.",
+        "hi": "यह ऐसा रोग लगता है जो मैंने प्रयोगशाला की फोटो से सीखा है, इसलिए सलाह से पहले खेत में एक छोटी जाँच चाहिए।",
+        "mr": "हा रोग मी प्रयोगशाळेतील फोटोंवरून शिकलो आहे, म्हणून सल्ल्यापूर्वी शेतात एक छोटी तपासणी हवी.",
+    },
+    "LAB_CLASS_BELOW_GATE": {
+        "en": "This may be a disease I learnt from lab photos, and I am not sure enough on a field photo. An expert will confirm.",
+        "hi": "यह ऐसा रोग हो सकता है जो मैंने प्रयोगशाला की फोटो से सीखा है; खेत की फोटो पर मुझे पूरा भरोसा नहीं। विशेषज्ञ पुष्टि करेंगे।",
+        "mr": "हा रोग मी प्रयोगशाळेतील फोटोंवरून शिकलो असू शकतो; शेतातील फोटोवर पुरेशी खात्री नाही. तज्ज्ञ खात्री करतील.",
+    },
     "AMBIGUOUS_NO_CUE": {
         "en": "I see two possibilities and no simple field check separates them. An expert will look.",
         "hi": "दो संभावनाएँ हैं और कोई आसान जाँच इन्हें अलग नहीं करती। विशेषज्ञ देखेंगे।",

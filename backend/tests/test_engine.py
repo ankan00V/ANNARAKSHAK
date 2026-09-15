@@ -266,3 +266,13 @@ def test_leaf_and_straw_colours_pass_the_vegetation_check(rgb):
     from app.engine.vision import vegetation_fraction
 
     assert vegetation_fraction(Image.new("RGB", (64, 64), rgb)) >= MIN_VEGETATION_FRACTION
+
+
+def test_a_lab_trained_class_must_clear_its_own_higher_bar():
+    # rice_blast was learnt from lab photos: 0.85 clears the global gate but not its 0.90
+    d = run_gate(topk(("rice_blast", 0.85), ("rice_brown_spot", 0.05)))
+    assert (d.outcome, d.reason) == ("clarify", "LAB_CLASS_CONFIRM") and d.cue_id
+    d = run_gate(topk(("rice_blast", 0.85), ("rice_leaf_folder", 0.05)))
+    assert (d.outcome, d.reason) == ("escalate", "LAB_CLASS_BELOW_GATE")
+    assert run_gate(topk(("rice_blast", 0.93), ("rice_brown_spot", 0.03))).outcome == "advise"
+    assert run_gate(topk(("rice_brown_spot", 0.75), ("rice_blast", 0.05))).outcome == "advise"  # others unchanged

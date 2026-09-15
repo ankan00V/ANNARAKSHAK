@@ -11,6 +11,8 @@ Order matters:
   3. top-1 and top-2 within MARGIN        → clarify if a cue separates them,
                                             else escalate
   4. clear but below GATE                 → escalate
+     a lab-trained class below its own     → clarify if a cue separates it from
+     higher bar (config.TARGET_GATE)          the runner-up, else escalate
   5. top-1 is inspection-tier             → escalate (a photo can't settle it)
   6. no advisory in the knowledge base    → escalate
   7. otherwise                            → advise
@@ -26,7 +28,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Literal
 
-from app.config import FLOOR, GATE, MARGIN
+from app.config import FLOOR, GATE, MARGIN, gate_for
 
 Outcome = Literal["advise", "clarify", "escalate", "retake"]
 """'retake' is only for a photo that is not a crop at all — an expert's time is
@@ -104,6 +106,13 @@ def decide(
 
     if top1.confidence < GATE:
         return out("escalate", "BELOW_GATE", GATE)
+
+    bar = gate_for(top1.target)
+    if top1.confidence < bar:  # a lab-trained class, between the global gate and its own
+        cue = cue_for(top1.target, top2.target)
+        if cue is not None:
+            return out("clarify", "LAB_CLASS_CONFIRM", bar, cue["id"])
+        return out("escalate", "LAB_CLASS_BELOW_GATE", bar)
 
     if is_healthy(top1.target):
         return out("advise", "HEALTHY", GATE)

@@ -172,10 +172,10 @@ def finish(db: Session, kb: KB, farm: Farm, sess: LiveSession, ctx: dict, lang: 
             db.add(Diagnosis(
                 problem_id=problem.id, image_path=services.save_upload(jpeg) if jpeg else None,
                 topk=[{"target": t, "confidence": item["confidence"]}], gate_outcome="escalate",
-                gate_reason="LIVE_FEW_VIEWS" if item["reason"] in ("FEW_VIEWS", "MINORITY_VIEWS") else "NOT_PHOTO_DIAGNOSABLE",
+                gate_reason="LIVE_FEW_VIEWS" if item["reason"] in ("FEW_VIEWS", "MINORITY_VIEWS", "LOOKALIKE") else "NOT_PHOTO_DIAGNOSABLE",
                 confidence=item["confidence"], model_version=model_version, is_stub=False,
             ))
-        case = services.escalate(db, problem, "LIVE_FEW_VIEWS" if item["reason"] in ("FEW_VIEWS", "MINORITY_VIEWS")
+        case = services.escalate(db, problem, "LIVE_FEW_VIEWS" if item["reason"] in ("FEW_VIEWS", "MINORITY_VIEWS", "LOOKALIKE")
                                  else "NOT_PHOTO_DIAGNOSABLE")
         problem_ids.append(problem.id)
         possible_out.append(item | {"name": tr(kb.targets[t]["names"], lang), "problem_id": problem.id,

@@ -262,12 +262,35 @@ def test_a_minority_reading_goes_to_the_expert_not_to_the_farmer():
     def classify(img):
         calls["n"] += 1
         if calls["n"] in (4, 9):  # two strong misreads in a walk that shows brown spot throughout
-            return [("rice_blast", 0.81), ("rice_brown_spot", 0.15), ("rice_healthy", 0.02)]
-        return [("rice_brown_spot", 0.9), ("rice_blast", 0.06), ("rice_healthy", 0.02)]
+            return [("rice_sheath_blight", 0.81), ("rice_brown_spot", 0.15), ("rice_healthy", 0.02)]
+        return [("rice_brown_spot", 0.9), ("rice_sheath_blight", 0.06), ("rice_healthy", 0.02)]
 
     s = LiveSession(crop="rice", lang="en", can_classify=True)
     walk(s, classify)
     f = s.findings(kb)
     assert [x["target"] for x in f["seen"]] == ["rice_brown_spot"]
-    blast = next(x for x in f["possible"] if x["target"] == "rice_blast")
-    assert blast["reason"] == "MINORITY_VIEWS" and blast["strong_views"] == 2
+    other = next(x for x in f["possible"] if x["target"] == "rice_sheath_blight")
+    assert other["reason"] == "MINORITY_VIEWS" and other["strong_views"] == 2
+
+
+def test_a_lab_trained_class_needs_its_own_higher_bar_in_the_live_walk():
+    s = LiveSession(crop="rice", lang="en", can_classify=True)
+    walk(s, lambda img: [("rice_blast", 0.85), ("rice_brown_spot", 0.1), ("rice_healthy", 0.02)])
+    f = s.findings(kb)
+    assert not f["seen"] and f["possible"][0]["target"] == "rice_blast"  # 0.85 < blast's 0.90
+
+
+def test_look_alikes_are_not_both_reported_as_seen():
+    calls = {"n": 0}
+
+    def classify(img):
+        calls["n"] += 1
+        if calls["n"] % 3 == 0:  # a third of close-ups read confidently as blast
+            return [("rice_blast", 0.95), ("rice_brown_spot", 0.03), ("rice_healthy", 0.01)]
+        return [("rice_brown_spot", 0.92), ("rice_blast", 0.05), ("rice_healthy", 0.01)]
+
+    s = LiveSession(crop="rice", lang="en", can_classify=True)
+    walk(s, classify)
+    f = s.findings(kb)
+    assert [x["target"] for x in f["seen"]] == ["rice_brown_spot"]
+    assert next(x for x in f["possible"] if x["target"] == "rice_blast")["reason"] == "LOOKALIKE"
