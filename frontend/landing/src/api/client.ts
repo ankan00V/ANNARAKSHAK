@@ -13,6 +13,8 @@ import type {
   KccPanel,
   LabelVerdict,
   LiveSummary,
+  KrishiAnswer,
+  KrishiChip,
   Lang,
   ModelCard,
   NoticeItem,
@@ -81,6 +83,11 @@ export const api = {
   signupExpert: (body: Record<string, unknown>) => req<Me>('/api/auth/signup/expert', json(body)),
   demoLogin: (role: Role) => req<Me>('/api/auth/demo', json({ role })),
   logout: () => req<{ signed_out: boolean }>('/api/auth/logout', { method: 'POST' }),
+
+  krishiHello: (lang: Lang, screen: string) =>
+    req<{ text: string; suggestions: KrishiChip[] }>(`/api/krishi/hello?lang=${lang}&screen=${screen}`),
+  krishiAsk: (body: { text?: string; topic?: string; lang: Lang; screen: string; farm_id?: number | null }) =>
+    req<KrishiAnswer>('/api/krishi/ask', json(body)),
 
   health: () => req<{ status: string; model: { is_stub: boolean }; voice: { configured: boolean } }>('/health'),
 

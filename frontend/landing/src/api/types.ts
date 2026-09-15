@@ -698,3 +698,19 @@ export interface AuthOptions {
   otp: { digits: number; minutes: number; channel: 'email' }
   demo_login: boolean
 }
+
+// --- Krishi, the in-app helper -------------------------------------------------
+
+export interface KrishiChip {
+  id: string
+  text: string
+}
+
+export interface KrishiAnswer {
+  topic: string | null
+  score: number
+  text: string
+  steps: string[]
+  go: { to: string; label: string }[]
+  suggestions: KrishiChip[]
+}

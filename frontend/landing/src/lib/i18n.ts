@@ -419,6 +419,17 @@ const en = {
   authBadPhone: 'Enter a 10-digit mobile number',
   authBadEmail: 'Enter a valid email',
   authAddField: 'Add another field',
+
+  // Krishi, the in-app helper
+  krishiName: 'Krishi',
+  krishiSub: 'Your AnnRakshak helper',
+  krishiAsk: 'Ask Krishi',
+  krishiPlaceholder: 'Ask about the app…',
+  krishiSend: 'Send',
+  krishiClose: 'Close',
+  krishiThinking: 'Krishi is looking…',
+  krishiError: 'I couldn\'t reach the server. Check your connection and try again.',
+  krishiNew: 'New chat',
 }
 
 type Key = keyof typeof en
@@ -834,6 +845,17 @@ const hi: Partial<Record<Key, string>> = {
   authBadPhone: '10 अंकों का मोबाइल नंबर डालें',
   authBadEmail: 'सही ईमेल डालें',
   authAddField: 'एक और खेत जोड़ें',
+
+  // Krishi, the in-app helper
+  krishiName: 'कृषि',
+  krishiSub: 'आपका AnnRakshak सहायक',
+  krishiAsk: 'कृषि से पूछें',
+  krishiPlaceholder: 'ऐप के बारे में पूछें…',
+  krishiSend: 'भेजें',
+  krishiClose: 'बंद करें',
+  krishiThinking: 'कृषि देख रहा है…',
+  krishiError: 'सर्वर से संपर्क नहीं हो पाया। कनेक्शन जाँचकर फिर कोशिश करें।',
+  krishiNew: 'नई बातचीत',
 }
 
 const mr: Partial<Record<Key, string>> = {
@@ -1247,6 +1269,17 @@ const mr: Partial<Record<Key, string>> = {
   authBadPhone: '10 अंकी मोबाइल नंबर टाका',
   authBadEmail: 'योग्य ईमेल टाका',
   authAddField: 'आणखी एक शेत जोडा',
+
+  // Krishi, the in-app helper
+  krishiName: 'कृषी',
+  krishiSub: 'तुमचा AnnRakshak मदतनीस',
+  krishiAsk: 'कृषीला विचारा',
+  krishiPlaceholder: 'ॲपबद्दल विचारा…',
+  krishiSend: 'पाठवा',
+  krishiClose: 'बंद करा',
+  krishiThinking: 'कृषी पाहत आहे…',
+  krishiError: 'सर्व्हरशी संपर्क झाला नाही. कनेक्शन तपासून पुन्हा प्रयत्न करा.',
+  krishiNew: 'नवीन संवाद',
 }
 
 // English, Hindi and Marathi are authored here. The other eight are machine

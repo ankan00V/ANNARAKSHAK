@@ -5,6 +5,7 @@ import BrandMark from '../ui/BrandMark'
 import { Spinner } from '../ui/kit'
 import { useAuth } from './AuthContext'
 import { homeOf, safeNext } from './helpers'
+import Krishi from '../krishi/Krishi'
 
 /** Login and the two sign-ups: the brand, the language (a farmer should be
  *  able to sign up in Marathi from the first screen) and one column. */
@@ -36,6 +37,7 @@ function Frame() {
       <main className="max-w-lg mx-auto px-4 pt-6 pb-16 animate-fadein">
         <Outlet />
       </main>
+      <Krishi />
     </div>
   )
 }

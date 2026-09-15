@@ -9,6 +9,7 @@ import LanguagePicker from './components/LanguagePicker'
 import Onboard from './screens/Onboard'
 import BrandMark from '../ui/BrandMark'
 import AccountMenu from '../auth/AccountMenu'
+import Krishi from '../krishi/Krishi'
 
 const NAV = [
   { to: '/app', icon: HomeIcon, key: 'home' },
@@ -127,6 +128,7 @@ function Shell() {
       </header>
 
       <Toast />
+      <Krishi aboveNav={farmId != null} />
 
       <main className="flex-1 w-full max-w-md mx-auto px-4 pt-5 pb-28 animate-fadein" key={pathname}>
         {farmId == null ? <Onboard /> : <Outlet />}
