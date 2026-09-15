@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { smoothScrollTo } from './smoothScroll'
+import BrandMark from './ui/BrandMark'
 
 const EASE = 'ease-[cubic-bezier(0.76,0,0.24,1)]'
 
@@ -40,7 +41,8 @@ export default function Navbar() {
     <>
       <nav className="flex items-center justify-between px-6 md:px-12 lg:px-16 py-5 md:py-6">
         <div className="flex items-center gap-8 lg:gap-12">
-          <span className="text-white font-semibold text-lg tracking-tight font-sans">
+          <span className="flex items-center gap-2.5 text-white font-semibold text-lg tracking-tight font-sans">
+            <BrandMark size={36} />
             AnnRakshak
           </span>
           <div className="hidden md:flex items-center gap-8">
@@ -85,7 +87,8 @@ export default function Navbar() {
           }`}
         >
           <div className="flex items-center justify-between px-6 py-5">
-            <span className="text-white font-semibold text-lg tracking-tight font-sans">
+            <span className="flex items-center gap-2.5 text-white font-semibold text-lg tracking-tight font-sans">
+              <BrandMark size={36} />
               AnnRakshak
             </span>
             <button

@@ -7,6 +7,7 @@ import { registerWorker } from '../lib/push'
 import { FarmerProvider, useFarmer } from './FarmerContext'
 import LanguagePicker from './components/LanguagePicker'
 import Onboard from './screens/Onboard'
+import BrandMark from '../ui/BrandMark'
 
 const NAV = [
   { to: '/app', icon: HomeIcon, key: 'home' },
@@ -80,9 +81,7 @@ function Shell() {
       <header className="sticky top-0 z-30 bg-leaf-deep text-cream shadow-sm">
         <div className="max-w-md mx-auto flex items-center justify-between gap-3 px-4 py-3">
           <Link to="/app" className="flex items-center gap-2 min-w-0">
-            <span className="w-8 h-8 rounded-full bg-cream/10 ring-1 ring-ochre/40 flex items-center justify-center font-instrument-serif text-lg text-ochre">
-              अ
-            </span>
+            <BrandMark size={34} />
             <span className="min-w-0">
               <span className="block font-semibold tracking-tight leading-none">AnnRakshak</span>
               {farm && (

@@ -7,6 +7,7 @@ import { api } from '../api/client'
 import type { CaseBundle, CaseListItem } from '../api/types'
 import { useAsync, usePersistent } from '../lib/hooks'
 import { Card, ErrorBox, GradCamOverlay, Pill, Spinner } from '../ui/kit'
+import BrandMark from '../ui/BrandMark'
 
 const REASON_LABEL: Record<string, string> = {
   BELOW_FLOOR: 'Model unsure',
@@ -32,7 +33,7 @@ export default function ExpertConsole() {
       <header className="bg-soil-dark text-cream">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/" className="font-semibold tracking-tight">AnnRakshak</Link>
+            <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight"><BrandMark size={30} />AnnRakshak</Link>
             <span className="text-cream/40">/</span>
             <span className="flex items-center gap-1.5 text-sm"><UserCheck className="w-4 h-4 text-ochre" /> Expert validation</span>
           </div>

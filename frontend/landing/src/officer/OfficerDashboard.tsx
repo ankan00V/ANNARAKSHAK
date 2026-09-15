@@ -8,6 +8,7 @@ import type { ModelCard, OutlookRow, PesticideBaseline, RainfallPanel, Summary }
 import { useAsync } from '../lib/hooks'
 import { Card, ErrorBox, Pill, Spinner } from '../ui/kit'
 import HotspotMap from './HotspotMap'
+import BrandMark from '../ui/BrandMark'
 
 const pct = (n: number | null | undefined, d = 0) => (n == null ? '—' : `${(n * 100).toFixed(d)}%`)
 
@@ -44,7 +45,7 @@ export default function OfficerDashboard() {
       <header className="bg-leaf-deep text-cream">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex flex-wrap gap-3 items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/" className="font-semibold tracking-tight">AnnRakshak</Link>
+            <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight"><BrandMark size={30} />AnnRakshak</Link>
             <span className="text-cream/40">/</span>
             <span className="text-sm">Crop-health surveillance · Maharashtra</span>
           </div>

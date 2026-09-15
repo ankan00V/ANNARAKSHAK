@@ -1,5 +1,6 @@
 import { Globe, Mail } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import BrandMark from '../ui/BrandMark'
 
 export default function FinalCta() {
   return (
@@ -31,7 +32,7 @@ export default function FinalCta() {
 
         <footer id="contact" className="mt-16 md:mt-24 border-t border-cream/10 pt-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="font-semibold tracking-tight">AnnRakshak</span>
+            <span className="flex items-center gap-2 font-semibold tracking-tight"><BrandMark size={28} />AnnRakshak</span>
             <p className="text-xs font-light text-cream/60 order-last sm:order-none">
               Smart India Hackathon 2026 · PS 26131 · Govt. of Maharashtra
             </p>
