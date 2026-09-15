@@ -8,6 +8,7 @@ import { Card, ErrorBox, SectionTitle, Spinner } from '../../ui/kit'
 import AlertCard from '../components/AlertCard'
 import ProblemRow from '../components/ProblemRow'
 import WeatherStrip from '../components/WeatherStrip'
+import { WeatherNowCard } from './Weather'
 import { useFarmer } from '../FarmerContext'
 
 export default function Home() {
@@ -28,6 +29,8 @@ export default function Home() {
       {d.followups_due.map((f) => (
         <FollowUp key={f.id} id={f.id} onDone={home.reload} />
       ))}
+
+      <WeatherNowCard />
 
       <Link
         to="/app/live"
@@ -97,7 +100,12 @@ export default function Home() {
       <WeatherStrip weather={d.weather} rain={d.rain_context} />
 
       <section>
-        <SectionTitle>{t('recentProblems')}</SectionTitle>
+        <SectionTitle>
+          <span className="flex items-center justify-between">
+            {t('recentProblems')}
+            <Link to="/app/history" className="text-xs font-medium text-leaf-deep">{t('allHistory')} →</Link>
+          </span>
+        </SectionTitle>
         {d.problems.filter((p) => p.gate_outcome !== 'retake').length === 0 ? (
           <p className="text-sm text-soil-dark/50">{t('noProblems')}</p>
         ) : (

@@ -1,25 +1,27 @@
-import { useEffect, useState } from 'react'
-import { Bell, Camera, FlaskConical, History, Home as HomeIcon, MapPin, Repeat } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { AlertTriangle, Bell, Camera, CloudSun, FlaskConical, Home as HomeIcon, MapPin, Repeat, X } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
-import type { Farm } from '../api/types'
+import type { Farm, LiveEvent } from '../api/types'
 import { LANGS } from '../lib/i18n'
+import { registerWorker } from '../lib/push'
 import { FarmerProvider, useFarmer } from './FarmerContext'
 import Onboard from './screens/Onboard'
 
 const NAV = [
   { to: '/app', icon: HomeIcon, key: 'home' },
+  { to: '/app/weather', icon: CloudSun, key: 'weatherNav' },
   { to: '/app/scan', icon: Camera, key: 'scan' },
   { to: '/app/spray', icon: FlaskConical, key: 'spray' },
   { to: '/app/alerts', icon: Bell, key: 'alerts' },
-  { to: '/app/history', icon: History, key: 'history' },
 ]
 
 function Shell() {
-  const { lang, setLang, farmId, setFarmId, t } = useFarmer()
+  const { lang, setLang, farmId, setFarmId, t, unread, setUnread, setToast } = useFarmer()
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const [farm, setFarm] = useState<Farm | null>(null)
+  const synced = useRef<number | null>(null)
 
   useEffect(() => {
     if (farmId == null) return
@@ -29,6 +31,11 @@ function Shell() {
       const f = fs.find((x) => x.id === farmId) ?? null
       setFarm(f)
       if (!f) setFarmId(null) // stale id from an older database
+      // The farmer's saved language wins when their farm opens on this device.
+      if (f && synced.current !== f.id) {
+        synced.current = f.id
+        if (f.lang !== lang) setLang(f.lang)
+      }
     }).catch(() => undefined)
     return () => {
       on = false
@@ -39,9 +46,34 @@ function Shell() {
     window.scrollTo(0, 0)
   }, [pathname])
 
+  useEffect(() => {
+    void registerWorker()
+  }, [])
+
+  // Real-time: new weather notices and field alerts while the app is open.
+  useEffect(() => {
+    if (farmId == null) return
+    api.notices(farmId, lang).then((n) => setUnread(n.unread)).catch(() => undefined)
+    const es = new EventSource(`/api/farms/${farmId}/events`)
+    const on = (ev: MessageEvent) => {
+      try {
+        const e = JSON.parse(ev.data) as LiveEvent
+        setToast(e)
+        if (e.type === 'notice') setUnread((n) => n + 1)
+      } catch {
+        /* ignore a malformed event */
+      }
+    }
+    es.addEventListener('notice', on)
+    es.addEventListener('alert', on)
+    return () => es.close()
+  }, [farmId, lang, setUnread, setToast])
+
   const active = pathname === '/app/result' || pathname === '/app/live'
     ? '/app/scan'
-    : NAV.slice().reverse().find((n) => pathname === n.to || pathname.startsWith(n.to + '/'))?.to ?? '/app'
+    : pathname.startsWith('/app/history')
+      ? '/app'
+      : NAV.slice().reverse().find((n) => pathname === n.to || pathname.startsWith(n.to + '/'))?.to ?? '/app'
 
   return (
     <div className="min-h-screen w-full bg-cream text-soil-dark flex flex-col">
@@ -63,6 +95,17 @@ function Shell() {
           </Link>
           <div className="flex items-center gap-1.5">
             {farm && (
+              <Link to="/app/alerts" aria-label={t('noticesTitle')}
+                className="relative w-9 h-9 rounded-full bg-cream/10 flex items-center justify-center hover:bg-cream/20">
+                <Bell className="w-4 h-4" />
+                {unread > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-ember text-[10px] font-bold flex items-center justify-center">
+                    {unread > 9 ? '9+' : unread}
+                  </span>
+                )}
+              </Link>
+            )}
+            {farm && (
               <button
                 onClick={() => {
                   setFarmId(null)
@@ -78,7 +121,10 @@ function Shell() {
               {LANGS.map(({ code, label }) => (
                 <button
                   key={code}
-                  onClick={() => setLang(code)}
+                  onClick={() => {
+                    setLang(code)
+                    if (farmId != null) api.setFarmLang(farmId, code).catch(() => undefined)
+                  }}
                   className={`px-2.5 py-1.5 rounded-full text-[11px] font-medium min-h-[32px] transition-colors ${
                     lang === code ? 'bg-cream text-leaf-deep' : 'text-cream/70 hover:text-cream'
                   }`}
@@ -90,6 +136,8 @@ function Shell() {
           </div>
         </div>
       </header>
+
+      <Toast />
 
       <main className="flex-1 w-full max-w-md mx-auto px-4 pt-5 pb-28 animate-fadein" key={pathname}>
         {farmId == null ? <Onboard /> : <Outlet />}
@@ -123,6 +171,32 @@ function Shell() {
           </div>
         </nav>
       )}
+    </div>
+  )
+}
+
+/** A new notice or alert, the moment it is issued. */
+function Toast() {
+  const { toast, setToast, t } = useFarmer()
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (!toast) return
+    const id = window.setTimeout(() => setToast(null), toast.severity === 'warning' ? 15000 : 8000)
+    return () => window.clearTimeout(id)
+  }, [toast, setToast])
+  if (!toast) return null
+  const warn = toast.severity === 'warning'
+  return (
+    <div className="fixed top-16 inset-x-0 z-40 px-3 animate-fadein">
+      <div role="alert" className={`max-w-md mx-auto rounded-2xl shadow-xl p-3 flex gap-3 items-start ${warn ? 'bg-ember text-cream' : 'bg-white border border-ochre/40'}`}>
+        <AlertTriangle className={`w-5 h-5 shrink-0 mt-0.5 ${warn ? '' : 'text-ochre'}`} />
+        <button className="flex-1 text-left" onClick={() => { setToast(null); navigate(toast.url) }}>
+          <span className="block text-sm font-semibold leading-snug">{toast.title}</span>
+          <span className={`block text-xs mt-0.5 line-clamp-2 ${warn ? 'text-cream/85' : 'text-soil-dark/70'}`}>{toast.body}</span>
+          <span className={`block text-[11px] mt-1 font-medium ${warn ? 'text-cream' : 'text-leaf-deep'}`}>{t('openLabel')} →</span>
+        </button>
+        <button aria-label="Close" onClick={() => setToast(null)} className="shrink-0 p-1"><X className="w-4 h-4" /></button>
+      </div>
     </div>
   )
 }

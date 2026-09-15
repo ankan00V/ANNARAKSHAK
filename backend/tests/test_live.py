@@ -247,3 +247,10 @@ def test_soil_health_card_ph_beats_the_soil_map_and_a_sensor_beats_both(client):
     soil = client.get(f"/api/farms/{fid}/live/context").json()["soil"]
     assert soil["ph"]["how"] == "measured" and soil["ph"]["value"] == 7.1
     assert soil["moisture"]["how"] == "measured" and soil["moisture"]["value_pct"] == 31
+
+
+def test_sharpness_of_a_sliver_is_zero_not_nan():
+    import math
+
+    from app.engine.livescan import sharpness
+    assert sharpness(np.zeros((2, 2))) == 0.0 and not math.isnan(sharpness(np.zeros((1, 50))))

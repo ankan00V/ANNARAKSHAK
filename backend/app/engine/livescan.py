@@ -314,6 +314,8 @@ def _thumb(img: Image.Image) -> np.ndarray:
 def sharpness(gray: np.ndarray) -> float:
     """Variance of the Laplacian — the standard blur measure."""
     g = gray.astype(np.float32)
+    if g.shape[0] < 3 or g.shape[1] < 3:
+        return 0.0  # too small to have edges (and var() of nothing is NaN, which is not JSON)
     lap = (-4 * g[1:-1, 1:-1] + g[:-2, 1:-1] + g[2:, 1:-1] + g[1:-1, :-2] + g[1:-1, 2:])
     return float(lap.var())
 

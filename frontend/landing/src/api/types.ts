@@ -470,3 +470,147 @@ export interface LiveSummary {
   photo_model: boolean
   speech: string
 }
+
+// --- Weather, notices and notifications -------------------------------------
+
+export type Severity = 'warning' | 'advice' | 'info'
+export type SprayStatus = 'good' | 'caution' | 'avoid'
+
+export interface WeatherAdvisory {
+  id: string
+  rule: string
+  severity: Severity
+  category: 'safety' | 'rain' | 'wind' | 'cold' | 'heat' | 'spray' | 'disease' | 'irrigation' | 'fog'
+  title: string
+  text: string
+  do: string[]
+  source: string
+  valid_until: string
+}
+
+export interface WeatherNow {
+  time: string | null
+  temp: number | null
+  feels: number | null
+  rh: number | null
+  dew: number | null
+  precip: number | null
+  prob_3h: number | null
+  wind: number | null
+  gust: number | null
+  wdir: number | null
+  uv: number | null
+  uv_band: 'low' | 'moderate' | 'high' | 'very_high' | 'extreme' | null
+  cloud: number | null
+  vis: number | null
+  pressure: number | null
+  pressure_trend_24h: number | null
+  code: number | null
+  is_day: number | null
+  station: string | null
+}
+
+export interface WeatherHour {
+  t: string
+  temp: number | null
+  rh: number | null
+  prob: number | null
+  precip: number | null
+  wind: number | null
+  gust: number | null
+  wdir: number | null
+  uv: number | null
+  cloud: number | null
+  vis: number | null
+  code: number | null
+  is_day: number | null
+  spray: SprayStatus
+}
+
+export interface WeatherDay {
+  on: string
+  tmin: number | null
+  tmax: number | null
+  rain: number | null
+  prob: number | null
+  rain_hours: number | null
+  wind_max: number | null
+  gust_max: number | null
+  wdir: number | null
+  uv_max: number | null
+  sunshine_h: number | null
+  radiation: number | null
+  et0: number | null
+  code: number | null
+  sunrise: string | null
+  sunset: string | null
+}
+
+export interface WaterBalance {
+  available: boolean
+  days?: number
+  kc?: number
+  et0_week?: number
+  etc_week?: number
+  rain_week?: number
+  eff_rain_week?: number
+  deficit?: number
+  deficit_threshold?: number
+  et0_today?: number | null
+  etc_today?: number | null
+  next3_rain?: number
+  next3_useful_days?: number
+  verdict?: 'irrigate' | 'hold_rain' | 'ok' | 'stop_stage'
+}
+
+export interface SprayHour {
+  t: string
+  status: SprayStatus
+  reasons: [string, number | null][]
+  wind: number
+  gust: number
+  prob: number
+  temp: number | null
+  reasons_text?: string | null
+}
+
+export interface WeatherView {
+  fetched_at: string
+  stale: boolean
+  source: { forecast: string; current: string | null; soil: string | null; et0: string }
+  current: WeatherNow
+  hourly: WeatherHour[]
+  daily: WeatherDay[]
+  soil: { temp_surface: number | null; temp_6cm: number | null; moisture: { depth: string; pct: number | null }[] } | null
+  water: WaterBalance
+  spray: { now: SprayHour | null; windows: { start: string; end: string; hours: number; wind: number }[]; reasons_text: string | null }
+  advisories: WeatherAdvisory[]
+  crop: { id: string; name: string; stage: string; stage_name: string; das: number; kc: number | null }
+  watch_for: { target: string; name: string; level: 'high' | 'medium' | 'low' }[]
+  location: { lat: number; lon: number; district: string }
+}
+
+export interface NoticeItem extends WeatherAdvisory {
+  notice_id: number
+  created_at: string
+  read: boolean
+  active: boolean
+}
+
+export interface LiveEvent {
+  type: 'notice' | 'alert'
+  id: number
+  severity: Severity
+  title: string
+  body: string
+  url: string
+}
+
+export type EmailPref = 'warnings' | 'all' | 'digest' | 'off'
+
+export interface Contact {
+  email: string | null
+  email_pref: EmailPref
+  phones: number
+  email_delivery: 'live' | 'outbox'
+}

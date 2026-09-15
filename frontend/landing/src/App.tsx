@@ -9,6 +9,7 @@ import { Spinner } from './ui/kit'
 // console and the Leaflet-heavy officials' dashboard are separate chunks.
 const Scan = lazy(() => import('./farmer/screens/Scan'))
 const Live = lazy(() => import('./farmer/screens/Live'))
+const Weather = lazy(() => import('./farmer/screens/Weather'))
 const Result = lazy(() => import('./farmer/screens/Result'))
 const Spray = lazy(() => import('./farmer/screens/Spray'))
 const Alerts = lazy(() => import('./farmer/screens/Alerts'))
@@ -27,6 +28,7 @@ export default function App() {
             <Route index element={<Home />} />
             <Route path="scan" element={<Scan />} />
             <Route path="live" element={<Live />} />
+            <Route path="weather" element={<Weather />} />
             <Route path="result" element={<Result />} />
             <Route path="spray" element={<Spray />} />
             <Route path="alerts" element={<Alerts />} />

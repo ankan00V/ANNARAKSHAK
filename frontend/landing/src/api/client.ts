@@ -3,6 +3,8 @@ import type {
   CaseBundle,
   CaseListItem,
   ClarifyResult,
+  Contact,
+  EmailPref,
   CropInfo,
   DiagnoseResult,
   Farm,
@@ -11,6 +13,7 @@ import type {
   LabelVerdict,
   Lang,
   ModelCard,
+  NoticeItem,
   OutlookRow,
   PesticideBaseline,
   ProblemView,
@@ -18,6 +21,8 @@ import type {
   Summary,
   TargetView,
   TrapReading,
+  SprayHour,
+  WeatherView,
 } from './types'
 
 export class ApiError extends Error {
@@ -65,6 +70,8 @@ export const api = {
   samples: (crop: string) => req<{ url: string; true_class: string; expected: 'advise' | 'clarify' | 'escalate' | 'retake' | null }[]>(`/api/samples?crop=${crop}`),
   farms: (lang: Lang) => req<Farm[]>(`/api/farms?lang=${lang}`),
   createFarm: (body: Record<string, unknown>) => req<Farm>('/api/farms', json(body)),
+  setFarmLang: (farmId: number, lang: Lang) =>
+    req<Farm>(`/api/farms/${farmId}`, { ...json({ lang }), method: 'PATCH' }),
   home: (farmId: number, lang: Lang) => req<Home>(`/api/farms/${farmId}/home?lang=${lang}`),
 
   diagnose: (farmId: number, image: Blob, lang: Lang, scenario?: string) => {
@@ -123,6 +130,29 @@ export const api = {
       '/api/officials/risk/run-all',
       { method: 'POST' },
     ),
+
+  weather: (farmId: number, lang: Lang) => req<WeatherView>(`/api/farms/${farmId}/weather?lang=${lang}`),
+  notices: (farmId: number, lang: Lang) =>
+    req<{ unread: number; items: NoticeItem[] }>(`/api/farms/${farmId}/notices?lang=${lang}`),
+  markRead: (farmId: number, ids?: number[]) =>
+    req<{ marked: number }>(`/api/farms/${farmId}/notices/read`, json({ ids: ids ?? null })),
+  logSpray: (farmId: number, product: string | null, lang: Lang) =>
+    req<{ id: number; sprayed_at: string; check: SprayHour | null }>(
+      `/api/farms/${farmId}/sprays?lang=${lang}`,
+      json({ product }),
+    ),
+  pushKey: () => req<{ public_key: string }>('/api/push/key'),
+  pushSubscribe: (farmId: number, sub: PushSubscriptionJSON) =>
+    req<{ subscribed: boolean }>(`/api/farms/${farmId}/push/subscribe`, json(sub)),
+  pushUnsubscribe: (endpoint: string) => req<{ subscribed: boolean }>('/api/push/unsubscribe', json({ endpoint })),
+  pushTest: (farmId: number, lang: Lang) =>
+    req<{ sent: number; removed: number; failed: number }>(`/api/farms/${farmId}/push/test?lang=${lang}`, { method: 'POST' }),
+  contact: (farmId: number) => req<Contact>(`/api/farms/${farmId}/contact`),
+  saveContact: (farmId: number, email: string | null, email_pref: EmailPref) =>
+    req<Contact>(`/api/farms/${farmId}/contact`, { ...json({ email, email_pref }), method: 'PUT' }),
+  emailTest: (farmId: number) => req<{ status: string }>(`/api/farms/${farmId}/email/test`, { method: 'POST' }),
+  emailSummary: (farmId: number) => req<{ status: string }>(`/api/farms/${farmId}/email/summary`, { method: 'POST' }),
+  watchRun: () => req<Record<string, number | string>>('/api/officials/watch/run', { method: 'POST' }),
 
   tts: async (text: string, lang: Lang): Promise<Blob> => {
     const res = await fetch('/api/voice/tts', json({ text, lang }))

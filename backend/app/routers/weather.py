@@ -38,6 +38,7 @@ from app.models import Farm, Notice, PushSubscription, SprayLog
 router = APIRouter(prefix="/api", tags=["weather"])
 
 EMAIL_PREFS = ("warnings", "all", "digest", "off")
+SSE_MAX_SECONDS = 300
 
 
 def _farm(db: Session, farm_id: int) -> Farm:
@@ -112,9 +113,12 @@ async def events(farm_id: int, request: Request, db: Session = Depends(get_db)):
 
     async def stream():
         q = notify.broker.subscribe(farm_id)
+        ends = asyncio.get_running_loop().time() + SSE_MAX_SECONDS
         try:
             yield "retry: 5000\n\n"
-            while not await request.is_disconnected():
+            # Bounded lifetime: EventSource reconnects by itself, and a server
+            # restart or deploy never waits on a stream that is open for hours.
+            while not await request.is_disconnected() and asyncio.get_running_loop().time() < ends:
                 try:
                     ev = await asyncio.wait_for(q.get(), timeout=20)
                     yield f"event: {ev['type']}\ndata: {json.dumps(ev, ensure_ascii=False)}\n\n"

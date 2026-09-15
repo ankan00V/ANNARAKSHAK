@@ -3,6 +3,15 @@ import type { Lang } from '../api/types'
 
 const BCP47: Record<Lang, string> = { en: 'en-IN', hi: 'hi-IN', mr: 'mr-IN' }
 
+export function browserVoice(lang: Lang): SpeechSynthesisVoice | null {
+  if (!('speechSynthesis' in window)) return null
+  const want = BCP47[lang].toLowerCase()
+  const voices = window.speechSynthesis.getVoices()
+  return voices.find((v) => v.lang.toLowerCase() === want)
+    ?? voices.find((v) => v.lang.toLowerCase().startsWith(want.slice(0, 2)))
+    ?? null
+}
+
 /**
  * Speaks guidance during the live walk. Sarvam voices (server-side, cached per
  * text) with the browser's own speech as a fallback. A new prompt interrupts
@@ -70,10 +79,14 @@ export class Speaker {
         a.play().catch(() => resolve())
       })
     } catch {
-      if (!('speechSynthesis' in window)) return
+      // Browser speech only with a voice for this language: an English voice
+      // reading Marathi or Hindi text is worse than silence.
+      const voice = browserVoice(this.lang)
+      if (!voice) return
       await new Promise<void>((resolve) => {
         const u = new SpeechSynthesisUtterance(text)
         u.lang = BCP47[this.lang]
+        u.voice = voice
         u.onend = () => resolve()
         u.onerror = () => resolve()
         window.speechSynthesis.speak(u)

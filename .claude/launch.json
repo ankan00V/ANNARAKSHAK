@@ -57,7 +57,9 @@
         "--port",
         "8010",
         "--app-dir",
-        "backend"
+        "backend",
+        "--timeout-graceful-shutdown",
+        "3"
       ],
       "port": 8010
     }
