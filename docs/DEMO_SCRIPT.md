@@ -61,12 +61,24 @@ Every step names the PS clause it proves.
 
 *"Four crops, 28 targets, three languages, one rule: never a confident wrong answer."*
 
+## Deep dives if time allows
+
+- **Weather that tells you what to do** (`/app/weather`): every parameter (temperature, feels like, humidity, dew point, rain now and chance, wind with direction, gusts, UV, cloud, visibility, pressure trend, soil temperature and moisture by depth, ET₀) and, above them, what to do — lightning, heavy rain, gusts, heat at flowering, fungal weather, the 24-hour spray strip, irrigate or hold by FAO-56 water balance. Each advisory names its source (IMD, WHO, FAO).
+- **Real time**: officials' "Run risk sweep" (or `POST /api/officials/watch/run`) → the farmer's app shows a toast instantly and the bell counts it; phone notification when the app is closed; a warning email in the farmer's language and the 6 am farm summary (weather, pH, moisture, water, spray window, crop risks). Alerts → "Email today's summary" sends it now.
+- **Languages**: header language button → Bengali / Tamil / Telugu / Kannada: the whole app, the advice and the voice switch. The farmer's saved language drives voice, notifications and email.
+- **Wrong crop, or not a crop**: a maize photo on a rice farm says what it sees ("Fall armyworm on Maize, 97%") and re-checks it on a maize farm in one tap; a photo of a person, a guitar or a bird is refused ("retake — not a crop photo") instead of guessed at.
+- **Crop health from space**: satellite greenness (NDVI) and soil moisture per field, and an honest "clouds have hidden your field" in the monsoon.
+- **Officials — Kisan Call Centre signal**: 262,778 farmer calls show when and where each pest is asked about (sucking pests peak Aug–Sep in Jalna; stem borer in Gondia) — an independent check on the risk calendar.
+
 ## Questions judges will ask
 
 - **"What happens when it's wrong?"** Show the gate panel and an escalated case; the expert correction is recorded against the label the model actually predicted.
 - **"How accurate is it?"** Model card: test-set numbers on held-out ICAR photos, and accuracy *when it chooses to advise*. Field accuracy comes from expert verdicts, separately.
 - **"Why is 'Expert agreed with AI' so low?"** Experts only see what the gate escalated — the photos the model was unsure about. Low agreement there means the gate sent the right photos: the ones it would have got wrong reached a human instead of a farmer.
-- **"Can it detect blast?"** Not from a photo — the ICAR set has no blast images. Blast is covered by weather alerts and inspection tasks, and an escalation path. Say it plainly.
+- **"Can it detect blast?"** Yes, since the v3 model (leaf and neck blast, and maize rust). They were learnt from lab photos, so they must clear a higher bar (0.90) before the app advises; in between it asks the blast-vs-brown-spot question or sends the photo to an expert. Blast is also covered by weather alerts.
+- **"How accurate is it end to end?"** `ml/reports/LIVE_EVAL.md`: through the real app on held-out photos, right 97.5% of the time when it advises; the live video call got 20/20 classes right. Field accuracy comes from expert verdicts, which also feed the next training run (`ml/export_confirmed.py`).
+- **"What if I photograph something else?"** It compares the photo with every training photo; a person, an object or an animal is refused, not diagnosed (84% of such test photos rejected; the rest still face the confidence gate).
+- **"Is it pan-India?"** Seven languages today (Marathi, Hindi, English hand-written; Bengali, Tamil, Telugu, Kannada machine translated from the approved text and under native review). Malayalam, Gujarati, Punjabi and Odia next — the pipeline is built, it needs translation credits.
 - **"Is the live check just video upload?"** No. Frames go over a WebSocket at ~1.5/s (about 30 KB each, fine on 4G), are analysed in memory and dropped; only the close-ups that prove a problem are kept, for the expert. Leave mid-call and nothing is saved.
 - **"Is that pH measured?"** Only if a sensor or Soil Health Card gave it — the card says *measured*, *from your Soil Health Card* or *estimated (soil map)*. We never present a map estimate as a measurement.
 - **"Does it work offline / without a smartphone?"** Honest answer: web app installable as a PWA today; SMS/IVR is the next integration (see docs/INTEGRATIONS.md).
