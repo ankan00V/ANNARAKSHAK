@@ -94,6 +94,7 @@ function RegisterForm({ crops, onDone }: {
   const [sowing, setSowing] = useState(() => new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10))
   const [district, setDistrict] = useState('Pune')
   const [area, setArea] = useState('2')
+  const [ph, setPh] = useState('')  // Soil Health Card pH, optional
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null)
   const [locating, setLocating] = useState(false)
   const [error, setError] = useState<Error | null>(null)
@@ -126,6 +127,7 @@ function RegisterForm({ crops, onDone }: {
         lat: coords?.lat ?? d.lat,
         lon: coords?.lon ?? d.lon,
         area_acres: parseFloat(area),
+        ...(phOk && ph ? { soil_ph: parseFloat(ph), soil_ph_on: new Date().toISOString().slice(0, 10) } : {}),
       })
       onDone(f.id)
     } catch (e) {
@@ -137,6 +139,7 @@ function RegisterForm({ crops, onDone }: {
 
   const field = 'w-full min-h-[48px] rounded-xl border border-soil-dark/20 px-3 bg-cream/50 text-sm focus:outline-none focus:border-leaf'
   const selected = crops.find((c) => c.id === crop)
+  const phOk = !ph || (parseFloat(ph) >= 3 && parseFloat(ph) <= 11)
 
   return (
     <Card className="p-4 space-y-3">
@@ -175,6 +178,12 @@ function RegisterForm({ crops, onDone }: {
           ))}
         </select>
       </label>
+      <label className="block text-xs text-soil-dark/60">
+        {t('soilPhCard')}
+        <input className={field} type="number" inputMode="decimal" min="3" max="11" step="0.1" value={ph}
+          placeholder="6.8" onChange={(e) => setPh(e.target.value)} />
+        <span className="block mt-1 text-[11px] text-soil-dark/45">{t('soilPhCardHint')}</span>
+      </label>
       <button type="button" onClick={locate}
         className="flex items-center gap-2 text-sm text-leaf-deep font-medium min-h-[40px]">
         <LocateFixed className="w-4 h-4" />
@@ -183,7 +192,7 @@ function RegisterForm({ crops, onDone }: {
       {error && <ErrorBox error={error} />}
       <button
         onClick={submit}
-        disabled={busy || !name.trim() || !(parseFloat(area) > 0)}
+        disabled={busy || !name.trim() || !(parseFloat(area) > 0) || !phOk}
         className="w-full min-h-[48px] rounded-full bg-leaf-deep text-cream text-sm font-medium disabled:opacity-50"
       >
         {t('save')}

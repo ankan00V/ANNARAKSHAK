@@ -233,3 +233,17 @@ def test_tiny_frames_are_rejected_and_an_empty_walk_still_finishes(client):
         ws.send_json({"type": "finish"})
         s = ws.receive_json()["summary"]
     assert s["verdict"] in {"risk", "all_good"} and not s["seen"] and s["speech"]
+
+
+def test_soil_health_card_ph_beats_the_soil_map_and_a_sensor_beats_both(client):
+    body = {"farmer_name": "c", "lang": "en", "crop": "maize", "sowing_date": str(date.today() - timedelta(days=40)),
+            "district": "Pune", "lat": 18.52, "lon": 73.85, "area_acres": 1, "soil_ph": 6.4,
+            "soil_ph_on": str(date.today())}
+    fid = client.post("/api/farms", json=body).json()["id"]
+    ph = client.get(f"/api/farms/{fid}/live/context").json()["soil"]["ph"]
+    assert ph["how"] == "card" and ph["value"] == 6.4
+    client.post(f"/api/farms/{fid}/sensor", json=[{"on": str(date.today()), "soil_ph": 7.1,
+                                                    "soil_moisture_pct": 31}])
+    soil = client.get(f"/api/farms/{fid}/live/context").json()["soil"]
+    assert soil["ph"]["how"] == "measured" and soil["ph"]["value"] == 7.1
+    assert soil["moisture"]["how"] == "measured" and soil["moisture"]["value_pct"] == 31
