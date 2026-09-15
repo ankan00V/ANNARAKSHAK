@@ -32,6 +32,7 @@ from PIL import Image
 from app.config import FLOOR, GATE, MARGIN
 from app.engine.gate import crop_of, is_healthy
 from app.engine.vision import vegetation_fraction
+from app.kb import tr
 
 # --- frame quality -----------------------------------------------------------
 WORK = 256                 # px, long side used for measuring
@@ -110,6 +111,9 @@ BASE_STEPS = [("overview", "scene", 3), ("plant", "plant", 2), ("leaf_top", "clo
               ("leaf_under", "close", 2), ("base", "base", 2), ("second_spot", "close", 3)]
 CONFIRM_NEED = 3
 MAX_EVIDENCE_FRAMES = 3
+MIN_SHARE_OF_STRONG = 0.25
+"""A second problem must make up at least this share of the walk's strong disease
+readings to be reported as seen; below it, it goes to an expert as possible."""
 
 
 @dataclass
@@ -171,7 +175,7 @@ class LiveSession:
         if self.done:
             return {"step": None, "index": len(self.steps), "total": len(self.steps)}
         s = self.steps[self.idx]
-        text = TEXT[s.id].get(self.lang) or TEXT[s.id]["en"]
+        text = tr(TEXT[s.id], self.lang)
         return {"step": s.id, "kind": s.kind, "index": self.idx, "total": len(self.steps),
                 "need": s.need, "got": s.got, "text": text.format(name=s.name or "")}
 
@@ -238,17 +242,28 @@ class LiveSession:
         by_target: dict[str, list[float]] = {}
         for s in self.sightings:
             by_target.setdefault(s.target, []).append(s.conf)
+        # Strong disease readings across the whole walk. A problem read strongly in
+        # only a sliver of them — two frames among fifteen that agree on something
+        # else — is more likely a misread than a second disease: it goes to an
+        # expert as 'possible', never to the farmer as 'seen'.
+        total_strong = sum(sum(c >= GATE for c in confs) for t, confs in by_target.items()
+                           if not is_healthy(t) and crop_of(t) == self.crop)
         for t, confs in sorted(by_target.items(), key=lambda kv: -max(kv[1])):
             if is_healthy(t) or crop_of(t) != self.crop:
                 continue
             strong = [c for c in confs if c >= GATE]
             tier = kb.targets.get(t, {}).get("tier")
+            share = len(strong) / total_strong if total_strong else 0.0
             item = {"target": t, "views": len(confs), "strong_views": len(strong),
+                    "share_of_strong": round(share, 2),
                     "confidence": round(median(strong) if strong else max(confs), 3)}
-            if tier == "diagnosable" and (len(strong) >= 2 or (settled == t and max(confs) >= FLOOR)):
+            if tier == "diagnosable" and ((len(strong) >= 2 and share >= MIN_SHARE_OF_STRONG)
+                                          or (settled == t and max(confs) >= FLOOR)):
                 seen.append(item | {"settled_by_answer": settled == t and len(strong) < 2})
             elif max(confs) >= FLOOR:
-                possible.append(item | {"reason": "FEW_VIEWS" if tier == "diagnosable" else "NOT_PHOTO_DIAGNOSABLE"})
+                reason = "NOT_PHOTO_DIAGNOSABLE" if tier != "diagnosable" else \
+                    "MINORITY_VIEWS" if len(strong) >= 2 else "FEW_VIEWS"
+                possible.append(item | {"reason": reason})
         healthy_views = sum(1 for s in self.sightings if is_healthy(s.target) and crop_of(s.target) == self.crop)
         return {
             "seen": seen,
@@ -265,7 +280,7 @@ class LiveSession:
         return [j for _, j in sorted(self.evidence.get(target, []), key=lambda x: -x[0])]
 
     def hint_text(self, key: str | None) -> str | None:
-        return (HINTS[key].get(self.lang) or HINTS[key]["en"]) if key else None
+        return tr(HINTS[key], self.lang) if key else None
 
     # --- internals ------------------------------------------------------------
     def _record(self, preds: list[tuple[str, float]], jpeg: bytes) -> dict:

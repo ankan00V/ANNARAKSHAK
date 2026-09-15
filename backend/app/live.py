@@ -14,7 +14,7 @@ from app import services
 from app.engine import advisory as advisory_engine
 from app.engine import fieldnow, vision
 from app.engine.livescan import LiveSession
-from app.kb import KB, tr
+from app.kb import KB, tr, trl
 from app.models import Diagnosis, Farm, LiveScan, Problem, SensorReading
 
 FAR_FROM_FARM_KM = 2.0  # GPS further than this from the registered farm is flagged
@@ -91,7 +91,7 @@ def context(db: Session, kb: KB, farm: Farm, lat: float | None, lon: float | Non
         risks.append({
             "target": s.target, "name": tr(kb.targets[s.target]["names"], lang), "level": s.level,
             "trigger": s.trigger, "reason": tr(s.reason, lang),
-            "check": (kb.rules[s.target]["tasks"].get(lang) or kb.rules[s.target]["tasks"]["en"])[:2],
+            "check": trl(kb.rules[s.target]["tasks"], lang)[:2],
             "prevention": prevention_for(kb, s.target, lang),
         })
     stage, das = kb.stage_for(farm.crop, farm.sowing_date, today)
@@ -121,7 +121,7 @@ def new_session(kb: KB, farm: Farm, lang: str) -> LiveSession:
             return tr(kb.targets[t]["names"], lang)
         crop = t.split("_")[0]
         if t.endswith("_healthy") and crop in kb.crops:
-            return services.HEALTHY_NAME.get(lang, services.HEALTHY_NAME["en"]).format(
+            return tr(services.HEALTHY_NAME, lang).format(
                 crop=tr(kb.crops[crop]["names"], lang))
         return t.replace("_", " ")
 
@@ -172,10 +172,10 @@ def finish(db: Session, kb: KB, farm: Farm, sess: LiveSession, ctx: dict, lang: 
             db.add(Diagnosis(
                 problem_id=problem.id, image_path=services.save_upload(jpeg) if jpeg else None,
                 topk=[{"target": t, "confidence": item["confidence"]}], gate_outcome="escalate",
-                gate_reason="LIVE_FEW_VIEWS" if item["reason"] == "FEW_VIEWS" else "NOT_PHOTO_DIAGNOSABLE",
+                gate_reason="LIVE_FEW_VIEWS" if item["reason"] in ("FEW_VIEWS", "MINORITY_VIEWS") else "NOT_PHOTO_DIAGNOSABLE",
                 confidence=item["confidence"], model_version=model_version, is_stub=False,
             ))
-        case = services.escalate(db, problem, "LIVE_FEW_VIEWS" if item["reason"] == "FEW_VIEWS"
+        case = services.escalate(db, problem, "LIVE_FEW_VIEWS" if item["reason"] in ("FEW_VIEWS", "MINORITY_VIEWS")
                                  else "NOT_PHOTO_DIAGNOSABLE")
         problem_ids.append(problem.id)
         possible_out.append(item | {"name": tr(kb.targets[t]["names"], lang), "problem_id": problem.id,
@@ -265,7 +265,7 @@ S = {
 
 
 def _s(key: str, lang: str, **kw) -> str:
-    return (S[key].get(lang) or S[key]["en"]).format(**kw)
+    return tr(S[key], lang).format(**kw)
 
 
 def speech(summary: dict, lang: str) -> str:

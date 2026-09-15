@@ -254,3 +254,20 @@ def test_sharpness_of_a_sliver_is_zero_not_nan():
 
     from app.engine.livescan import sharpness
     assert sharpness(np.zeros((2, 2))) == 0.0 and not math.isnan(sharpness(np.zeros((1, 50))))
+
+
+def test_a_minority_reading_goes_to_the_expert_not_to_the_farmer():
+    calls = {"n": 0}
+
+    def classify(img):
+        calls["n"] += 1
+        if calls["n"] in (4, 9):  # two strong misreads in a walk that shows brown spot throughout
+            return [("rice_blast", 0.81), ("rice_brown_spot", 0.15), ("rice_healthy", 0.02)]
+        return [("rice_brown_spot", 0.9), ("rice_blast", 0.06), ("rice_healthy", 0.02)]
+
+    s = LiveSession(crop="rice", lang="en", can_classify=True)
+    walk(s, classify)
+    f = s.findings(kb)
+    assert [x["target"] for x in f["seen"]] == ["rice_brown_spot"]
+    blast = next(x for x in f["possible"] if x["target"] == "rice_blast")
+    assert blast["reason"] == "MINORITY_VIEWS" and blast["strong_views"] == 2
