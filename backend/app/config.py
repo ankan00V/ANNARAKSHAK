@@ -19,6 +19,18 @@ SARVAM_API_KEY = os.environ.get("SARVAM_API_KEY")
 SARVAM_API_KEYS = list(dict.fromkeys(
     k.strip() for k in [*(os.environ.get("SARVAM_API_KEYS") or "").split(","), SARVAM_API_KEY or ""] if k.strip()))
 """Every Sarvam key we may use, rotated; one out of credits is benched and the next takes over."""
+NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY") if os.environ.get("ANNRAKSHAK_NIM") != "off" else None
+"""NVIDIA NIM, used by Krishi to understand a question — never to answer one.
+Absent, Krishi falls back to its own matcher and loses nothing it can promise."""
+NVIDIA_BASE_URL = os.environ.get("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
+NVIDIA_MODEL = os.environ.get("NVIDIA_MODEL", "openai/gpt-oss-20b")
+"""Chosen by measurement on 28 questions typed the way farmers actually type
+(Hinglish, romanised Marathi, typos): it routed 25 right where Krishi's own
+matcher managed 16, refused all 4 off-topic questions, and answers in under a
+second. nemotron-3-super-120b was faster (366 ms) but got 21."""
+NVIDIA_TIMEOUT_S = 10.0
+"""Measured median 2.6 s, 90th percentile 4.8 s. A call that times out costs the
+farmer the wait AND falls back anyway, so the bar is set past the slow tail."""
 OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY")
 AGRO_API_KEY = os.environ.get("AGRO_API_KEY")  # AgroMonitoring: satellite NDVI and soil per field  # optional; Open-Meteo is the keyless fallback
 SARVAM_TTS_MODEL = "bulbul:v3"

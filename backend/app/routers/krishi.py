@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import auth, krishi
@@ -44,8 +45,16 @@ class AskIn(BaseModel):
 @router.post("/ask")
 def ask(body: AskIn, request: Request, db: Session = Depends(get_db), kb: KB = Depends(get_kb)):
     limit(f"krishi:{client_ip(request)}", 60, 60)
+    user = auth.current_user(request, db)
     farm = db.get(Farm, body.farm_id) if body.farm_id is not None else None
-    if farm is not None and not auth.can_open_farm(auth.current_user(request, db), farm):
+    if farm is not None and not auth.can_open_farm(user, farm):
         farm = None  # not theirs: answer as if no farm is open
+    # Krishi is a personal assistant once signed in, so the fields it may talk
+    # about are read from the session, never from the request. body.farm_id only
+    # says which field the farmer is looking at; it can never widen what Krishi
+    # can see, and an expert gets no personal answer at all.
+    farms: list[Farm] = []
+    if user is not None and user.role == "farmer":
+        farms = list(db.scalars(select(Farm).where(Farm.user_id == user.id).order_by(Farm.id)).all())
     return krishi.answer(db, kb, text=body.text, topic=body.topic, screen=body.screen, lang=_lang(body.lang),
-                         farm=farm)
+                         farm=farm, user=user if user and user.role == "farmer" else None, farms=farms)

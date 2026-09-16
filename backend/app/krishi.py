@@ -27,15 +27,22 @@ from functools import lru_cache
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app import services
+from app import nim, services
 from app.config import KB_DIR
 from app.engine import agromet, agroweather
 from app.i18n import LANGS
 from app.kb import KB, tr, trl
-from app.models import Alert, Farm, FollowUp, Problem
+from app.models import Alert, Farm, FarmerProfile, FollowUp, Problem
 
 MATCH_MIN = 0.14
 """Below this similarity Krishi says it didn't understand instead of guessing."""
+CONFIDENT = 0.30
+"""At or above this the matcher is trusted on its own and no model is called:
+the common questions stay instant and work with the network down."""
+PERSONAL = "my_details"
+"""Not an authored topic — the id the router returns for "what crops do I grow",
+"where is my field", "how much land do I have". Answered from the signed-in
+farmer's own rows and nothing else (see `facts` and `_personal`)."""
 SCREEN_BOOST = 0.05
 KEYWORD_BOOST = 0.08
 FARM_TOPICS = ("today", "weather_now", "spray_now", "irrigate_now", "risks_now", "my_cases", "my_farm")
@@ -334,14 +341,35 @@ def hello(screen: str | None, lang: str, name: str | None) -> dict:
 
 
 def answer(db: Session, kb: KB, *, text: str | None, topic: str | None, screen: str | None, lang: str,
-           farm: Farm | None) -> dict:
+           farm: Farm | None, user=None, farms: list[Farm] | None = None) -> dict:
+    """`user` and `farms` are the signed-in farmer and their own fields, and are
+    the only place a personal answer may come from."""
     idx = index()
     ranked: list[tuple[str, float]] = []
     if topic in idx.topics:
         best, score = topic, 1.0
+    elif topic == PERSONAL:
+        best, score = PERSONAL, 1.0
     else:
         ranked = idx.rank(text or "", screen)
         best, score = ranked[0] if ranked else (None, 0.0)
+        # The matcher is fast, offline and right about the common questions. It
+        # is weak on the way farmers really type ("mera dhan me patta pila ho
+        # raha hai"), so below CONFIDENT the model reads the question instead —
+        # and only ever answers with one of our own topic ids.
+        if score < CONFIDENT and (text or "").strip():
+            routed = _route(text or "", idx)
+            if routed in idx.topics:
+                best, score, ranked = routed, max(score, MATCH_MIN), []
+            elif routed == PERSONAL:
+                best, score, ranked = PERSONAL, 1.0, []
+            elif routed is None and score < MATCH_MIN:
+                best = None  # off topic, or nothing we have an authored answer for
+    if best == PERSONAL:
+        out = _personal(db, kb, user, farms or [], text or "", lang, screen)
+        if out is not None:
+            return out
+        best, score = (ranked[0] if ranked else (None, 0.0))
     if best is None or score < MATCH_MIN:
         return {"topic": None, "score": score, "text": _t("not_sure", lang), "steps": [],
                 "go": [], "suggestions": suggestions(screen, lang)}
@@ -516,6 +544,118 @@ def _cases(db: Session, kb: KB, farm: Farm, lang: str) -> dict:
             line = _t("case_open", lang, name=name)
         steps.append(line)
     return {"text": _t("cases_intro", lang), "steps": steps, "go": _go([GO["history"]], lang)}
+
+
+# --------------------------------------------------------------------------
+# The farmer's own details
+#
+# Krishi is a personal assistant after sign-in, which makes the boundary the
+# important part: everything below is built from `user` and `farms`, and the
+# caller resolves those from the session cookie alone (routers/krishi.py). No
+# id from the request body reaches this code, so one farmer's question cannot
+# read another farmer's rows — there is no query here that could.
+# --------------------------------------------------------------------------
+
+def facts(db: Session, kb: KB, user, farms: list[Farm], lang: str) -> str:
+    """Everything Krishi may say about this farmer, as plain lines. Nothing
+    here is generated: each line is a column of their own rows."""
+    if user is None:
+        return ""
+    out: list[str] = []
+    prof = db.get(FarmerProfile, user.id)
+    place = ", ".join(x for x in (prof.village, prof.taluka, prof.district, prof.state) if x) if prof else ""
+    out.append(f"Farmer's name: {user.name}")
+    if user.email:
+        out.append(f"Sign-in email: {user.email}")
+    if user.phone:
+        out.append(f"Phone on the account: {user.phone}")
+    if place:
+        out.append(f"Home village/district: {place}")
+    if prof and prof.total_land_acres:
+        out.append(f"Total land: {prof.total_land_acres} acres")
+    out.append(f"App language: {lang}")
+    out.append(f"Number of fields registered: {len(farms)}")
+
+    today = date.today()
+    for i, f in enumerate(farms, 1):
+        stage, das = kb.stage_for(f.crop, f.sowing_date, today)
+        where = ", ".join(x for x in (f.village, f.taluka, f.district, f.state) if x)
+        line = (f"Field {i}: {tr(kb.crops[f.crop]['names'], 'en')}"
+                f"{f' variety {f.variety}' if f.variety else ''}, {f.area_acres} acres, at {where}. "
+                f"Sown {f.sowing_date.strftime('%d %b %Y')}, {das} days ago, now at the "
+                f"{kb.stage_name(f.crop, stage, 'en')} stage.")
+        if f.irrigation:
+            line += f" Watered by: {f.irrigation}."
+        if f.soil_ph:
+            line += f" Soil pH {f.soil_ph}."
+        line += (" Photo diagnosis is available for this crop."
+                 if kb.crops[f.crop]["photo_diagnosis"] else
+                 " Photo diagnosis is not available for this crop yet; it still gets risk alerts and expert help.")
+        out.append(line)
+        for p in services.problem_views(db, kb, db.scalars(
+                select(Problem).where(Problem.farm_id == f.id).order_by(Problem.id.desc())).all()[:3], "en"):
+            name = p["name"] or "an unidentified problem"
+            if p["expert"]:
+                out.append(f"  Field {i} problem: {name} — the expert {p['expert']['expert_name']} "
+                           f"{p['expert']['verdict']} it.")
+            elif p["case"] and p["case"]["status"] == "open":
+                out.append(f"  Field {i} problem: {name} — waiting for an expert.")
+            else:
+                out.append(f"  Field {i} problem: {name} — {p['status']}.")
+    return "\n".join(out)
+
+
+NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
+
+
+def _values(text: str) -> set[float]:
+    out = set()
+    for n in NUMBER.findall(text or ""):
+        try:
+            out.add(float(n.replace(",", ".")))
+        except ValueError:
+            continue
+    return out
+
+
+def grounded(reply: str, source: str) -> bool:
+    """True when every number in `reply` is one of the farmer's own.
+
+    A model asked to answer from facts mostly does, and occasionally rounds an
+    acre or invents a day. Numbers are what a farmer acts on, so any number not
+    in their own rows sends the answer back and the templated one is shown.
+
+    Compared by value, not by spelling: "3 acres" is a fair way to say "3.0
+    acres" and "6 July" to say "06 Jul", and rejecting those would throw away
+    good answers. An invented 5 acres still has no 5 to match."""
+    have = _values(source)
+    return _values(reply) <= have
+
+
+def _personal(db: Session, kb: KB, user, farms: list[Farm], question: str, lang: str, screen: str | None) -> dict | None:
+    """Answer a question about the farmer's own field from their own rows."""
+    if user is None or not nim.enabled():
+        return None
+    sheet = facts(db, kb, user, farms, lang)
+    if not sheet:
+        return None
+    said = nim.say(question, sheet, lang)
+    if said is None:
+        return None
+    text, steps = said
+    if not grounded(" ".join([text, *steps]), sheet):
+        return None
+    return {"topic": PERSONAL, "score": 1.0, "text": text, "steps": steps, "go": _go([GO["home"]], lang),
+            "suggestions": suggestions(screen, lang)}
+
+
+def _route(text: str, idx: Index) -> str | None:
+    """What the farmer meant, read by the model, as one of our own topic ids."""
+    topics = [(tid, " / ".join(t["ask"]["en"][:3]) + " | " + ", ".join(t.get("keys", [])[:10]))
+              for tid, t in idx.topics.items()]
+    topics.append((PERSONAL, "what crops do I grow / where is my field / how big is my land / "
+                             "when did I sow / what is my name, village, phone | my, mera, majha, apna"))
+    return nim.route(text, topics)
 
 
 def _farm_line(db: Session, kb: KB, farm: Farm, lang: str) -> dict:

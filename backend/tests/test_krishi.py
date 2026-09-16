@@ -9,6 +9,7 @@ from app import config, krishi
 from app.engine import agroweather
 from app.i18n import LANGS
 from app.models import Alert, Problem
+from sqlalchemy import select
 from app.db import SessionLocal
 from tests.test_weather import NOW, bundle, humid, storm, world  # noqa: F401  (fixture)
 
@@ -159,3 +160,59 @@ def test_never_names_a_pesticide():
         for lang, text in t.get("answer", {}).items():
             if t["id"] != "spray_check":  # 'for example Mancozeb' shows what to type, not what to buy
                 assert not products.search(text), (t["id"], lang)
+
+
+# --------------------------------------------------------------------------
+# Krishi as a personal assistant: the farmer's own details, and only theirs
+# --------------------------------------------------------------------------
+
+def test_a_number_that_is_not_in_the_farmer_s_own_rows_is_refused():
+    sheet = "Field 1: Rice, 3.0 acres, sown 01 Jul 2026, 80 days ago."
+    assert krishi.grounded("You have 3.0 acres of rice, sown 80 days ago.", sheet)
+    assert krishi.grounded("You have 3 acres of rice.", sheet)         # same number, said plainly
+    assert krishi.grounded("Sown on 1 July 2026.", sheet)              # "1" for "01"
+    assert not krishi.grounded("You have 5 acres of rice.", sheet)     # invented area
+    assert not krishi.grounded("It was sown 45 days ago.", sheet)      # invented age
+    assert krishi.grounded("Your rice is doing well.", sheet)          # no numbers to check
+
+
+def test_the_facts_sheet_holds_only_the_signed_in_farmer_s_fields(monkeypatch):
+    """The boundary that matters: Krishi builds its answer from the rows of the
+    user it was handed, so another farmer's field cannot appear in it."""
+    from datetime import timedelta
+
+    from app.db import Base, SessionLocal, engine
+    from app.kb import get_kb
+    from app.models import Farm, FarmerProfile, User
+
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    with SessionLocal() as db:
+        mine = User(name="Sunita", role="farmer", email="sunita@example.com", phone="9800000001")
+        theirs = User(name="Ramesh", role="farmer", email="ramesh@example.com", phone="9800000002")
+        db.add_all([mine, theirs])
+        db.flush()
+        db.add_all([
+            FarmerProfile(user_id=mine.id, district="Bhandara", village="Pauni",
+                          consent_at=NOW, total_land_acres=3),
+            Farm(user_id=mine.id, farmer_name="Sunita", crop="rice", sowing_date=NOW.date() - timedelta(days=80),
+                 district="Bhandara", village="Pauni", lat=21.17, lon=79.65, area_acres=2, lang="mr"),
+            Farm(user_id=theirs.id, farmer_name="Ramesh", crop="cotton", sowing_date=NOW.date() - timedelta(days=40),
+                 district="Yavatmal", village="Ner", lat=20.4, lon=78.1, area_acres=9, lang="mr"),
+        ])
+        db.commit()
+        mine_farms = list(db.scalars(select(Farm).where(Farm.user_id == mine.id)).all())
+        sheet = krishi.facts(db, get_kb(), db.get(User, mine.id), mine_farms, "en")
+
+    assert "Sunita" in sheet and "Pauni" in sheet and "2.0 acres" in sheet
+    for leak in ("Ramesh", "Yavatmal", "Ner", "9.0 acres", "ramesh@example.com", "9800000002"):
+        assert leak not in sheet, f"another farmer's {leak} reached the answer"
+
+
+def test_no_personal_answer_without_a_signed_in_farmer():
+    from app.kb import get_kb
+    from app.db import SessionLocal
+
+    with SessionLocal() as db:
+        assert krishi.facts(db, get_kb(), None, [], "en") == ""
+        assert krishi._personal(db, get_kb(), None, [], "how much land do I have", "en", "home") is None
