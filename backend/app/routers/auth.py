@@ -273,7 +273,7 @@ def _me(db: Session, user: User) -> dict:
            "lang": user.lang, "is_demo": user.is_demo}
     if user.role == "farmer":
         p = db.get(FarmerProfile, user.id)
-        out["profile"] = {"district": p.district, "taluka": p.taluka, "village": p.village,
+        out["profile"] = {"state": p.state, "district": p.district, "taluka": p.taluka, "village": p.village,
                           "total_land_acres": p.total_land_acres} if p else None
         out["farm_ids"] = sorted(auth.farm_ids_for(db, user) or [])
     else:

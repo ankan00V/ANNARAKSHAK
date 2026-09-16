@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ChevronRight, LocateFixed, Plus, Sprout } from 'lucide-react'
 import { api } from '../../api/client'
 import type { Farm } from '../../api/types'
-import { DISTRICTS } from '../../lib/districts'
+import WherePicker, { type Where } from '../../auth/WherePicker'
 import { useAsync } from '../../lib/hooks'
 import { Card, ErrorBox, Pill, Spinner } from '../../ui/kit'
 import LanguagePicker from '../components/LanguagePicker'
@@ -103,7 +103,10 @@ function RegisterForm({ crops, onDone }: {
   const [irrigation, setIrrigation] = useState<Irrigation>('rainfed')
   const [crop, setCrop] = useState(crops[0]?.id ?? 'rice')
   const [sowing, setSowing] = useState(() => new Date(Date.now() - 60 * 864e5).toISOString().slice(0, 10))
-  const [district, setDistrict] = useState(me?.profile?.district ?? 'Pune')
+  const [where, setWhere] = useState<Where>({
+    state: me?.profile?.state ?? '', district: me?.profile?.district ?? '', village: me?.profile?.village ?? '',
+    taluka: me?.profile?.taluka ?? '', lat: null, lon: null, fromGps: false,
+  })
   const [area, setArea] = useState('2')
   const [ph, setPh] = useState('')  // Soil Health Card pH, optional
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null)
@@ -125,7 +128,7 @@ function RegisterForm({ crops, onDone }: {
   }
 
   const submit = async () => {
-    const d = DISTRICTS.find((x) => x.name === district)!
+
     setBusy(true)
     setError(null)
     try {
@@ -134,12 +137,13 @@ function RegisterForm({ crops, onDone }: {
         lang,
         crop,
         sowing_date: sowing,
-        district,
-        lat: coords?.lat ?? d.lat,
-        lon: coords?.lon ?? d.lon,
+        state: where.state || null,
+        district: where.district,
+        lat: where.lat ?? coords?.lat,
+        lon: where.lon ?? coords?.lon,
         area_acres: parseFloat(area),
         irrigation,
-        village: me?.profile?.village ?? null,
+        village: where.village || null,
         ...(phOk && ph ? { soil_ph: parseFloat(ph), soil_ph_on: new Date().toISOString().slice(0, 10) } : {}),
       })
       onDone(f.id)
@@ -183,14 +187,7 @@ function RegisterForm({ crops, onDone }: {
         {t('sowingDate')}
         <input className={field} type="date" value={sowing} onChange={(e) => setSowing(e.target.value)} />
       </label>
-      <label className="block text-xs text-soil-dark/60">
-        {t('district')}
-        <select className={field} value={district} onChange={(e) => setDistrict(e.target.value)}>
-          {DISTRICTS.map((d) => (
-            <option key={d.name}>{d.name}</option>
-          ))}
-        </select>
-      </label>
+      <WherePicker value={where} onChange={setWhere} />
       <div className="text-xs text-soil-dark/60">
         <p className="mb-1">{t('authIrrigation')}</p>
         <Chips columns={2} value={[irrigation]} onChange={([v]) => setIrrigation(v)}

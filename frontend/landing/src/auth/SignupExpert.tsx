@@ -4,7 +4,6 @@ import { ShieldCheck } from 'lucide-react'
 import { api } from '../api/client'
 import type { Lang } from '../api/types'
 import { useFarmer } from '../farmer/FarmerContext'
-import { DISTRICTS } from '../lib/districts'
 import { LANGS } from '../lib/i18n'
 import { useAsync } from '../lib/hooks'
 import { Card, ErrorBox, Spinner } from '../ui/kit'
@@ -25,7 +24,8 @@ export default function SignupExpert() {
   const [f, setF] = useState({
     name: '', email: '', phone: '',
     designation: 'kvk_scientist', organisation: '', employeeId: '', qualification: 'msc_agri', experience: '',
-    districts: [] as string[], crops: [] as string[], specialities: [] as string[], languages: ['mr', 'hi', 'en'] as Lang[],
+    state: '', districts: [] as string[], crops: [] as string[], specialities: [] as string[],
+    languages: ['mr', 'hi', 'en'] as Lang[],
   })
   const [query, setQuery] = useState('')
   const [touched, setTouched] = useState(false)
@@ -59,9 +59,12 @@ export default function SignupExpert() {
     }
   }
 
+  const places = useAsync(() => api.places(), [], 'places')
+  const inState = places.data?.states.find((x) => x.name === f.state)?.districts ?? []
   const districts = useMemo(
-    () => DISTRICTS.map((d) => d.name).filter((d) => d.toLowerCase().includes(query.trim().toLowerCase())),
-    [query],
+    () => inState.map((d) => d.name).filter((d) => d.toLowerCase().includes(query.trim().toLowerCase())),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [query, f.state, places.data],
   )
   const titles = [t('authExpertStep1'), t('authExpertStep2'), t('authExpertStep3'), t('authFarmerStep4')]
   const o = options.data
@@ -123,11 +126,17 @@ export default function SignupExpert() {
 
       {step === 2 && (
         <div className="space-y-5">
+          <Field label={t('authState')}>
+            <Select value={f.state} onChange={(v) => set('state', v)}>
+              <option value="">{t('authPickState')}</option>
+              {(places.data?.states ?? []).map((x) => <option key={x.name}>{x.name}</option>)}
+            </Select>
+          </Field>
           <Field group label={`${t('authDistricts')} · ${f.districts.length}`} hint={t('authDistrictsHint')}
             error={show('districts') && t('authPickOne')}>
             <div className="flex gap-2 mb-2">
               <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('authSearch')} />
-              <button type="button" onClick={() => set('districts', DISTRICTS.map((d) => d.name))}
+              <button type="button" onClick={() => set('districts', inState.map((d) => d.name))}
                 className="px-3 rounded-xl border border-soil-dark/15 text-[13px] font-medium bg-white">{t('authSelectAll')}</button>
               <button type="button" onClick={() => set('districts', [])}
                 className="px-3 rounded-xl border border-soil-dark/15 text-[13px] font-medium bg-white">{t('authClear')}</button>

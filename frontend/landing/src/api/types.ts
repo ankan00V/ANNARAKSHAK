@@ -663,6 +663,7 @@ export interface Me {
   is_demo: boolean
   farm_ids?: number[]
   profile: {
+    state?: string | null
     district?: string
     taluka?: string | null
     village?: string | null
