@@ -28,10 +28,17 @@ interface Msg {
 
 let nextId = 1
 
-/** Krishi, the in-app helper: always in the bottom-right corner of the farmer
- *  app and the sign-in screens. Answers come from the server's authored help
- *  topics and the farm's own data — never made up. */
-export default function Krishi({ aboveNav = false }: { aboveNav?: boolean }) {
+/** Krishi, the in-app helper. Answers come from the server's authored help
+ *  topics and the farm's own data — never made up.
+ *
+ *  `anchor` says where the opener sits. In the farmer app it floats in the
+ *  bottom-right corner. On sign-up it does not: that screen is a form of
+ *  side-by-side choice tiles, and a floating bubble parks itself on top of one
+ *  of them (it was covering "Open well"), so the opener goes in the header
+ *  where it can never cover an answer the farmer is trying to tap. The panel
+ *  it opens is the same either way. */
+export default function Krishi({ aboveNav = false, anchor = 'float' }:
+  { aboveNav?: boolean; anchor?: 'float' | 'header' }) {
   const { lang, t, farmId } = useFarmer()
   const { me } = useAuth()
   const { pathname } = useLocation()
@@ -128,7 +135,20 @@ export default function Krishi({ aboveNav = false }: { aboveNav?: boolean }) {
 
   return (
     <>
-      {!open && (
+      {!open && anchor === 'header' && (
+        <button
+          onClick={() => setOpen(true)}
+          aria-label={t('krishiAsk')}
+          className="shrink-0 flex items-center gap-1.5 rounded-full bg-cream/15 text-cream ring-1 ring-cream/30 pl-1.5 pr-3 py-1 hover:bg-cream/25 transition"
+        >
+          <span className="w-7 h-7 rounded-full bg-cream text-leaf-deep flex items-center justify-center">
+            <Sprout className="w-4 h-4" />
+          </span>
+          <span className="text-[13px] font-semibold">{t('krishiName')}</span>
+        </button>
+      )}
+
+      {!open && anchor === 'float' && (
         <button
           onClick={() => setOpen(true)}
           aria-label={t('krishiAsk')}

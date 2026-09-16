@@ -31,13 +31,15 @@ function Frame() {
             <BrandMark size={34} />
             AnnRakshak
           </Link>
-          <LanguagePicker onPick={setLang} />
+          <div className="flex items-center gap-2">
+            <Krishi anchor="header" />
+            <LanguagePicker onPick={setLang} />
+          </div>
         </div>
       </header>
       <main className="max-w-lg mx-auto px-4 pt-6 pb-16 animate-fadein">
         <Outlet />
       </main>
-      <Krishi />
     </div>
   )
 }
