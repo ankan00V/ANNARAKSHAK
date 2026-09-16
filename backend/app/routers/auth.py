@@ -237,7 +237,9 @@ class FarmerSignup(BaseModel):
     app keeps asking until it is, because the weather, the spray window and the
     outbreak radius are all read at this spot."""
     total_land_acres: float | None = Field(default=None, gt=0, le=10000)
-    farm: FirstFarm
+    farms: list[FirstFarm] = Field(min_length=1, max_length=6)
+    """A farmer usually sows more than one crop — rice on one plot, cotton on
+    another. Each is its own field, with its own stage, risks and advice."""
     consent: bool
 
 
@@ -282,8 +284,8 @@ def signup_farmer(body: FarmerSignup, request: Request, response: Response, db: 
         raise HTTPException(422, "unknown language")
     if not body.consent:
         raise HTTPException(422, _say("consent", body.lang))
-    bad = [x for x, ok in ((body.district, body.district in _districts()), (body.farm.crop, body.farm.crop in kb.crops))
-           if not ok]
+    bad = ([body.district] if body.district not in _districts() else []) \
+        + [f.crop for f in body.farms if f.crop not in kb.crops]
     if bad:
         raise HTTPException(422, _say("pick_lists", body.lang, items=", ".join(bad)))
     phone = _phone(body.phone, body.lang)
@@ -295,13 +297,13 @@ def signup_farmer(body: FarmerSignup, request: Request, response: Response, db: 
     db.flush()
     db.add(FarmerProfile(user_id=user.id, district=body.district, taluka=taluka, village=village,
                          total_land_acres=body.total_land_acres, consent_at=auth.now()))
-    f = body.farm
-    db.add(Farm(user_id=user.id, farmer_name=name, phone=phone, email=ch.destination, lang=body.lang,
-                crop=f.crop, variety=(f.variety or "").strip() or None, sowing_date=f.sowing_date,
-                district=body.district, taluka=taluka, village=village, lat=body.lat, lon=body.lon,
-                area_acres=f.area_acres, irrigation=f.irrigation, soil_ph=f.soil_ph,
-                location_source="gps" if body.location_from_gps else "district",
-                soil_ph_on=date.today() if f.soil_ph is not None else None))
+    for f in body.farms:  # one row per plot: each has its own crop stage, risks and advice
+        db.add(Farm(user_id=user.id, farmer_name=name, phone=phone, email=ch.destination, lang=body.lang,
+                    crop=f.crop, variety=(f.variety or "").strip() or None, sowing_date=f.sowing_date,
+                    district=body.district, taluka=taluka, village=village, lat=body.lat, lon=body.lon,
+                    area_acres=f.area_acres, irrigation=f.irrigation, soil_ph=f.soil_ph,
+                    location_source="gps" if body.location_from_gps else "district",
+                    soil_ph_on=date.today() if f.soil_ph is not None else None))
     auth.start_session(db, user, response, request.headers.get("user-agent"))
     db.commit()
     return _me(db, user)

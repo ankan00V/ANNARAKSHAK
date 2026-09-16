@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronDown, LocateFixed } from 'lucide-react'
+import { ChevronDown, LocateFixed, Plus, X } from 'lucide-react'
 import { api } from '../api/client'
 import type { Irrigation } from '../api/types'
 import LanguagePicker from '../farmer/components/LanguagePicker'
@@ -13,6 +13,15 @@ import { emailOk, phoneOk } from './helpers'
 import { Chips, CodePanel, Field, Input, Primary, Secondary, Select, Steps } from './parts'
 
 const IRRIGATION: Irrigation[] = ['rainfed', 'canal', 'borewell', 'open_well', 'farm_pond', 'drip', 'sprinkler']
+
+interface FirstField {
+  crop: string
+  variety: string | null
+  sowing_date: string
+  area_acres: number
+  irrigation: Irrigation
+  soil_ph: number | null
+}
 const today = () => new Date().toISOString().slice(0, 10)
 
 /** The district whose headquarters is nearest this point — one less question
@@ -20,6 +29,28 @@ const today = () => new Date().toISOString().slice(0, 10)
 function districtAt(lat: number, lon: number): string {
   const d2 = (d: (typeof DISTRICTS)[number]) => (d.lat - lat) ** 2 + ((d.lon - lon) * Math.cos((lat * Math.PI) / 180)) ** 2
   return DISTRICTS.reduce((best, d) => (d2(d) < d2(best) ? d : best)).name
+}
+
+/** The plots added so far, so a farmer can see what they have entered. */
+function FieldList({ fields, crops, onRemove }: {
+  fields: FirstField[]; crops?: { id: string; name: string }[] | null; onRemove: (i: number) => void
+}) {
+  const { t } = useFarmer()
+  return (
+    <ul className="space-y-2">
+      {fields.map((x, i) => (
+        <li key={i} className="flex items-center gap-2 rounded-xl bg-leaf/10 border border-leaf/30 px-3 py-2 text-[13px]">
+          <span className="flex-1 min-w-0">
+            <span className="font-medium">{crops?.find((c) => c.id === x.crop)?.name ?? x.crop}</span>
+            <span className="text-soil-dark/60"> · {x.area_acres} {t('acres')} · {x.sowing_date}</span>
+          </span>
+          <button type="button" onClick={() => onRemove(i)} aria-label={t('authRemoveField')} className="p-1 text-soil-dark/45">
+            <X className="w-4 h-4" />
+          </button>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 /** Optional questions, folded away: a farmer should see a short form, and open
@@ -55,6 +86,9 @@ export default function SignupFarmer() {
     area: '', irrigation: 'rainfed' as Irrigation, ph: '',
     consent: false,
   }))
+  // Every plot the farmer has sown. The one being filled in lives in `f`;
+  // "I grow another crop too" pushes it here and clears the form for the next.
+  const [fields, setFields] = useState<FirstField[]>([])
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null)
   const [locating, setLocating] = useState(false)
   const [fromGps, setFromGps] = useState(false)
@@ -111,15 +145,26 @@ export default function SignupFarmer() {
       village: f.village.trim(), lat: coords?.lat ?? d.lat, lon: coords?.lon ?? d.lon,
       location_from_gps: coords != null,
       total_land_acres: f.totalLand ? parseFloat(f.totalLand) : null, consent: f.consent,
-      farm: {
-        crop: f.crop, variety: f.variety.trim() || null, sowing_date: f.sowing, area_acres: parseFloat(f.area),
-        irrigation: f.irrigation, soil_ph: f.ph ? parseFloat(f.ph) : null,
-      },
+      farms: [...fields, current()],
     }
   }
 
+  /** The field on screen right now. */
+  const current = (): FirstField => ({
+    crop: f.crop, variety: f.variety.trim() || null, sowing_date: f.sowing, area_acres: parseFloat(f.area),
+    irrigation: f.irrigation, soil_ph: f.ph ? parseFloat(f.ph) : null,
+  })
+
+  const addAnother = () => {
+    setTouched(true)
+    if (!stepOk[2]) return
+    setFields((list) => [...list, current()])
+    setF((x) => ({ ...x, crop: crops.data?.find((c) => c.id !== x.crop)?.id ?? x.crop, variety: '', area: '', ph: '' }))
+    setTouched(false)
+    window.scrollTo(0, 0)
+  }
+
   const titles = [t('authFarmerStep1'), t('authFarmerStep2'), t('authFarmerStep3'), t('authFarmerStep4')]
-  const cropName = crops.data?.find((c) => c.id === f.crop)?.name ?? f.crop
   const selectedCrop = crops.data?.find((c) => c.id === f.crop)
 
   return (
@@ -185,7 +230,9 @@ export default function SignupFarmer() {
 
       {step === 2 && (
         <div className="space-y-4">
-          <p className="text-sm text-soil-dark/60 -mt-2">{t('authFirstField')}</p>
+          <p className="text-sm text-soil-dark/60 -mt-2">{fields.length ? t('authFieldsHint') : t('authFirstField')}</p>
+          {fields.length > 0 && <FieldList fields={fields} crops={crops.data} onRemove={(i) =>
+            setFields((list) => list.filter((_, j) => j !== i))} />}
           {!crops.data ? <Spinner /> : (
             <Field group label={t('crop')}>
               <Chips columns={2} value={[f.crop]} onChange={([c]) => set('crop', c)}
@@ -216,6 +263,13 @@ export default function SignupFarmer() {
                 min="3" max="11" step="0.1" placeholder="6.8" invalid={show('ph')} />
             </Field>
           </MoreDetails>
+          {fields.length < 5 && (
+            <button type="button" onClick={addAnother}
+              className="w-full min-h-[48px] rounded-2xl border-2 border-dashed border-leaf/40 text-leaf-deep text-sm font-semibold flex items-center justify-center gap-2 hover:bg-leaf/5">
+              <Plus className="w-4 h-4" />
+              {t('authAddAnother')}
+            </button>
+          )}
         </div>
       )}
 
@@ -229,9 +283,15 @@ export default function SignupFarmer() {
               <dt className="text-soil-dark/55">{t('authEmail')}</dt><dd className="break-all">{f.email.trim()}</dd>
               <dt className="text-soil-dark/55">{t('authVillage')}</dt>
               <dd>{[f.village, f.taluka, f.district].filter(Boolean).join(', ')}</dd>
-              <dt className="text-soil-dark/55">{t('crop')}</dt>
-              <dd>{cropName}{f.variety && ` (${f.variety})`} · {f.area} {t('acres')} · {t(`irr_${f.irrigation}`)}</dd>
-              <dt className="text-soil-dark/55">{t('sowingDate')}</dt><dd>{f.sowing}</dd>
+              <dt className="text-soil-dark/55">{t('authFieldsTitle')}</dt>
+              <dd>
+                {[...fields, current()].map((x, i) => (
+                  <span key={i} className="block">
+                    {crops.data?.find((c) => c.id === x.crop)?.name ?? x.crop} · {x.area_acres} {t('acres')} ·{' '}
+                    {t(`irr_${x.irrigation}`)} · {x.sowing_date}
+                  </span>
+                ))}
+              </dd>
             </dl>
             <button type="button" onClick={() => setStep(0)} className="mt-3 text-[13px] text-leaf-deep font-medium">
               {t('authChange')}

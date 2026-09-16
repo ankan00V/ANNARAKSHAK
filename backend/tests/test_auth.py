@@ -55,8 +55,8 @@ def farmer_signup(c: TestClient, mail, phone="9876543210", email="ramesh@example
     body = {"challenge_id": r.json()["challenge_id"], "code": code_of(mail), "name": "Ramesh Patil",
             "phone": phone, "lang": "mr", "district": "Bhandara", "taluka": "Tumsar", "village": "Mohadi",
             "lat": 21.38, "lon": 79.73, "total_land_acres": 4.5, "consent": True,
-            "farm": {"crop": "rice", "variety": "Jaya", "sowing_date": SOWN, "area_acres": 2.5,
-                     "irrigation": "canal", "soil_ph": 6.8}} | over
+            "farms": [{"crop": "rice", "variety": "Jaya", "sowing_date": SOWN, "area_acres": 2.5,
+                       "irrigation": "canal", "soil_ph": 6.8}]} | over
     return c.post("/api/auth/signup/farmer", json=body)
 
 
@@ -122,7 +122,7 @@ def test_codes_are_hashed_single_use_and_limited(client, mail):
     wrong = "000000" if code != "000000" else "111111"
     base = {"challenge_id": cid, "name": "A B", "phone": "9000000001", "district": "Bhandara", "village": "X Y",
             "lat": 21.1, "lon": 79.6, "consent": True, "lang": "en",
-            "farm": {"crop": "rice", "sowing_date": SOWN, "area_acres": 1, "irrigation": "rainfed"}}
+            "farms": [{"crop": "rice", "sowing_date": SOWN, "area_acres": 1, "irrigation": "rainfed"}]}
     for left in (4, 3, 2, 1):
         r = client.post("/api/auth/signup/farmer", json=base | {"code": wrong})
         assert r.status_code == 400 and str(left) in r.json()["detail"]
@@ -184,9 +184,25 @@ def test_duplicate_signups_are_refused(client, mail):
 def test_signup_validates_the_answers(client, mail):
     assert farmer_signup(client, mail, consent=False).status_code == 422
     assert farmer_signup(client, mail, district="Atlantis").status_code == 422
-    r = farmer_signup(client, mail, farm={"crop": "rice", "sowing_date": SOWN, "area_acres": 1,
-                                          "irrigation": "sprinkler", "soil_ph": 14})
+    r = farmer_signup(client, mail, farms=[{"crop": "rice", "sowing_date": SOWN, "area_acres": 1,
+                                           "irrigation": "sprinkler", "soil_ph": 14}])
     assert r.status_code == 422
+
+
+def test_signup_registers_every_crop_a_farmer_sowed(client, mail):
+    """Farmers sow more than one crop; each plot is its own field, so a photo of
+    any of them is diagnosed instead of refused as 'another crop'."""
+    r = farmer_signup(client, mail, farms=[
+        {"crop": "rice", "sowing_date": SOWN, "area_acres": 2, "irrigation": "canal"},
+        {"crop": "cotton", "sowing_date": SOWN, "area_acres": 3, "irrigation": "rainfed"},
+        {"crop": "maize", "sowing_date": SOWN, "area_acres": 1.5, "irrigation": "borewell"}])
+    assert r.status_code == 201, r.text
+    assert len(r.json()["farm_ids"]) == 3
+    with SessionLocal() as db:
+        farms = db.scalars(select(Farm).where(Farm.user_id == r.json()["id"])).all()
+        assert sorted(f.crop for f in farms) == ["cotton", "maize", "rice"]
+        assert {f.village for f in farms} == {"Mohadi"} and {f.lat for f in farms} == {21.38}
+    assert [f["crop"] for f in client.get("/api/farms").json()] == ["rice", "cotton", "maize"]
 
 
 def test_farmers_see_only_their_own_farms(client, mail):

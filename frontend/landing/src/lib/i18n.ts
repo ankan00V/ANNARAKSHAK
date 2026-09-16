@@ -453,6 +453,16 @@ const en = {
   locSaved: 'Saved — your field is now on the map.',
   locDenied: 'Location is blocked for this site in your browser. Allow it in the browser\'s settings, or tell your agriculture assistant your field\'s village.',
   locFailed: 'Could not get your location. Try again under open sky.',
+
+  // More than one crop: a farmer usually has several plots
+  authFieldsTitle: 'Your fields',
+  authAddAnother: 'I grow another crop too',
+  authFieldNo: 'Field {n}',
+  authRemoveField: 'Remove',
+  authFieldsHint: 'Add a field for every crop you have sown. Each one gets its own weather, risks and advice.',
+  mismatchAddField: 'I grow {crop} too — add that field',
+  mismatchNewField: 'Your {crop} field',
+  mismatchAddAndCheck: 'Add and check this photo',
 }
 
 type Key = keyof typeof en
@@ -902,6 +912,16 @@ const hi: Partial<Record<Key, string>> = {
   locSaved: 'सहेजा गया — अब आपका खेत नक्शे पर है।',
   locDenied: 'इस साइट के लिए ब्राउज़र में स्थान बंद है। ब्राउज़र सेटिंग में अनुमति दें, या अपने कृषि सहायक को खेत का गाँव बताएँ।',
   locFailed: 'स्थान नहीं मिला। खुले आसमान के नीचे फिर कोशिश करें।',
+
+  // More than one crop: a farmer usually has several plots
+  authFieldsTitle: 'आपके खेत',
+  authAddAnother: 'मैं दूसरी फसल भी उगाता/उगाती हूँ',
+  authFieldNo: 'खेत {n}',
+  authRemoveField: 'हटाएँ',
+  authFieldsHint: 'जो-जो फसल बोई है, हर एक के लिए खेत जोड़ें। हर खेत का मौसम, खतरा और सलाह अलग मिलती है।',
+  mismatchAddField: 'मैं {crop} भी उगाता/उगाती हूँ — वह खेत जोड़ें',
+  mismatchNewField: 'आपका {crop} खेत',
+  mismatchAddAndCheck: 'जोड़ें और यह फोटो जाँचें',
 }
 
 const mr: Partial<Record<Key, string>> = {
@@ -1349,6 +1369,16 @@ const mr: Partial<Record<Key, string>> = {
   locSaved: 'जतन झाले — आता तुमचे शेत नकाशावर आहे.',
   locDenied: 'या साइटसाठी ब्राउझरमध्ये स्थान बंद आहे. ब्राउझर सेटिंगमध्ये परवानगी द्या, किंवा तुमच्या कृषी सहाय्यकाला शेताचे गाव सांगा.',
   locFailed: 'स्थान मिळाले नाही. मोकळ्या आकाशाखाली पुन्हा प्रयत्न करा.',
+
+  // More than one crop: a farmer usually has several plots
+  authFieldsTitle: 'तुमची शेते',
+  authAddAnother: 'मी दुसरे पीकही घेतो/घेते',
+  authFieldNo: 'शेत {n}',
+  authRemoveField: 'काढा',
+  authFieldsHint: 'तुम्ही पेरलेल्या प्रत्येक पिकासाठी शेत जोडा. प्रत्येक शेताचे हवामान, धोका आणि सल्ला वेगळा मिळतो.',
+  mismatchAddField: 'मी {crop} सुद्धा घेतो/घेते — ते शेत जोडा',
+  mismatchNewField: 'तुमचे {crop} शेत',
+  mismatchAddAndCheck: 'जोडा आणि हा फोटो तपासा',
 }
 
 // English, Hindi and Marathi are authored here. The other eight are machine
