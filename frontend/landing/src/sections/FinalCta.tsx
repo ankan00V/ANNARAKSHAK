@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext'
 import { homeOf } from '../auth/helpers'
 
 export default function FinalCta() {
-  const { me } = useAuth()
+  const { me, logout } = useAuth()
   return (
     <section id="cta" className="w-full bg-leaf-deep text-cream">
       <div className="max-w-4xl mx-auto px-6 md:px-12 pt-16 md:pt-24 pb-10 text-center">
@@ -13,14 +13,22 @@ export default function FinalCta() {
           Ready to protect your harvest?
         </h2>
         {me ? (
-          <div className="mt-8 flex justify-center">
-            <Link
-              to={homeOf(me.role)}
-              className="w-full sm:w-auto bg-ochre text-soil-dark rounded-full px-8 py-4 text-sm font-medium hover:brightness-105 transition"
-            >
-              Continue as {me.name}
-            </Link>
-          </div>
+          <>
+            <div className="mt-8 flex justify-center">
+              <Link
+                to={homeOf(me.role)}
+                className="w-full sm:w-auto bg-ochre text-soil-dark rounded-full px-8 py-4 text-sm font-medium hover:brightness-105 transition"
+              >
+                Continue as {me.name}
+              </Link>
+            </div>
+            <p className="mt-5 text-sm text-cream/70">
+              Not you?{' '}
+              <button onClick={() => { void logout() }} className="text-cream font-medium underline underline-offset-4">
+                Sign in as someone else
+              </button>
+            </p>
+          </>
         ) : (
           <>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
