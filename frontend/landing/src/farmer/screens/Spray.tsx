@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Ban, FlaskConical, Info, Loader2, ShieldCheck, SprayCan } from 'lucide-react'
+import { Ban, FlaskConical, HelpCircle, Info, Loader2, ShieldCheck, SprayCan } from 'lucide-react'
 import { api } from '../../api/client'
 import type { LabelVerdict } from '../../api/types'
 import { useAsync } from '../../lib/hooks'
@@ -104,15 +104,20 @@ export default function Spray() {
       {error && <ErrorBox error={error} />}
 
       {v && (
-        <section className={`rounded-2xl p-5 animate-fadein ${v.is_veto ? 'bg-ember text-cream' : 'bg-white border-2 border-leaf/40'}`}>
+        <section className={`rounded-2xl p-5 animate-fadein ${
+          v.tone === 'stop' ? 'bg-ember text-cream'
+            : v.tone === 'unknown' ? 'bg-ochre/15 border-2 border-ochre/50'
+            : 'bg-white border-2 border-leaf/40'}`}>
           <div className="flex items-start justify-between gap-3">
             <p className="flex items-center gap-2 text-xl font-semibold">
-              {v.is_veto ? <Ban className="w-6 h-6" /> : <ShieldCheck className="w-6 h-6 text-leaf" />}
-              {v.is_veto ? t('vetoTitle') : t('noObjectionTitle')}
+              {v.tone === 'stop' ? <Ban className="w-6 h-6" />
+                : v.tone === 'unknown' ? <HelpCircle className="w-6 h-6 text-[#8a5a17]" />
+                : <ShieldCheck className="w-6 h-6 text-leaf" />}
+              {v.tone === 'stop' ? t('vetoTitle') : v.tone === 'unknown' ? t('unknownTitle') : t('noObjectionTitle')}
             </p>
             <ListenButton text={v.message} lang={lang} label={t('listen')} stopLabel={t('stop')} compact />
           </div>
-          {v.product && <p className={`mt-1 text-xs ${v.is_veto ? 'text-cream/80' : 'text-soil-dark/60'}`}>{v.product}</p>}
+          {v.product && <p className={`mt-1 text-xs ${v.tone === 'stop' ? 'text-cream/80' : 'text-soil-dark/60'}`}>{v.product}</p>}
           <p className="mt-3 text-[15px] leading-snug">{v.message}</p>
           {!v.is_veto && (
             logged

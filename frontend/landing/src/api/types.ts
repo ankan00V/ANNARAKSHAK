@@ -227,6 +227,8 @@ export interface LabelVerdict {
   ingredient: string | null
   product: string | null
   is_veto: boolean
+  /** 'stop' = known to be wrong here, 'unknown' = no record of it, 'ok' = no objection found. */
+  tone: 'stop' | 'unknown' | 'ok'
   target: string | null
 }
 

@@ -80,6 +80,15 @@ def check(kb: KB, query: str, crop: str, target: str | None, lang: str) -> dict:
             "ingredient": ingredient,
             "product": kb.pesticides[ingredient]["name"] if ingredient else None,
             "is_veto": code != "NO_OBJECTION_FOUND",
+            # Three different things, and a farmer should be able to tell them
+            # apart at a glance. "stop" is a product we know is wrong here — a
+            # herbicide on a disease, a fungicide on an insect. "unknown" is a
+            # word we simply do not hold a record for, which is not the same
+            # accusation: typing "water" and being told "DO NOT SPRAY THIS" in
+            # red reads as if water were dangerous. Both still refuse to endorse,
+            # and is_veto stays true for both so nothing downstream treats an
+            # unrecognised input as approved.
+            "tone": "ok" if code == "NO_OBJECTION_FOUND" else "unknown" if code == "NOT_IN_RECORDS" else "stop",
         }
 
     if ingredient is None:
