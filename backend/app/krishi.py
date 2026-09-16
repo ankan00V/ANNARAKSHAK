@@ -38,7 +38,9 @@ MATCH_MIN = 0.14
 """Below this similarity Krishi says it didn't understand instead of guessing."""
 SCREEN_BOOST = 0.05
 KEYWORD_BOOST = 0.08
-LIVE_TOPICS = ("today", "weather_now", "spray_now", "irrigate_now", "risks_now", "my_cases", "my_farm")
+FARM_TOPICS = ("today", "weather_now", "spray_now", "irrigate_now", "risks_now", "my_cases", "my_farm")
+"""Answered from the farmer's own field: they need a farm open."""
+LIVE_TOPICS = (*FARM_TOPICS, "crop_support")
 AUTHORED_LANGS = ("en", "hi", "mr")
 
 # What each screen offers first, as suggestion chips.
@@ -152,6 +154,18 @@ TEXT = {
     "case_resolved": {"en": "{name}: resolved.", "hi": "{name}: सुलझ गई।", "mr": "{name}: सुटली."},
     "case_unknown": {"en": "Photo sent for checking", "hi": "जाँच के लिए भेजी गई फोटो", "mr": "तपासणीसाठी पाठवलेला फोटो"},
     "case_note": {"en": "Expert's note: {note}", "hi": "विशेषज्ञ की टिप्पणी: {note}", "mr": "तज्ज्ञांची टीप: {note}"},
+    "crops_photo": {"en": "A photo or a live check identifies diseases and pests on {crops}.",
+                    "hi": "फोटो या लाइव जाँच {crops} के रोग और कीट पहचानती है।",
+                    "mr": "फोटो किंवा थेट तपासणी {crops} चे रोग व किडी ओळखते."},
+    "crops_other": {"en": "{crops}: everything else works — weather warnings, pest-risk alerts, trap counts, spray "
+                          "and water advice — and you can send close-ups to an expert. Photo checks for them are being added.",
+                    "hi": "{crops}: बाकी सब चलता है — मौसम चेतावनी, कीट-खतरे के अलर्ट, ट्रैप गिनती, छिड़काव और पानी की सलाह — "
+                          "और आप पास की फोटो विशेषज्ञ को भेज सकते हैं। इनकी फोटो जाँच जोड़ी जा रही है।",
+                    "mr": "{crops}: बाकी सर्व चालते — हवामान इशारे, किडीच्या धोक्याच्या सूचना, सापळा नोंद, फवारणी व पाण्याचा सल्ला — "
+                          "आणि जवळचे फोटो तज्ज्ञांना पाठवता येतात. त्यांची फोटो तपासणी जोडली जात आहे."},
+    "crops_trained": {"en": "The model is trained on ICAR photos and field photos from Indian fields.",
+                      "hi": "मॉडल ICAR की तस्वीरों और भारतीय खेतों की फ़ील्ड फ़ोटो पर सीखा है।",
+                      "mr": "मॉडेल ICAR ची चित्रे आणि भारतीय शेतांतील फोटोंवर शिकले आहे."},
     "farm_line": {"en": "Your {crop}{variety} in {place}: sown on {sown}, now {das} days old, at the {stage} stage. Field size {area} acres.",
                   "hi": "{place} में आपकी {crop}{variety}: बुवाई {sown} को, अब {das} दिन की, {stage} अवस्था में। खेत {area} एकड़।",
                   "mr": "{place} मधील तुमचे {crop}{variety}: पेरणी {sown} रोजी, आता {das} दिवसांचे, {stage} अवस्थेत. क्षेत्र {area} एकर."},
@@ -345,11 +359,25 @@ def answer(db: Session, kb: KB, *, text: str | None, topic: str | None, screen: 
 
 
 def _live(db: Session, kb: KB, topic: str, lang: str, farm: Farm | None) -> dict:
+    if topic == "crop_support":
+        return _crops(kb, lang)
     if farm is None:
         return {"text": _t("need_farm", lang), "steps": [], "go": []}
     fn = {"today": _today, "weather_now": _weather, "spray_now": _spray, "irrigate_now": _water,
           "risks_now": _risks, "my_cases": _cases, "my_farm": _farm_line}[topic]
     return fn(db, kb, farm, lang)
+
+
+def _crops(kb: KB, lang: str) -> dict:
+    """Which crops the camera can identify — read from the knowledge base, so it
+    is right the day a crop's photo model ships."""
+    def names(want: bool) -> str:
+        return ", ".join(tr(c["names"], lang) for c in kb.crops.values() if c["photo_diagnosis"] is want)
+
+    text = _t("crops_photo", lang, crops=names(True)) + " " + _t("crops_trained", lang)
+    rest = names(False)
+    steps = [_t("crops_other", lang, crops=rest)] if rest else []
+    return {"text": text, "steps": steps, "go": _go([GO["scan"]], lang)}
 
 
 def _weather_view(db: Session, kb: KB, farm: Farm, lang: str) -> dict | None:

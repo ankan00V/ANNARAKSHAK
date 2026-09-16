@@ -1165,11 +1165,7 @@
     "मक्का",
     "मका"
    ],
-   "answer": {
-    "en": "Photo and live checks identify diseases and pests on rice and maize today, trained on ICAR images. Cotton and soybean fields get everything else — weather warnings, pest-risk alerts, trap counts, spray and water advice — and you can send close-ups to an expert. Photo checks for cotton and soybean are being added.",
-    "hi": "फोटो और लाइव जाँच अभी धान और मक्का के रोग और कीट पहचानती है, ICAR की तस्वीरों पर सीखी हुई। कपास और सोयाबीन के खेतों को बाकी सब मिलता है — मौसम चेतावनी, कीट-खतरे के अलर्ट, ट्रैप गिनती, छिड़काव और पानी की सलाह — और आप पास की फोटो विशेषज्ञ को भेज सकते हैं। कपास और सोयाबीन की फोटो जाँच जोड़ी जा रही है।",
-    "mr": "फोटो आणि थेट तपासणी सध्या भात आणि मक्याचे रोग व किडी ओळखते, ICAR च्या चित्रांवरून शिकलेली. कापूस आणि सोयाबीनच्या शेतांना बाकी सर्व मिळते — हवामान इशारे, किडीच्या धोक्याच्या सूचना, सापळा नोंद, फवारणी व पाण्याचा सल्ला — आणि जवळचे फोटो तज्ज्ञांना पाठवता येतात. कापूस आणि सोयाबीनची फोटो तपासणी जोडली जात आहे."
-   }
+   "live": true
   },
   {
    "id": "photo_refused",
