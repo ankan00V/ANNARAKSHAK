@@ -109,6 +109,7 @@ export default function SignupFarmer() {
     return {
       name: f.name.trim(), phone: f.phone, lang, district: f.district, taluka: f.taluka.trim() || null,
       village: f.village.trim(), lat: coords?.lat ?? d.lat, lon: coords?.lon ?? d.lon,
+      location_from_gps: coords != null,
       total_land_acres: f.totalLand ? parseFloat(f.totalLand) : null, consent: f.consent,
       farm: {
         crop: f.crop, variety: f.variety.trim() || null, sowing_date: f.sowing, area_acres: parseFloat(f.area),

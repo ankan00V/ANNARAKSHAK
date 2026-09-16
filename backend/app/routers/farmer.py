@@ -151,17 +151,24 @@ def create_farm(body: FarmIn, request: Request, db: Session = Depends(get_db), k
 
 
 class FarmPrefs(BaseModel):
-    lang: Lang
+    lang: Lang | None = None
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lon: float | None = Field(default=None, ge=-180, le=180)
 
 
 @router.patch("/farms/{farm_id}")
 def update_farm(farm_id: int, body: FarmPrefs, db: Session = Depends(get_db), kb: KB = Depends(get_kb)):
-    """The farmer's preferred language: the app, the voice, phone notifications
-    and emails all follow it."""
+    """The farmer's preferred language (the app, the voice, notifications and
+    emails all follow it), and the field's own spot once they allow location —
+    everything from the weather to the outbreak radius is read there."""
     farm = _farm(db, farm_id)
-    farm.lang = body.lang
+    if body.lang:
+        farm.lang = body.lang
+    if body.lat is not None and body.lon is not None:
+        farm.lat, farm.lon, farm.location_source = body.lat, body.lon, "gps"
+        farm.agro_polygon_id = None  # the satellite field polygon is redrawn around the new spot
     db.commit()
-    return services.farm_view(kb, farm, body.lang)
+    return services.farm_view(kb, farm, body.lang or farm.lang)
 
 
 @router.get("/farms/{farm_id}")

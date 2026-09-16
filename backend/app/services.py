@@ -156,6 +156,7 @@ def farm_view(kb: KB, farm: Farm, lang: str, today: date | None = None) -> dict:
         "village": farm.village,
         "lat": farm.lat,
         "lon": farm.lon,
+        "location_source": farm.location_source or "district",
         "area_acres": farm.area_acres,
         "sowing_date": farm.sowing_date.isoformat(),
         "stage": stage,

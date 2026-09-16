@@ -6,6 +6,7 @@ import type { CropInfo, Home as HomeData } from '../../api/types'
 import { useAsync } from '../../lib/hooks'
 import { Card, ErrorBox, SectionTitle, Spinner } from '../../ui/kit'
 import AlertCard from '../components/AlertCard'
+import LocationAsk from '../components/LocationAsk'
 import ProblemRow from '../components/ProblemRow'
 import WeatherStrip from '../components/WeatherStrip'
 import { WeatherNowCard } from './Weather'
@@ -25,6 +26,9 @@ export default function Home() {
   return (
     <div className="space-y-6">
       <FarmCard data={d} crop={crop} />
+
+      {/* Everything below is read at the field's spot, so ask for it until we have one. */}
+      <LocationAsk farm={d.farm} onUpdated={(farm) => home.setData({ ...d, farm })} />
 
       {d.followups_due.map((f) => (
         <FollowUp key={f.id} id={f.id} onDone={home.reload} />

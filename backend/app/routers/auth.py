@@ -232,6 +232,10 @@ class FarmerSignup(BaseModel):
     lat: float = Field(ge=-90, le=90)
     lon: float = Field(ge=-180, le=180)
     """The phone's GPS at the field, or the district headquarters."""
+    location_from_gps: bool = False
+    """True when the farmer allowed location while standing in the field. The
+    app keeps asking until it is, because the weather, the spray window and the
+    outbreak radius are all read at this spot."""
     total_land_acres: float | None = Field(default=None, gt=0, le=10000)
     farm: FirstFarm
     consent: bool
@@ -296,6 +300,7 @@ def signup_farmer(body: FarmerSignup, request: Request, response: Response, db: 
                 crop=f.crop, variety=(f.variety or "").strip() or None, sowing_date=f.sowing_date,
                 district=body.district, taluka=taluka, village=village, lat=body.lat, lon=body.lon,
                 area_acres=f.area_acres, irrigation=f.irrigation, soil_ph=f.soil_ph,
+                location_source="gps" if body.location_from_gps else "district",
                 soil_ph_on=date.today() if f.soil_ph is not None else None))
     auth.start_session(db, user, response, request.headers.get("user-agent"))
     db.commit()

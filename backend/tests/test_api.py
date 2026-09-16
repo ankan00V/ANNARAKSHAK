@@ -247,3 +247,16 @@ def test_result_reopens_as_things_stand_now(client):
     client.post(f"/api/problems/{r['problem_id']}/escalate?lang=mr")
     asked = client.get(f"/api/problems/{r['problem_id']}/result?lang=en").json()
     assert asked["gate"]["outcome"] == "escalate" and asked["case"]["id"]
+
+
+def test_field_location_is_recorded_and_used(client):
+    """Weather, the spray window and the 5 km outbreak radius are all read at
+    the field's spot, so the app tracks whether it has a real one."""
+    before = client.get("/api/farms/1?lang=en").json()
+    assert before["location_source"] == "district"  # seeded from the district headquarters
+    after = client.patch("/api/farms/1", json={"lat": 21.1809, "lon": 79.6612}).json()
+    assert after["location_source"] == "gps" and (after["lat"], after["lon"]) == (21.1809, 79.6612)
+    with SessionLocal() as db:
+        farm = db.get(Farm, 1)
+        assert farm.agro_polygon_id is None  # the satellite field polygon is redrawn there
+    assert client.patch("/api/farms/1", json={"lang": "mr"}).json()["location_source"] == "gps"

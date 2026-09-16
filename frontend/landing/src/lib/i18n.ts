@@ -443,6 +443,16 @@ const en = {
   authDistrictFromGps: 'District taken from your location',
   authMore: 'More details (optional)',
   authMoreHide: 'Hide extra details',
+
+  // Asking for the field's location
+  locAskTitle: 'Where exactly is your field?',
+  locAskBody: 'Weather, the spraying window, irrigation advice and warnings about outbreaks within 5 km are all read at your field\'s own spot. Right now we are using the {district} district headquarters, which can be far away.',
+  locAskCta: 'Use my field\'s location',
+  locAskLater: 'Not now',
+  locAskStanding: 'Tap it while you are standing in the field.',
+  locSaved: 'Saved — your field is now on the map.',
+  locDenied: 'Location is blocked for this site in your browser. Allow it in the browser\'s settings, or tell your agriculture assistant your field\'s village.',
+  locFailed: 'Could not get your location. Try again under open sky.',
 }
 
 type Key = keyof typeof en
@@ -882,6 +892,16 @@ const hi: Partial<Record<Key, string>> = {
   authDistrictFromGps: 'आपके स्थान से ज़िला लिया गया',
   authMore: 'और जानकारी (वैकल्पिक)',
   authMoreHide: 'अतिरिक्त जानकारी छिपाएँ',
+
+  // Asking for the field's location
+  locAskTitle: 'आपका खेत ठीक कहाँ है?',
+  locAskBody: 'मौसम, छिड़काव का समय, सिंचाई की सलाह और 5 किमी के अंदर फैलाव की चेतावनी — सब आपके खेत की अपनी जगह से बनते हैं। अभी हम {district} ज़िला मुख्यालय ले रहे हैं, जो दूर हो सकता है।',
+  locAskCta: 'मेरे खेत की जगह लें',
+  locAskLater: 'अभी नहीं',
+  locAskStanding: 'खेत में खड़े होकर दबाएँ।',
+  locSaved: 'सहेजा गया — अब आपका खेत नक्शे पर है।',
+  locDenied: 'इस साइट के लिए ब्राउज़र में स्थान बंद है। ब्राउज़र सेटिंग में अनुमति दें, या अपने कृषि सहायक को खेत का गाँव बताएँ।',
+  locFailed: 'स्थान नहीं मिला। खुले आसमान के नीचे फिर कोशिश करें।',
 }
 
 const mr: Partial<Record<Key, string>> = {
@@ -1319,6 +1339,16 @@ const mr: Partial<Record<Key, string>> = {
   authDistrictFromGps: 'तुमच्या ठिकाणावरून जिल्हा घेतला',
   authMore: 'अधिक माहिती (ऐच्छिक)',
   authMoreHide: 'अतिरिक्त माहिती लपवा',
+
+  // Asking for the field's location
+  locAskTitle: 'तुमचे शेत नेमके कुठे आहे?',
+  locAskBody: 'हवामान, फवारणीची वेळ, सिंचनाचा सल्ला आणि 5 किमीच्या आतील प्रादुर्भावाचे इशारे — सर्व तुमच्या शेताच्या जागेवरून ठरतात. सध्या आम्ही {district} जिल्हा मुख्यालय वापरत आहोत, जे लांब असू शकते.',
+  locAskCta: 'माझ्या शेताची जागा घ्या',
+  locAskLater: 'आत्ता नाही',
+  locAskStanding: 'शेतात उभे असताना दाबा.',
+  locSaved: 'जतन झाले — आता तुमचे शेत नकाशावर आहे.',
+  locDenied: 'या साइटसाठी ब्राउझरमध्ये स्थान बंद आहे. ब्राउझर सेटिंगमध्ये परवानगी द्या, किंवा तुमच्या कृषी सहाय्यकाला शेताचे गाव सांगा.',
+  locFailed: 'स्थान मिळाले नाही. मोकळ्या आकाशाखाली पुन्हा प्रयत्न करा.',
 }
 
 // English, Hindi and Marathi are authored here. The other eight are machine

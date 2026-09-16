@@ -140,6 +140,10 @@ class Farm(Base):
     """The farmer who owns this farm; None for seeded demo farms."""
     irrigation: Mapped[str | None] = mapped_column(String(20))
     """rainfed | canal | borewell | open_well | farm_pond | drip | sprinkler"""
+    location_source: Mapped[str] = mapped_column(String(10), default="district")
+    """'gps' when the farmer stood in the field and allowed location, else
+    'district' — the district headquarters, which the weather, the spray window
+    and the 5 km outbreak radius all have to make do with until they do."""
     taluka: Mapped[str | None] = mapped_column(String(80))
     """This farm's field polygon at AgroMonitoring (satellite NDVI and soil)."""
     """Secret for the one-click unsubscribe link; never shown in the app."""

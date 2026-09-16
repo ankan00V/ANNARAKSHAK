@@ -12,6 +12,7 @@ export interface Farm {
   village: string | null
   lat: number
   lon: number
+  location_source: 'gps' | 'district'
   area_acres: number
   sowing_date: string
   stage: string
