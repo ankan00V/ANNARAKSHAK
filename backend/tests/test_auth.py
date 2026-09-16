@@ -309,3 +309,15 @@ def test_verdict_carries_the_signed_in_expert(client, mail):
     assert r.status_code == 200, r.text
     with SessionLocal() as db:
         assert db.scalar(select(Confirmation)).expert_name == "Dr. S. Kale"
+
+
+def test_sample_photos_are_for_demo_accounts_only(client, mail):
+    """A farmer who signed up for their own field is looking at their own crop.
+    Somebody else's photos must not appear on their Scan screen, and asking the
+    API directly must not get them either."""
+    farmer_signup(client, mail)
+    assert client.get("/api/samples").json() == []
+    client.post("/api/auth/logout")
+    assert client.get("/api/samples").json() == []  # signed out too
+    client.post("/api/auth/demo", json={"role": "farmer"})
+    assert client.get("/api/samples").status_code == 200  # the demo account may have them

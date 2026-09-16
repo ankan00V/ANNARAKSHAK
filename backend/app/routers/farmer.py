@@ -53,9 +53,17 @@ def targets(lang: Lang = "en", crop: str | None = None, kb: KB = Depends(get_kb)
 
 
 @router.get("/samples")
-def samples(crop: str | None = None, per_class: int = 1):
-    """Held-out TEST images (never seen in training) for demos without a sick
-    plant at hand. Empty when the dataset or split is not on this machine."""
+def samples(request: Request, crop: str | None = None, per_class: int = 1,
+            db: Session = Depends(get_db)):
+    """Held-out TEST images (never seen in training) for showing the app without
+    a sick plant at hand. Empty when the dataset or split is not on this machine.
+
+    Demo accounts only. A farmer who signed up for their own field is looking at
+    their own crop, and a strip of somebody else's photos in the middle of that
+    is not something they should have to tell apart from their own."""
+    user = auth.current_user(request, db)
+    if not (user and user.is_demo):
+        return []
     split = vision.ARTIFACTS / "split.json"
     if not split.exists():
         return []
