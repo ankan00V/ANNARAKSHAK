@@ -118,9 +118,14 @@ def load_split():
     return train, val, test
 
 
+# 2 workers, not 4: on a 16 GB laptop the extra copies of the dataset cost more
+# in memory pressure than they save in decode time (an item takes ~4 ms).
+WORKERS = int(os.environ.get("ANNRAKSHAK_WORKERS", "2"))
+
+
 def loader(rows, class_idx, tf, shuffle, bs=16, sampler=None, **ds):
     return DataLoader(Images(rows, class_idx, tf, **ds), batch_size=bs, shuffle=shuffle and sampler is None,
-                      sampler=sampler, num_workers=4, persistent_workers=True)
+                      sampler=sampler, num_workers=WORKERS, persistent_workers=WORKERS > 0)
 
 
 def balanced_sampler(rows, epoch_size, icar_share=0.5):
@@ -314,6 +319,8 @@ def finetune(backbone, train, val, class_idx, device, quick, epochs, backgrounds
               f"[{time.time() - t0:.0f}s]")
         if s["f1"] > best:
             best, best_state = s["f1"], {k: v.detach().clone() for k, v in net.state_dict().items()}
+        if device.type == "mps":  # a 16 GB laptop swaps without this
+            torch.mps.empty_cache()
     net.load_state_dict(best_state)
     return net, best, history
 
@@ -444,6 +451,8 @@ def main():
                     help="with --with-extra: add expert-labelled field photos from ml/export_confirmed.py")
     ap.add_argument("--warm-start", action="store_true",
                     help="with --with-extra: continue from the deployed model instead of ImageNet weights")
+    ap.add_argument("--per-class", type=int, default=120,
+                    help="with --with-extra: samples drawn per class per epoch")
     ap.add_argument("--with-more", action="store_true",
                     help="also the cotton, soybean and extra maize/rice sets (data/processed/more_images.csv)")
     ap.add_argument("--with-extra", action="store_true",
@@ -643,7 +652,7 @@ def main_extra(args):
     bgs = {"train": {c: healthy(i_tr + e_tr, c) for c in crops},
            "val": {c: healthy(i_va + e_va, c) for c in crops},
            "test": {c: healthy(i_te + e_te, c) for c in crops}}
-    epoch_size = 96 if args.quick else 120 * len(classes)
+    epoch_size = 96 if args.quick else args.per_class * len(classes)
     print(f"device={device}  classes={len(classes)}  ICAR {len(i_tr)}/{len(i_va)}/{len(i_te)}  "
           f"extra {len(e_tr)}/{len(e_va)}/{len(e_te)}  epoch={epoch_size or len(train)} samples  "
           f"backgrounds train={ {c: len(v) for c, v in bgs['train'].items()} }")
