@@ -26,7 +26,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
-from app import auth, notify, services, watch
+from app import auth, live, notify, services, watch
 from app.config import EMAIL_BACKEND
 from app.db import get_db
 from app.engine import agromet, agroweather, satellite
@@ -77,6 +77,13 @@ def weather(farm_id: int, lang: str = "en", db: Session = Depends(get_db), kb: K
                       for s in risks[:4]],
         "location": {"lat": b["lat"], "lon": b["lon"], "district": farm.district},
         "seasonal": services.kcc_seasonal(kb, farm, now.month, lang),
+        # The pH of the soil under this field: a sensor reading if there is one,
+        # else the Soil Health Card value the farmer typed, else the ISRIC
+        # SoilGrids estimate for the point. It was already read for the live walk
+        # and never shown on a screen, so a farmer could not see the pH the app
+        # was reasoning from. Merged into the soil block that already carries
+        # temperature and moisture rather than replacing it.
+        "soil": (v.get("soil") or {}) | {"ph": live.soil_ph_for(db, farm, b["lat"], b["lon"], lang)},
     }
 
 

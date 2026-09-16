@@ -582,7 +582,12 @@ export interface WeatherView {
   current: WeatherNow
   hourly: WeatherHour[]
   daily: WeatherDay[]
-  soil: { temp_surface: number | null; temp_6cm: number | null; moisture: { depth: string; pct: number | null }[] } | null
+  soil: {
+    temp_surface: number | null
+    temp_6cm: number | null
+    moisture: { depth: string; pct: number | null }[]
+    ph: { value: number; how: 'measured' | 'card' | 'estimated'; source: string; on?: string | null; band: string } | null
+  } | null
   water: WaterBalance
   spray: { now: SprayHour | null; windows: { start: string; end: string; hours: number; wind: number }[]; reasons_text: string | null }
   advisories: WeatherAdvisory[]

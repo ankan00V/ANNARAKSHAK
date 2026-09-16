@@ -335,6 +335,21 @@ function SoilWater({ v }: { v: WeatherView }) {
     <section>
       <SectionTitle sub={t('modelledNote')}>{t('soilWater')}</SectionTitle>
       <Card className="p-4 space-y-4">
+        {s?.ph && (
+          <div className="flex items-baseline gap-3 border-b border-soil-dark/10 pb-3">
+            <div>
+              <p className="text-xs text-soil-dark/60">{t('soilPh')}</p>
+              <p className="text-lg font-semibold">
+                {s.ph.value} <span className="text-sm font-normal text-soil-dark/70">{s.ph.band}</span>
+              </p>
+            </div>
+            {/* Where the number came from decides how much a farmer should lean
+                on it: their own sensor, the card they were given, or a map. */}
+            <p className="ml-auto text-right text-[11px] leading-tight text-soil-dark/50">
+              {t(`ph_${s.ph.how}`)}<br />{s.ph.source}
+            </p>
+          </div>
+        )}
         {s && (
           <div className="grid grid-cols-2 gap-4">
             <div>
