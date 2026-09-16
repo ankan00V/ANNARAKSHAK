@@ -117,7 +117,12 @@ def test_non_crop_photo_asks_retake_without_case(client):
     assert r["gate"]["outcome"] == "retake" and "case" not in r
 
 
-def test_crop_without_photo_model_goes_to_expert(client):
+def test_crop_without_photo_model_goes_to_expert(client, monkeypatch):
+    """A crop the app cannot check from a photo goes straight to an expert —
+    whichever crops ship with a model on the day."""
+    from app.kb import get_kb
+
+    monkeypatch.setitem(get_kb().crops["cotton"], "photo_diagnosis", False)
     r = diagnose(client, 4, "clear")
     assert r["gate"]["reason"] == "CROP_NOT_SUPPORTED" and r["case"]["id"]
 
