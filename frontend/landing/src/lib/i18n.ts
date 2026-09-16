@@ -1316,9 +1316,8 @@ export const LANGS: { code: Lang; label: string; english: string; ready: boolean
   { code: 'ta', label: 'தமிழ்', english: 'Tamil', ready: true },
   { code: 'te', label: 'తెలుగు', english: 'Telugu', ready: true },
   { code: 'kn', label: 'ಕನ್ನಡ', english: 'Kannada', ready: true },
-  // Next: translation memory not built yet (backend/translate_i18n.py --lang ml,gu,pa,od)
-  { code: 'ml', label: 'മലയാളം', english: 'Malayalam', ready: false },
-  { code: 'gu', label: 'ગુજરાતી', english: 'Gujarati', ready: false },
-  { code: 'pa', label: 'ਪੰਜਾਬੀ', english: 'Punjabi', ready: false },
-  { code: 'od', label: 'ଓଡ଼ିଆ', english: 'Odia', ready: false },
+  { code: 'ml', label: 'മലയാളം', english: 'Malayalam', ready: true },
+  { code: 'gu', label: 'ગુજરાતી', english: 'Gujarati', ready: true },
+  { code: 'pa', label: 'ਪੰਜਾਬੀ', english: 'Punjabi', ready: true },
+  { code: 'od', label: 'ଓଡ଼ିଆ', english: 'Odia', ready: true },
 ]

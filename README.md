@@ -19,7 +19,7 @@ the officials' surveillance dashboard.
 | Weather-based risk forecasting | `backend/app/engine/risk.py` — Open-Meteo window + crop stage + farm history + IMD rainfall normals |
 | Geospatial hotspot mapping | Officials' map: confirmed / awaiting-expert / AI-advised cases, 5 km spread radius, active risk alerts |
 | Expert validation | `/expert` console: pre-packed case bundles, confirm/correct, lab referral, 3-minute review timer |
-| Multilingual advisories | Seven languages, following the farmer's saved choice: Marathi, Hindi, English (hand-authored) + Bengali, Tamil, Telugu, Kannada (machine translated once, under review); Malayalam, Gujarati, Punjabi, Odia next. Sarvam AI voice in each |
+| Multilingual advisories | Eleven languages, following the farmer's saved choice: Marathi, Hindi, English (hand-authored) + Bengali, Tamil, Telugu, Kannada, Malayalam, Gujarati, Punjabi, Odia (machine translated once with AI4Bharat IndicTrans2 / Sarvam-Translate, placeholders checked, pending native review). Sarvam AI voice in each |
 | Weather-based alerts in real time | Hour-by-hour weather screen (temperature, humidity, rain and its chance, wind, gusts, direction, UV, cloud, visibility, pressure, dew point, soil, ET₀) and 15 weather→action rules (lightning, heavy rain, gusts, frost, heat at flowering, fungal weather, spray window, irrigation by FAO-56 water balance…) — delivered in the app instantly, as phone notifications and by email |
 | Crop health from space | Satellite greenness (NDVI, Sentinel-2/Landsat 8) and soil moisture per field; a greenness drop becomes an alert |
 | Farmer demand signal | 262,778 Kisan Call Centre calls → when and where Maharashtra's farmers ask about each pest |
