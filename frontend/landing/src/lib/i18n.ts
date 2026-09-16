@@ -430,6 +430,19 @@ const en = {
   krishiThinking: 'Krishi is looking…',
   krishiError: 'I couldn\'t reach the server. Check your connection and try again.',
   krishiNew: 'New chat',
+
+  // The landing page's own buttons
+  landFarmer: 'I\'m a farmer',
+  landExpert: 'I\'m an expert, KVK or agriculture officer',
+  landReady: 'Ready to protect your harvest?',
+  landContinue: 'Continue as {name}',
+  landNotYou: 'Not you?',
+  landSwitchUser: 'Sign in as someone else',
+  landOpenApp: 'Open my farm',
+  landOpenConsole: 'Open console',
+  authDistrictFromGps: 'District taken from your location',
+  authMore: 'More details (optional)',
+  authMoreHide: 'Hide extra details',
 }
 
 type Key = keyof typeof en
@@ -856,6 +869,19 @@ const hi: Partial<Record<Key, string>> = {
   krishiThinking: 'कृषि देख रहा है…',
   krishiError: 'सर्वर से संपर्क नहीं हो पाया। कनेक्शन जाँचकर फिर कोशिश करें।',
   krishiNew: 'नई बातचीत',
+
+  // The landing page's own buttons
+  landFarmer: 'मैं किसान हूँ',
+  landExpert: 'मैं विशेषज्ञ, KVK या कृषि अधिकारी हूँ',
+  landReady: 'अपनी फसल बचाने के लिए तैयार हैं?',
+  landContinue: '{name} के रूप में आगे बढ़ें',
+  landNotYou: 'आप नहीं हैं?',
+  landSwitchUser: 'किसी और के रूप में साइन इन करें',
+  landOpenApp: 'मेरा खेत खोलें',
+  landOpenConsole: 'कंसोल खोलें',
+  authDistrictFromGps: 'आपके स्थान से ज़िला लिया गया',
+  authMore: 'और जानकारी (वैकल्पिक)',
+  authMoreHide: 'अतिरिक्त जानकारी छिपाएँ',
 }
 
 const mr: Partial<Record<Key, string>> = {
@@ -1280,6 +1306,19 @@ const mr: Partial<Record<Key, string>> = {
   krishiThinking: 'कृषी पाहत आहे…',
   krishiError: 'सर्व्हरशी संपर्क झाला नाही. कनेक्शन तपासून पुन्हा प्रयत्न करा.',
   krishiNew: 'नवीन संवाद',
+
+  // The landing page's own buttons
+  landFarmer: 'मी शेतकरी आहे',
+  landExpert: 'मी तज्ज्ञ, KVK किंवा कृषी अधिकारी आहे',
+  landReady: 'तुमचे पीक वाचवायला तयार आहात?',
+  landContinue: '{name} म्हणून पुढे जा',
+  landNotYou: 'तुम्ही नाही?',
+  landSwitchUser: 'दुसऱ्या कोणाच्या नावाने साइन इन करा',
+  landOpenApp: 'माझे शेत उघडा',
+  landOpenConsole: 'कन्सोल उघडा',
+  authDistrictFromGps: 'तुमच्या ठिकाणावरून जिल्हा घेतला',
+  authMore: 'अधिक माहिती (ऐच्छिक)',
+  authMoreHide: 'अतिरिक्त माहिती लपवा',
 }
 
 // English, Hindi and Marathi are authored here. The other eight are machine

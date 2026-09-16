@@ -4,6 +4,8 @@ import { smoothScrollTo } from './smoothScroll'
 import BrandMark from './ui/BrandMark'
 import { useAuth } from './auth/AuthContext'
 import { homeOf } from './auth/helpers'
+import LanguagePicker from './farmer/components/LanguagePicker'
+import { useFarmer } from './farmer/FarmerContext'
 
 const EASE = 'ease-[cubic-bezier(0.76,0,0.24,1)]'
 
@@ -35,9 +37,10 @@ function Hamburger({ open, onClick }: { open: boolean; onClick: () => void }) {
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const { me } = useAuth()
+  const { t, setLang } = useFarmer()
   const account = me
-    ? { to: homeOf(me.role), label: me.role === 'expert' ? 'Open console' : 'Open my farm' }
-    : { to: '/login', label: 'Log in' }
+    ? { to: homeOf(me.role), label: t(me.role === 'expert' ? 'landOpenConsole' : 'landOpenApp') }
+    : { to: '/login', label: t('authLogin') }
 
   const go = (id: string) => {
     setOpen(false)
@@ -71,6 +74,9 @@ export default function Navbar() {
           >
             Contact
           </button>
+          <span className="text-white [&_button]:bg-white/15 [&_button]:hover:bg-white/25">
+            <LanguagePicker onPick={setLang} />
+          </span>
           <Link
             to={account.to}
             className="hidden md:block text-white/80 hover:text-white text-sm font-light transition-colors duration-200"
@@ -82,7 +88,7 @@ export default function Navbar() {
               to="/signup"
               className="hidden md:inline-block bg-white text-black rounded-full px-5 py-2 text-sm font-medium"
             >
-              Get Started
+              {t('authCreateAccount')}
             </Link>
           )}
           <Hamburger open={open} onClick={() => setOpen(true)} />
@@ -143,7 +149,7 @@ export default function Navbar() {
                 open ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              {me ? account.label : 'Get Started'}
+              {me ? account.label : t('authCreateAccount')}
             </Link>
             {!me && (
               <Link
@@ -153,7 +159,7 @@ export default function Navbar() {
                   open ? 'opacity-100' : 'opacity-0'
                 }`}
               >
-                Log in
+                {t('authLogin')}
               </Link>
             )}
           </div>

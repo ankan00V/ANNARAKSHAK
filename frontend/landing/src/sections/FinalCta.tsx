@@ -3,14 +3,16 @@ import { Link } from 'react-router-dom'
 import BrandMark from '../ui/BrandMark'
 import { useAuth } from '../auth/AuthContext'
 import { homeOf } from '../auth/helpers'
+import { useFarmer } from '../farmer/FarmerContext'
 
 export default function FinalCta() {
   const { me, logout } = useAuth()
+  const { t } = useFarmer()
   return (
     <section id="cta" className="w-full bg-leaf-deep text-cream">
       <div className="max-w-4xl mx-auto px-6 md:px-12 pt-16 md:pt-24 pb-10 text-center">
         <h2 className="font-instrument-serif text-3xl sm:text-4xl md:text-5xl leading-tight">
-          Ready to protect your harvest?
+          {t('landReady')}
         </h2>
         {me ? (
           <>
@@ -19,13 +21,13 @@ export default function FinalCta() {
                 to={homeOf(me.role)}
                 className="w-full sm:w-auto bg-ochre text-soil-dark rounded-full px-8 py-4 text-sm font-medium hover:brightness-105 transition"
               >
-                Continue as {me.name}
+                {t('landContinue').replace('{name}', me.name)}
               </Link>
             </div>
             <p className="mt-5 text-sm text-cream/70">
-              Not you?{' '}
+              {t('landNotYou')}{' '}
               <button onClick={() => { void logout() }} className="text-cream font-medium underline underline-offset-4">
-                Sign in as someone else
+                {t('landSwitchUser')}
               </button>
             </p>
           </>
@@ -36,18 +38,18 @@ export default function FinalCta() {
                 to="/signup/farmer"
                 className="w-full sm:w-auto bg-ochre text-soil-dark rounded-full px-8 py-4 text-sm font-medium hover:brightness-105 transition"
               >
-                I&apos;m a Farmer
+                {t('landFarmer')}
               </Link>
               <Link
                 to="/signup/expert"
                 className="w-full sm:w-auto border border-cream/60 text-cream rounded-full px-8 py-4 text-sm font-medium hover:bg-cream/10 transition-colors"
               >
-                I&apos;m an Expert, KVK or Agriculture Official
+                {t('landExpert')}
               </Link>
             </div>
             <p className="mt-5 text-sm text-cream/70">
-              Already registered?{' '}
-              <Link to="/login" className="text-cream font-medium underline underline-offset-4">Log in</Link>
+              {t('authHaveAccount')}{' '}
+              <Link to="/login" className="text-cream font-medium underline underline-offset-4">{t('authLogin')}</Link>
             </p>
           </>
         )}

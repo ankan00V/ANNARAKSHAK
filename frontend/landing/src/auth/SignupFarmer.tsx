@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { LocateFixed } from 'lucide-react'
+import { ChevronDown, LocateFixed } from 'lucide-react'
 import { api } from '../api/client'
 import type { Irrigation } from '../api/types'
 import LanguagePicker from '../farmer/components/LanguagePicker'
@@ -14,6 +14,29 @@ import { Chips, CodePanel, Field, Input, Primary, Secondary, Select, Steps } fro
 
 const IRRIGATION: Irrigation[] = ['rainfed', 'canal', 'borewell', 'open_well', 'farm_pond', 'drip', 'sprinkler']
 const today = () => new Date().toISOString().slice(0, 10)
+
+/** The district whose headquarters is nearest this point — one less question
+ *  for a farmer standing in their field. */
+function districtAt(lat: number, lon: number): string {
+  const d2 = (d: (typeof DISTRICTS)[number]) => (d.lat - lat) ** 2 + ((d.lon - lon) * Math.cos((lat * Math.PI) / 180)) ** 2
+  return DISTRICTS.reduce((best, d) => (d2(d) < d2(best) ? d : best)).name
+}
+
+/** Optional questions, folded away: a farmer should see a short form, and open
+ *  this only if they have the details at hand. */
+function MoreDetails({ open, onToggle, children }: { open: boolean; onToggle: () => void; children: ReactNode }) {
+  const { t } = useFarmer()
+  return (
+    <div className="rounded-2xl border border-soil-dark/10 bg-white/60">
+      <button type="button" onClick={onToggle}
+        className="w-full flex items-center justify-between px-3 min-h-[48px] text-[13px] font-medium text-soil-dark/70">
+        {open ? t('authMoreHide') : t('authMore')}
+        <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && <div className="px-3 pb-3 space-y-3">{children}</div>}
+    </div>
+  )
+}
 
 /** What a farmer is asked, and why: everything here drives their advice.
  *  Who they are and how to reach them; where the field is (weather, the
@@ -34,6 +57,8 @@ export default function SignupFarmer() {
   }))
   const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null)
   const [locating, setLocating] = useState(false)
+  const [fromGps, setFromGps] = useState(false)
+  const [more, setMore] = useState(false)
   const [touched, setTouched] = useState(false)
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }))
 
@@ -67,7 +92,13 @@ export default function SignupFarmer() {
     if (!navigator.geolocation) return
     setLocating(true)
     navigator.geolocation.getCurrentPosition(
-      (p) => { setCoords({ lat: p.coords.latitude, lon: p.coords.longitude }); setLocating(false) },
+      (p) => {
+        const { latitude: lat, longitude: lon } = p.coords
+        setCoords({ lat, lon })
+        setF((x) => ({ ...x, district: districtAt(lat, lon) }))  // one less question
+        setFromGps(true)
+        setLocating(false)
+      },
       () => setLocating(false),
       { timeout: 10000, enableHighAccuracy: true },
     )
@@ -119,8 +150,8 @@ export default function SignupFarmer() {
 
       {step === 1 && (
         <div className="space-y-4">
-          <Field label={t('district')}>
-            <Select value={f.district} onChange={(v) => set('district', v)}>
+          <Field label={t('district')} hint={fromGps ? t('authDistrictFromGps') : undefined}>
+            <Select value={f.district} onChange={(v) => { set('district', v); setFromGps(false) }}>
               {DISTRICTS.map((d) => <option key={d.name}>{d.name}</option>)}
             </Select>
           </Field>
@@ -142,10 +173,12 @@ export default function SignupFarmer() {
             </button>
             <p className="text-[12px] text-soil-dark/55 leading-snug">{t('authFieldHint')}</p>
           </Card>
-          <Field label={t('authTotalLand')} optional error={show('totalLand') && t('authFixField')}>
-            <Input value={f.totalLand} onChange={(e) => set('totalLand', e.target.value)} type="number"
-              inputMode="decimal" min="0.1" step="0.1" invalid={show('totalLand')} />
-          </Field>
+          <MoreDetails open={more} onToggle={() => setMore((m) => !m)}>
+            <Field label={t('authTotalLand')} optional error={show('totalLand') && t('authFixField')}>
+              <Input value={f.totalLand} onChange={(e) => set('totalLand', e.target.value)} type="number"
+                inputMode="decimal" min="0.1" step="0.1" invalid={show('totalLand')} />
+            </Field>
+          </MoreDetails>
         </div>
       )}
 
@@ -161,15 +194,10 @@ export default function SignupFarmer() {
           {selectedCrop && !selectedCrop.photo_diagnosis && (
             <p className="text-xs rounded-xl bg-sky-50 text-sky-800 p-2.5">{t('photoLater')}</p>
           )}
-          <div className="grid grid-cols-2 gap-3">
-            <Field label={t('authVariety')} optional>
-              <Input value={f.variety} onChange={(e) => set('variety', e.target.value)} placeholder="Jaya, MTU 1010…" />
-            </Field>
-            <Field label={t('area')} error={show('area') && t('authFixField')}>
-              <Input value={f.area} onChange={(e) => set('area', e.target.value)} type="number" inputMode="decimal"
-                min="0.1" step="0.1" invalid={show('area')} />
-            </Field>
-          </div>
+          <Field label={t('area')} error={show('area') && t('authFixField')}>
+            <Input value={f.area} onChange={(e) => set('area', e.target.value)} type="number" inputMode="decimal"
+              min="0.1" step="0.1" invalid={show('area')} />
+          </Field>
           <Field label={t('sowingDate')} error={show('sowing') && t('authFixField')}>
             <Input value={f.sowing} onChange={(e) => set('sowing', e.target.value)} type="date" max={today()}
               invalid={show('sowing')} />
@@ -178,10 +206,15 @@ export default function SignupFarmer() {
             <Chips columns={2} value={[f.irrigation]} onChange={([v]) => set('irrigation', v)}
               options={IRRIGATION.map((id) => ({ id, label: t(`irr_${id}`) }))} />
           </Field>
-          <Field label={t('soilPhCard')} hint={t('soilPhCardHint')} error={show('ph') && t('authFixField')}>
-            <Input value={f.ph} onChange={(e) => set('ph', e.target.value)} type="number" inputMode="decimal"
-              min="3" max="11" step="0.1" placeholder="6.8" invalid={show('ph')} />
-          </Field>
+          <MoreDetails open={more} onToggle={() => setMore((m) => !m)}>
+            <Field label={t('authVariety')} optional>
+              <Input value={f.variety} onChange={(e) => set('variety', e.target.value)} placeholder="Jaya, MTU 1010…" />
+            </Field>
+            <Field label={t('soilPhCard')} hint={t('soilPhCardHint')} error={show('ph') && t('authFixField')}>
+              <Input value={f.ph} onChange={(e) => set('ph', e.target.value)} type="number" inputMode="decimal"
+                min="3" max="11" step="0.1" placeholder="6.8" invalid={show('ph')} />
+            </Field>
+          </MoreDetails>
         </div>
       )}
 
