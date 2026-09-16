@@ -15,7 +15,7 @@ from app.kb import get_kb
 from app import voice
 from app import cache, notify, watch
 from app import krishi as krishi_kb
-from app.routers import auth, expert, farmer, krishi, live, officials, weather
+from app.routers import auth, expert, farmer, geo, krishi, live, officials, weather
 
 
 @asynccontextmanager
@@ -56,6 +56,7 @@ if _MORE.exists():  # held-out cotton, soybean and more maize/rice photos
 
 app.include_router(auth.router)
 app.include_router(krishi.router)
+app.include_router(geo.router)
 app.include_router(farmer.router)
 app.include_router(expert.router)
 app.include_router(officials.router)

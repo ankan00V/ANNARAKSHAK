@@ -32,7 +32,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app import auth, config, mailer, services
+from app import auth, config, geo, mailer, services
 from app.db import get_db
 from app.i18n import LANGS
 from app.kb import KB, get_kb, tr
@@ -88,6 +88,10 @@ MESSAGES = {
                 "mr": "कृपया माहितीच्या वापराला संमती द्या."},
     "pick_lists": {"en": "Please choose from the lists: {items}", "hi": "कृपया सूची में से चुनें: {items}",
                    "mr": "कृपया यादीतून निवडा: {items}"},
+    "no_place": {"en": "We could not find that place. Allow location while you are in the field, or check the "
+                       "district and village spelling.",
+                 "hi": "यह जगह नहीं मिली। खेत में रहते हुए स्थान की अनुमति दें, या ज़िला और गाँव की वर्तनी जाँचें।",
+                 "mr": "ही जागा सापडली नाही. शेतात असताना स्थानाची परवानगी द्या, किंवा जिल्हा व गावाचे स्पेलिंग तपासा."},
 }
 LANG_NAMES = {"en": "English", "hi": "हिन्दी", "mr": "मराठी", "bn": "বাংলা", "ta": "தமிழ்", "te": "తెలుగు",
               "kn": "ಕನ್ನಡ", "ml": "മലയാളം", "gu": "ગુજરાતી", "pa": "ਪੰਜਾਬੀ", "od": "ଓଡ଼ିଆ"}
@@ -226,12 +230,16 @@ class FarmerSignup(BaseModel):
     name: str = Field(min_length=2, max_length=120)
     phone: str = Field(max_length=20)
     lang: str = "mr"
-    district: str
+    state: str | None = Field(default=None, max_length=60)
+    district: str = Field(min_length=2, max_length=60)
+    """Any district in India (the Government's LGD list, or one typed in)."""
     taluka: str | None = Field(default=None, max_length=80)
     village: str = Field(min_length=2, max_length=80)
-    lat: float = Field(ge=-90, le=90)
-    lon: float = Field(ge=-180, le=180)
-    """The phone's GPS at the field, or the district headquarters."""
+    lat: float | None = Field(default=None, ge=-90, le=90)
+    lon: float | None = Field(default=None, ge=-180, le=180)
+    """The phone's GPS at the field. Left out when the farmer refused location:
+    the server then looks the place up, because everything the app says is read
+    at a point."""
     location_from_gps: bool = False
     """True when the farmer allowed location while standing in the field. The
     app keeps asking until it is, because the weather, the spray window and the
@@ -284,10 +292,16 @@ def signup_farmer(body: FarmerSignup, request: Request, response: Response, db: 
         raise HTTPException(422, "unknown language")
     if not body.consent:
         raise HTTPException(422, _say("consent", body.lang))
-    bad = ([body.district] if body.district not in _districts() else []) \
-        + [f.crop for f in body.farms if f.crop not in kb.crops]
+    bad = [f.crop for f in body.farms if f.crop not in kb.crops]
     if bad:
         raise HTTPException(422, _say("pick_lists", body.lang, items=", ".join(bad)))
+    state, district = geo.match_district(body.state, body.district)
+    lat, lon = body.lat, body.lon
+    if lat is None or lon is None:  # location refused: look the place up instead
+        at = geo.locate(state, district, body.village)
+        if at is None:
+            raise HTTPException(422, _say("no_place", body.lang))
+        lat, lon = at["lat"], at["lon"]
     phone = _phone(body.phone, body.lang)
     ch = _verified(db, body, "signup", "farmer")
     _unused(db, ch.destination, phone, body.lang)
@@ -295,12 +309,12 @@ def signup_farmer(body: FarmerSignup, request: Request, response: Response, db: 
     user = User(role="farmer", name=name, phone=phone, email=ch.destination, lang=body.lang)
     db.add(user)
     db.flush()
-    db.add(FarmerProfile(user_id=user.id, district=body.district, taluka=taluka, village=village,
+    db.add(FarmerProfile(user_id=user.id, state=state, district=district, taluka=taluka, village=village,
                          total_land_acres=body.total_land_acres, consent_at=auth.now()))
     for f in body.farms:  # one row per plot: each has its own crop stage, risks and advice
         db.add(Farm(user_id=user.id, farmer_name=name, phone=phone, email=ch.destination, lang=body.lang,
                     crop=f.crop, variety=(f.variety or "").strip() or None, sowing_date=f.sowing_date,
-                    district=body.district, taluka=taluka, village=village, lat=body.lat, lon=body.lon,
+                    state=state, district=district, taluka=taluka, village=village, lat=lat, lon=lon,
                     area_acres=f.area_acres, irrigation=f.irrigation, soil_ph=f.soil_ph,
                     location_source="gps" if body.location_from_gps else "district",
                     soil_ph_on=date.today() if f.soil_ph is not None else None))

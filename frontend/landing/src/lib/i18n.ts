@@ -463,6 +463,20 @@ const en = {
   mismatchAddField: 'I grow {crop} too — add that field',
   mismatchNewField: 'Your {crop} field',
   mismatchAddAndCheck: 'Add and check this photo',
+
+  // Where the field is — anywhere in India
+  authState: 'State',
+  authWhereTitle: 'Where is your field?',
+  authUseLocation: 'Use my location',
+  authLocationFilled: 'Filled in from your location. Change anything that is wrong.',
+  authOrType: 'or choose it yourself',
+  authSearchVillage: 'Search your village or town',
+  authSearching: 'Looking…',
+  authNoPlaces: 'Nothing found. Type the name yourself below.',
+  authPickState: 'Choose your state',
+  authPickDistrict: 'Choose your district',
+  authOtherDistrict: 'My district is not in the list',
+  authTypeDistrict: 'Type your district',
 }
 
 type Key = keyof typeof en
@@ -922,6 +936,20 @@ const hi: Partial<Record<Key, string>> = {
   mismatchAddField: 'मैं {crop} भी उगाता/उगाती हूँ — वह खेत जोड़ें',
   mismatchNewField: 'आपका {crop} खेत',
   mismatchAddAndCheck: 'जोड़ें और यह फोटो जाँचें',
+
+  // Where the field is — anywhere in India
+  authState: 'राज्य',
+  authWhereTitle: 'आपका खेत कहाँ है?',
+  authUseLocation: 'मेरा स्थान लें',
+  authLocationFilled: 'आपके स्थान से भरा गया। कुछ गलत हो तो बदलें।',
+  authOrType: 'या खुद चुनें',
+  authSearchVillage: 'अपना गाँव या शहर खोजें',
+  authSearching: 'खोज रहे हैं…',
+  authNoPlaces: 'कुछ नहीं मिला। नीचे नाम खुद लिखें।',
+  authPickState: 'अपना राज्य चुनें',
+  authPickDistrict: 'अपना ज़िला चुनें',
+  authOtherDistrict: 'मेरा ज़िला सूची में नहीं है',
+  authTypeDistrict: 'अपना ज़िला लिखें',
 }
 
 const mr: Partial<Record<Key, string>> = {
@@ -1379,6 +1407,20 @@ const mr: Partial<Record<Key, string>> = {
   mismatchAddField: 'मी {crop} सुद्धा घेतो/घेते — ते शेत जोडा',
   mismatchNewField: 'तुमचे {crop} शेत',
   mismatchAddAndCheck: 'जोडा आणि हा फोटो तपासा',
+
+  // Where the field is — anywhere in India
+  authState: 'राज्य',
+  authWhereTitle: 'तुमचे शेत कुठे आहे?',
+  authUseLocation: 'माझे स्थान घ्या',
+  authLocationFilled: 'तुमच्या स्थानावरून भरले. काही चुकीचे असल्यास बदला.',
+  authOrType: 'किंवा स्वतः निवडा',
+  authSearchVillage: 'तुमचे गाव किंवा शहर शोधा',
+  authSearching: 'शोधत आहोत…',
+  authNoPlaces: 'काहीही सापडले नाही. खाली नाव स्वतः लिहा.',
+  authPickState: 'तुमचे राज्य निवडा',
+  authPickDistrict: 'तुमचा जिल्हा निवडा',
+  authOtherDistrict: 'माझा जिल्हा यादीत नाही',
+  authTypeDistrict: 'तुमचा जिल्हा लिहा',
 }
 
 // English, Hindi and Marathi are authored here. The other eight are machine

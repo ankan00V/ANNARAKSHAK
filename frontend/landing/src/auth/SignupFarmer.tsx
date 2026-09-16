@@ -1,16 +1,16 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronDown, LocateFixed, Plus, X } from 'lucide-react'
+import { ChevronDown, Plus, X } from 'lucide-react'
 import { api } from '../api/client'
 import type { Irrigation } from '../api/types'
 import LanguagePicker from '../farmer/components/LanguagePicker'
 import { useFarmer } from '../farmer/FarmerContext'
-import { DISTRICTS } from '../lib/districts'
 import { useAsync } from '../lib/hooks'
 import { Card, Spinner } from '../ui/kit'
 import { useAuth } from './AuthContext'
 import { emailOk, phoneOk } from './helpers'
-import { Chips, CodePanel, Field, Input, Primary, Secondary, Select, Steps } from './parts'
+import { Chips, CodePanel, Field, Input, Primary, Secondary, Steps } from './parts'
+import WherePicker, { type Where } from './WherePicker'
 
 const IRRIGATION: Irrigation[] = ['rainfed', 'canal', 'borewell', 'open_well', 'farm_pond', 'drip', 'sprinkler']
 
@@ -23,13 +23,6 @@ interface FirstField {
   soil_ph: number | null
 }
 const today = () => new Date().toISOString().slice(0, 10)
-
-/** The district whose headquarters is nearest this point — one less question
- *  for a farmer standing in their field. */
-function districtAt(lat: number, lon: number): string {
-  const d2 = (d: (typeof DISTRICTS)[number]) => (d.lat - lat) ** 2 + ((d.lon - lon) * Math.cos((lat * Math.PI) / 180)) ** 2
-  return DISTRICTS.reduce((best, d) => (d2(d) < d2(best) ? d : best)).name
-}
 
 /** The plots added so far, so a farmer can see what they have entered. */
 function FieldList({ fields, crops, onRemove }: {
@@ -80,8 +73,7 @@ export default function SignupFarmer() {
   const crops = useAsync(() => api.crops(lang), [lang])
   const [step, setStep] = useState(0)
   const [f, setF] = useState(() => ({
-    name: '', phone: '', email: '',
-    district: 'Bhandara', taluka: '', village: '', totalLand: '',
+    name: '', phone: '', email: '', totalLand: '',
     crop: 'rice', variety: '', sowing: new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10),
     area: '', irrigation: 'rainfed' as Irrigation, ph: '',
     consent: false,
@@ -89,9 +81,8 @@ export default function SignupFarmer() {
   // Every plot the farmer has sown. The one being filled in lives in `f`;
   // "I grow another crop too" pushes it here and clears the form for the next.
   const [fields, setFields] = useState<FirstField[]>([])
-  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null)
-  const [locating, setLocating] = useState(false)
-  const [fromGps, setFromGps] = useState(false)
+  const [where, setWhere] = useState<Where>({ state: '', district: '', village: '', taluka: '',
+                                              lat: null, lon: null, fromGps: false })
   const [more, setMore] = useState(false)
   const [touched, setTouched] = useState(false)
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }))
@@ -100,7 +91,7 @@ export default function SignupFarmer() {
     name: f.name.trim().length < 2,
     phone: !phoneOk(f.phone),
     email: !emailOk(f.email),
-    village: f.village.trim().length < 2,
+    where: !where.state || !where.district || where.village.trim().length < 2,
     totalLand: f.totalLand !== '' && !(parseFloat(f.totalLand) > 0),
     area: !(parseFloat(f.area) > 0 && parseFloat(f.area) <= 1000),
     sowing: !f.sowing || f.sowing > today(),
@@ -108,7 +99,7 @@ export default function SignupFarmer() {
   }
   const stepOk = [
     !bad.name && !bad.phone && !bad.email,
-    !bad.village && !bad.totalLand,
+    !bad.where && !bad.totalLand,
     !bad.area && !bad.sowing && !bad.ph,
     f.consent,
   ]
@@ -122,32 +113,16 @@ export default function SignupFarmer() {
   }
   const show = (k: keyof typeof bad) => touched && bad[k]
 
-  const locate = () => {
-    if (!navigator.geolocation) return
-    setLocating(true)
-    navigator.geolocation.getCurrentPosition(
-      (p) => {
-        const { latitude: lat, longitude: lon } = p.coords
-        setCoords({ lat, lon })
-        setF((x) => ({ ...x, district: districtAt(lat, lon) }))  // one less question
-        setFromGps(true)
-        setLocating(false)
-      },
-      () => setLocating(false),
-      { timeout: 10000, enableHighAccuracy: true },
-    )
-  }
-
-  const payload = () => {
-    const d = DISTRICTS.find((x) => x.name === f.district)!
-    return {
-      name: f.name.trim(), phone: f.phone, lang, district: f.district, taluka: f.taluka.trim() || null,
-      village: f.village.trim(), lat: coords?.lat ?? d.lat, lon: coords?.lon ?? d.lon,
-      location_from_gps: coords != null,
-      total_land_acres: f.totalLand ? parseFloat(f.totalLand) : null, consent: f.consent,
-      farms: [...fields, current()],
-    }
-  }
+  const payload = () => ({
+    name: f.name.trim(), phone: f.phone, lang,
+    state: where.state, district: where.district.trim(), taluka: where.taluka.trim() || null,
+    village: where.village.trim(),
+    // No coordinates when the farmer refused location: the server looks the
+    // place up, because everything the app says is read at a point.
+    lat: where.lat, lon: where.lon, location_from_gps: where.fromGps,
+    total_land_acres: f.totalLand ? parseFloat(f.totalLand) : null, consent: f.consent,
+    farms: [...fields, current()],
+  })
 
   /** The field on screen right now. */
   const current = (): FirstField => ({
@@ -196,29 +171,7 @@ export default function SignupFarmer() {
 
       {step === 1 && (
         <div className="space-y-4">
-          <Field label={t('district')} hint={fromGps ? t('authDistrictFromGps') : undefined}>
-            <Select value={f.district} onChange={(v) => { set('district', v); setFromGps(false) }}>
-              {DISTRICTS.map((d) => <option key={d.name}>{d.name}</option>)}
-            </Select>
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label={t('authTaluka')} optional>
-              <Input value={f.taluka} onChange={(e) => set('taluka', e.target.value)} />
-            </Field>
-            <Field label={t('authVillage')} error={show('village') && t('authFixField')}>
-              <Input value={f.village} onChange={(e) => set('village', e.target.value)} invalid={show('village')} />
-            </Field>
-          </div>
-          <Card className="p-3">
-            <button type="button" onClick={locate}
-              className="w-full flex items-center gap-2 text-[14px] text-leaf-deep font-semibold min-h-[44px]">
-              <LocateFixed className="w-5 h-5" />
-              {locating ? t('locating') : coords
-                ? `${t('locationSet')} (${coords.lat.toFixed(3)}, ${coords.lon.toFixed(3)})`
-                : t('authAtField')}
-            </button>
-            <p className="text-[12px] text-soil-dark/55 leading-snug">{t('authFieldHint')}</p>
-          </Card>
+          <WherePicker value={where} onChange={setWhere} showErrors={touched} />
           <MoreDetails open={more} onToggle={() => setMore((m) => !m)}>
             <Field label={t('authTotalLand')} optional error={show('totalLand') && t('authFixField')}>
               <Input value={f.totalLand} onChange={(e) => set('totalLand', e.target.value)} type="number"
@@ -282,7 +235,7 @@ export default function SignupFarmer() {
               <dt className="text-soil-dark/55">{t('authMobile')}</dt><dd>+91 {f.phone.replace(/\D/g, '').slice(-10)}</dd>
               <dt className="text-soil-dark/55">{t('authEmail')}</dt><dd className="break-all">{f.email.trim()}</dd>
               <dt className="text-soil-dark/55">{t('authVillage')}</dt>
-              <dd>{[f.village, f.taluka, f.district].filter(Boolean).join(', ')}</dd>
+              <dd>{[where.village, where.taluka, where.district, where.state].filter(Boolean).join(', ')}</dd>
               <dt className="text-soil-dark/55">{t('authFieldsTitle')}</dt>
               <dd>
                 {[...fields, current()].map((x, i) => (

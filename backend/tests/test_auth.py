@@ -183,7 +183,6 @@ def test_duplicate_signups_are_refused(client, mail):
 
 def test_signup_validates_the_answers(client, mail):
     assert farmer_signup(client, mail, consent=False).status_code == 422
-    assert farmer_signup(client, mail, district="Atlantis").status_code == 422
     r = farmer_signup(client, mail, farms=[{"crop": "rice", "sowing_date": SOWN, "area_acres": 1,
                                            "irrigation": "sprinkler", "soil_ph": 14}])
     assert r.status_code == 422
@@ -203,6 +202,33 @@ def test_signup_registers_every_crop_a_farmer_sowed(client, mail):
         assert sorted(f.crop for f in farms) == ["cotton", "maize", "rice"]
         assert {f.village for f in farms} == {"Mohadi"} and {f.lat for f in farms} == {21.38}
     assert [f["crop"] for f in client.get("/api/farms").json()] == ["rice", "cotton", "maize"]
+
+
+def test_a_farmer_anywhere_in_india_can_sign_up(client, mail, monkeypatch):
+    """Any of the 785 districts, not one state's. Without a GPS fix the place is
+    looked up, because the weather and the spray window are read at a point."""
+    from app import geo
+
+    r = farmer_signup(client, mail, state="Punjab", district="Ludhiana", village="Jagraon",
+                      lat=30.79, lon=75.47)
+    assert r.status_code == 201, r.text
+    with SessionLocal() as db:
+        farm = db.scalar(select(Farm).where(Farm.district == "Ludhiana"))
+        assert (farm.state, farm.lat) == ("Punjab", 30.79)
+
+    monkeypatch.setattr(geo, "locate", lambda state, district, village=None:
+                        {"lat": 26.85, "lon": 80.95, "state": state, "district": district, "matched": village})
+    r = farmer_signup(client, mail, phone="9000000022", email="two@example.com", state="Uttar Pradesh",
+                      district="Lucknow", village="Malihabad", lat=None, lon=None)
+    assert r.status_code == 201, r.text
+    with SessionLocal() as db:
+        farm = db.scalar(select(Farm).where(Farm.district == "Lucknow"))
+        assert (farm.lat, farm.lon, farm.location_source) == (26.85, 80.95, "district")
+
+    monkeypatch.setattr(geo, "locate", lambda *a, **k: None)  # nothing answers: say so, don't guess
+    r = farmer_signup(client, mail, phone="9000000033", email="three@example.com", state="Bihar",
+                      district="Nowhere", village="Nowhere", lat=None, lon=None, lang="en")
+    assert r.status_code == 422 and "could not find" in r.json()["detail"].lower()
 
 
 def test_farmers_see_only_their_own_farms(client, mail):

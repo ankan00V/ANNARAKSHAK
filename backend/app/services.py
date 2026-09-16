@@ -152,6 +152,7 @@ def farm_view(kb: KB, farm: Farm, lang: str, today: date | None = None) -> dict:
         "crop_name": tr(kb.crops[farm.crop]["names"], lang),
         "photo_diagnosis": kb.crops[farm.crop]["photo_diagnosis"],
         "variety": farm.variety,
+        "state": farm.state,
         "district": farm.district,
         "village": farm.village,
         "lat": farm.lat,

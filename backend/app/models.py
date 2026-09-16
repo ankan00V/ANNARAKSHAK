@@ -54,6 +54,7 @@ class FarmerProfile(Base):
     __tablename__ = "farmer_profile"
 
     user_id: Mapped[int] = mapped_column(ForeignKey("app_user.id"), primary_key=True)
+    state: Mapped[str | None] = mapped_column(String(60))
     district: Mapped[str] = mapped_column(String(60))
     taluka: Mapped[str | None] = mapped_column(String(80))
     village: Mapped[str | None] = mapped_column(String(80))
@@ -123,6 +124,8 @@ class Farm(Base):
     crop: Mapped[str] = mapped_column(String(20))
     variety: Mapped[str | None] = mapped_column(String(80))
     sowing_date: Mapped[date] = mapped_column(Date)
+    state: Mapped[str | None] = mapped_column(String(60))
+    """Any state or union territory: the app is not one state's app."""
     district: Mapped[str] = mapped_column(String(60))
     village: Mapped[str | None] = mapped_column(String(80))
     lat: Mapped[float] = mapped_column(Float)

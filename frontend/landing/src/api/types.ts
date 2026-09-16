@@ -715,3 +715,19 @@ export interface KrishiAnswer {
   go: { to: string; label: string }[]
   suggestions: KrishiChip[]
 }
+
+// --- Where the farm is ---------------------------------------------------------
+
+export interface StatePlaces {
+  name: string
+  districts: { name: string; local: string | null }[]
+}
+
+export interface PlaceHit {
+  name: string
+  taluka: string | null
+  district: string | null
+  state: string | null
+  lat: number
+  lon: number
+}

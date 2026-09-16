@@ -32,6 +32,8 @@ import type {
   OtpSent,
   AuthOptions,
   Role,
+  StatePlaces,
+  PlaceHit,
 } from './types'
 
 /** Fired when a signed-in call comes back 401 (session expired or revoked). */
@@ -74,6 +76,12 @@ const json = (body: unknown): RequestInit => ({
 
 export const api = {
   me: () => req<Me>('/api/auth/me'),
+  places: () => req<{ states: StatePlaces[] }>('/api/geo/places'),
+  whereAmI: (lat: number, lon: number) =>
+    req<{ state: string | null; district: string | null; village: string | null }>(
+      `/api/geo/reverse?lat=${lat}&lon=${lon}`),
+  findPlace: (q: string) => req<{ results: PlaceHit[] }>(`/api/geo/search?q=${encodeURIComponent(q)}`),
+
   authOptions: (lang: Lang) => req<AuthOptions>(`/api/auth/options?lang=${lang}`),
   requestOtp: (body: { role: Role; purpose: 'signup' | 'login'; email?: string; phone?: string; identifier?: string; lang: Lang }) =>
     req<OtpSent>('/api/auth/otp', json(body)),
