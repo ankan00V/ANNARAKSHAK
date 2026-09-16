@@ -50,6 +50,9 @@ if _SAMPLES.exists():  # held-out demo images; absent on machines without the da
 _EXTRA = BACKEND_DIR.parent / "data" / "processed" / "extra_640"
 if _EXTRA.exists():  # held-out photos from the extra sources (blast, rust, field FAW)
     app.mount("/samples-extra", StaticFiles(directory=_EXTRA), name="samples-extra")
+_MORE = BACKEND_DIR.parent / "data" / "processed" / "more_640"
+if _MORE.exists():  # held-out cotton, soybean and more maize/rice photos
+    app.mount("/samples-more", StaticFiles(directory=_MORE), name="samples-more")
 
 app.include_router(auth.router)
 app.include_router(krishi.router)

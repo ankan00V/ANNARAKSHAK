@@ -76,9 +76,12 @@ def samples(crop: str | None = None, per_class: int = 1):
         if crop and not cls.startswith(crop + "_"):
             continue
         key = "/".join(path.split("/")[-2:])
-        extra = "/extra_640/" in path
-        url = "/samples-extra/" + "/".join(path.split("/")[-3:]) if extra else "/samples/" + key
-        item = {"url": url, "true_class": cls, "source": path.split("/")[-3] if extra else "icar",
+        # Each processed set has its own mount (app.main); ICAR photos sit one
+        # directory shallower, the others under their source folder.
+        mount = next((m for d, m in (("/extra_640/", "/samples-extra/"), ("/more_640/", "/samples-more/"))
+                      if d in path), None)
+        url = mount + "/".join(path.split("/")[-3:]) if mount else "/samples/" + key
+        item = {"url": url, "true_class": cls, "source": path.split("/")[-3] if mount else "icar",
                 "expected": outcomes.get(key, {}).get("outcome")}
         if item["expected"] == "clarify" or (item["expected"] == "escalate" and n_escalate < 2):
             n_escalate += item["expected"] == "escalate"
