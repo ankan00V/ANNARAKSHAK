@@ -53,7 +53,8 @@ class IndicTrans2:
         self.model = self.model.to(self.device).eval()
         self.ip = IndicProcessor(inference=True)
 
-    def translate(self, strings: list[str], lang: str, batch: int = 8, progress=None, save=None) -> dict[str, str]:
+    def translate(self, strings: list[str], lang: str, batch: int = 8, progress=None, save=None,
+                  beams: int = 4) -> dict[str, str]:
         tgt = IT2_CODES[lang]
         done: dict[str, str] = {}
         order = sorted(strings, key=len)  # similar lengths per batch: less padding
@@ -65,7 +66,7 @@ class IndicTrans2:
                          return_attention_mask=True).to(self.device)
             with self.torch.no_grad():
                 # use_cache=False: the model's remote code predates transformers' new cache objects
-                out = self.model.generate(**x, use_cache=False, min_length=0, max_length=384, num_beams=4)
+                out = self.model.generate(**x, use_cache=False, min_length=0, max_length=384, num_beams=beams)
             dec = self.tok.batch_decode(out.detach().cpu().tolist(), skip_special_tokens=True,
                                         clean_up_tokenization_spaces=True)
             for src, (_, names), text in zip(chunk, safe, self.ip.postprocess_batch(dec, lang=tgt)):
@@ -156,8 +157,10 @@ def write(lang: str, kb_path: Path, ui_path: Path, kb: dict, ui: dict, engine) -
     models.add(INDICTRANS2 if engine else SARVAM_TRANSLATE_MODEL)
     strings = dict(sorted(kb.items()))
     updated = old.get("updated") if old.get("strings") == strings else date.today().isoformat()
-    _save(kb_path, json.dumps({"_note": NOTE, "models": sorted(models), "source": "en", "updated": updated,
-                               "strings": strings}, ensure_ascii=False, indent=1) + "\n")
+    out = {"_note": NOTE, "models": sorted(models), "source": "en", "updated": updated, "strings": strings}
+    if old.get("reviewed"):  # lines a native speaker has corrected (review_translations.py)
+        out["reviewed"] = old["reviewed"]
+    _save(kb_path, json.dumps(out, ensure_ascii=False, indent=1) + "\n")
     _save(ui_path, json.dumps(dict(sorted(ui.items())), ensure_ascii=False, indent=1) + "\n")
 
 
@@ -165,6 +168,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--lang", default=",".join(MACHINE))
     ap.add_argument("--count", action="store_true", help="only count what would be sent")
+    ap.add_argument("--beams", type=int, default=4,
+                    help="indictrans2 beam search width; 2 is about twice as fast, slightly rougher")
     ap.add_argument("--engine", choices=("sarvam", "indictrans2"), default="sarvam",
                     help="sarvam: Sarvam-Translate API (paid credits); indictrans2: AI4Bharat model run locally")
     args = ap.parse_args()
@@ -197,7 +202,7 @@ def main() -> None:
             write(lang, kb_path, ui_path, kb_have | {s: partial[s] for s in kb_todo if s in partial},
                   ui_have | {k: partial[v] for k, v in ui_todo.items() if v in partial}, engine)
 
-        done = engine.translate(texts, lang, progress=report, save=save) if engine \
+        done = engine.translate(texts, lang, progress=report, save=save, beams=args.beams) if engine \
             else translate_many(texts, lang, progress=report)
         kb_have.update({s: done[s] for s in kb_todo if s in done})
         ui_have.update({k: done[v] for k, v in ui_todo.items() if v in done})
