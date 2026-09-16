@@ -1,17 +1,19 @@
 """The guarantees the product rests on, tested at the function level."""
 
 import copy
+import io
 from datetime import date, timedelta
 
 import pytest
 
 from app.config import FLOOR, GATE, MARGIN, PRIOR_MAX_BIAS
-from app.engine import advisory, doubt, labelcheck, prior, risk
+from app.engine import advisory, doubt, labelcheck, prior, risk, vision
 from app.engine.gate import Prediction, TopK, decide
 from app.engine.weather import Day, Window
 from app.kb import KB, get_kb, validate
 
 kb = get_kb()
+_REAL_MODEL = vision._real_model
 
 
 def topk(*pairs, **kw):
@@ -69,6 +71,48 @@ def test_gate_asks_for_retake_on_non_crop_photo():
     d = run_gate(topk(("rice_brown_spot", 0.99), ("rice_false_smut", 0.0),
                       out_of_scope=True, oos_reason="NOT_A_CROP_PHOTO"))
     assert d.outcome == "retake"
+
+
+def test_gate_sends_an_unfamiliar_crop_photo_to_an_expert_not_back_to_the_farmer():
+    # A real maize whorl chewed by fall armyworm scored below the familiarity bar
+    # and was told "this is not a crop photo". A photo that is mostly plant is a
+    # crop photo whatever the bank says, so it goes to a human.
+    d = run_gate(topk(("maize_fall_armyworm", 0.25), ("maize_aphid", 0.23),
+                      out_of_scope=True, oos_reason="UNFAMILIAR_PHOTO"), crop="maize")
+    assert (d.outcome, d.reason) == ("escalate", "UNFAMILIAR_PHOTO")
+
+
+def test_vegetation_decides_retake_versus_expert_for_an_unfamiliar_photo():
+    from PIL import Image
+
+    from app.config import CLEARLY_VEGETATION
+    from app.engine import vision
+
+    class Unfamiliar:
+        version, temperature = "test-0", 1.0
+
+        def analyse(self, img, k=3, with_heatmap=True):
+            return [("maize_fall_armyworm", 0.25), ("maize_aphid", 0.23)], {"grid": []}, 0.1
+
+        def is_familiar(self, fam):
+            return False
+
+    vision._real_model.cache_clear()
+    try:
+        vision._real_model = lambda: Unfamiliar()  # type: ignore[assignment]
+        leafy = Image.new("RGB", (64, 64), (70, 130, 50))
+        assert vision.vegetation_fraction(leafy) >= CLEARLY_VEGETATION
+        buf = io.BytesIO()
+        leafy.save(buf, format="JPEG")
+        assert vision.classify(buf.getvalue(), "maize").oos_reason == "UNFAMILIAR_PHOTO"
+
+        grey = Image.new("RGB", (64, 64), (128, 128, 128))
+        buf = io.BytesIO()
+        grey.save(buf, format="JPEG")
+        assert vision.classify(buf.getvalue(), "maize").oos_reason == "NOT_A_CROP_PHOTO"
+    finally:
+        vision._real_model = _REAL_MODEL
+        vision._real_model.cache_clear()
 
 
 def test_gate_healthy_is_advise_without_treatment():
@@ -276,6 +320,28 @@ def test_a_lab_trained_class_must_clear_its_own_higher_bar():
     assert (d.outcome, d.reason) == ("escalate", "LAB_CLASS_BELOW_GATE")
     assert run_gate(topk(("rice_blast", 0.93), ("rice_brown_spot", 0.03))).outcome == "advise"
     assert run_gate(topk(("rice_brown_spot", 0.75), ("rice_blast", 0.05))).outcome == "advise"  # others unchanged
+
+
+def test_closed_form_cam_is_the_same_map_as_grad_cam():
+    # The heatmap is computed without a backward pass, which is only allowed
+    # because for a single Linear layer on pooled features the two are the same
+    # map. If the head ever stops being linear, cam_from_map must return None
+    # and the backward pass must come back.
+    torch = pytest.importorskip("torch")
+
+    from app.engine.model import Net, cam_from_map, gradcam
+
+    net = Net("mobilenet_v3_large", 4, "finetune", pretrained=False).train(False)
+    x = torch.rand(1, 3, 96, 96)
+    with torch.no_grad():
+        fmap = net.feature_map(x)
+    for c in range(4):
+        closed = cam_from_map(net, fmap, c)
+        assert closed is not None
+        assert abs(closed - gradcam(net, x.clone().requires_grad_(True), c)).max() < 1e-4
+
+    deep = Net("mobilenet_v3_large", 4, "ann", pretrained=False).train(False)
+    assert cam_from_map(deep, fmap, 0) is None  # no closed form: fall back
 
 
 def test_familiarity_rejects_what_is_far_from_every_training_photo():

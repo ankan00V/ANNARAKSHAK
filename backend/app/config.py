@@ -53,6 +53,15 @@ reject class always puts its mass somewhere, even on a photo of a shoe.
 Measured on the 835 ICAR images: 10 (1.2%) fall below it, mostly insects shot
 off the plant; flat wood, cardboard, soil, skin and grey all score 0."""
 
+CLEARLY_VEGETATION = 0.35
+"""At or above this share of plant-coloured pixels the photo IS of a plant,
+whatever the familiarity score says. The two are independent: familiarity asks
+"have I seen photos like this?", which a farmer's wide phone shot of a chewed
+whorl can fail honestly. Telling that farmer "this is not a crop photo, take
+another" is the worst answer the app can give, so above this bar an unfamiliar
+photo goes to an expert instead of back to the farmer. Measured on the 44
+out-of-scope photos in the familiarity check: 32 of them fall below it."""
+
 TARGET_GATE = {
     "rice_blast": 0.90,
     "maize_common_rust": 0.90,

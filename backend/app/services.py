@@ -91,6 +91,11 @@ MESSAGES = {
         "hi": "यह फसल की फोटो नहीं लगती। प्रभावित पत्ती की पास से, दिन की रोशनी में फोटो लें।",
         "mr": "हा पिकाचा फोटो वाटत नाही. बाधित पानाचा जवळून, दिवसाच्या उजेडात फोटो घ्या.",
     },
+    "UNFAMILIAR_PHOTO": {
+        "en": "This is a crop photo, but not like the ones I have been taught on, so I will not guess. An expert will look at it.",
+        "hi": "यह फसल की फोटो है, पर जिन फोटो पर मैंने सीखा है उनसे अलग है, इसलिए मैं अंदाज़ा नहीं लगाऊँगा। विशेषज्ञ इसे देखेंगे।",
+        "mr": "हा पिकाचा फोटो आहे, पण मी ज्या फोटोंवरून शिकलो त्यांच्यासारखा नाही, म्हणून मी अंदाज लावणार नाही. तज्ज्ञ तो पाहतील.",
+    },
     "CROP_MISMATCH": {
         "en": "This photo does not match the crop registered for your field. An expert will check it.",
         "hi": "यह फोटो आपके खेत की दर्ज फसल से मेल नहीं खाती। विशेषज्ञ जाँच करेंगे।",
