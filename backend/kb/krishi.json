@@ -77,7 +77,8 @@
      "weather today",
      "how is the weather",
      "aaj barish hogi kya",
-     "paus padel ka"
+     "paus padel ka",
+     "will it rain tomorrow"
     ],
     "hi": [
      "क्या बारिश होगी?",
@@ -109,7 +110,11 @@
     "thand",
     "barish hogi",
     "paus yenar",
-    "mausam kaisa"
+    "mausam kaisa",
+    "tomorrow",
+    "kal",
+    "udya",
+    "rain tomorrow"
    ]
   },
   {
@@ -742,7 +747,6 @@
     "mila",
     "aadhle",
     "nothing",
-    "tomorrow",
     "जाँच",
     "तपासणी"
    ],
@@ -2154,7 +2158,6 @@
     "email",
     "sms",
     "code",
-    "otp",
     "gmail",
     "no email",
     "ईमेल",
@@ -2334,7 +2337,11 @@
     "expired",
     "resend",
     "गलत",
-    "चुकीचा"
+    "चुकीचा",
+    "otp",
+    "one time code",
+    "did not get",
+    "nahi mila"
    ],
    "answer": {
     "en": "Check the Spam or Promotions folder of that email, and that the email address is spelt right. A code works for 5 minutes and only once; after 30 seconds you can tap 'Send a new code'. After 5 wrong tries, ask for a new code.",
@@ -2456,7 +2463,8 @@
     "en": [
      "hello",
      "hi",
-     "namaste"
+     "namaste",
+     "good morning"
     ],
     "hi": [
      "नमस्ते",
@@ -2478,7 +2486,12 @@
     "ram ram",
     "jai kisan",
     "नमस्ते",
-    "नमस्कार"
+    "नमस्कार",
+    "good morning",
+    "good evening",
+    "salaam",
+    "jai shri ram",
+    "kem cho"
    ],
    "answer": {
     "en": "Namaste! I'm Krishi. Ask me anything about AnnRakshak — how to check a sick plant, when to spray, what an alert means — or tap a question below.",

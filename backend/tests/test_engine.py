@@ -61,7 +61,7 @@ def test_gate_escalates_crop_mismatch():
 
 
 def test_gate_escalates_inspection_tier_even_when_confident():
-    d = run_gate(topk(("rice_tungro", 0.95), ("rice_brown_spot", 0.02)))
+    d = run_gate(topk(("rice_brown_planthopper", 0.95), ("rice_brown_spot", 0.02)))
     assert (d.outcome, d.reason) == ("escalate", "NOT_PHOTO_DIAGNOSABLE")
 
 

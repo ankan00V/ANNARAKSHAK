@@ -61,6 +61,7 @@ from composite import composite  # noqa: E402
 
 MANIFEST = ROOT / "data" / "processed" / "icar_images.csv"
 EXTRA_MANIFEST = ROOT / "data" / "processed" / "extra_images.csv"
+MORE_MANIFEST = ROOT / "data" / "processed" / "more_images.csv"
 ART = ROOT / "ml" / "artifacts"
 REP = ROOT / "ml" / "reports"
 SEED = 42
@@ -69,6 +70,10 @@ IMG = 300
 # Classes the ICAR set already has get fewer, so its field photos keep weight.
 EXTRA_CAP_NEW = {"train": 300, "val": 40, "test": 80}
 EXTRA_CAP_EXISTING = {"train": 150, "val": 30, "test": 60}
+# --with-more: the cotton, soybean and extra maize/rice sets (data/ingest_more.py).
+# Their new classes carry the crop alone, so they may bring more per class.
+MORE_CAP_NEW = {"train": 420, "val": 60, "test": 120}
+MORE_CAP_EXISTING = {"train": 200, "val": 40, "test": 80}
 COMPOSITE_P = 0.85
 
 
@@ -144,21 +149,24 @@ def balanced_sampler(rows, epoch_size, icar_share=0.5):
     return WeightedRandomSampler(torch.tensor(w, dtype=torch.double), num_samples=epoch_size, replacement=True)
 
 
-def load_extra_split():
-    """Extra-source rows split per class (seeded, stratified), capped."""
-    rows = list(csv.DictReader(EXTRA_MANIFEST.open()))
-    icar_classes = {r["train_class"] for r in csv.DictReader(MANIFEST.open())}
+def load_extra_split(manifest=None, cap_new=None, cap_existing=None, known=None):
+    """Extra-source rows split per class (seeded, stratified), capped. A class
+    the ICAR set already covers gets the smaller cap, so ICAR's field photos
+    keep their weight."""
+    rows = list(csv.DictReader((manifest or EXTRA_MANIFEST).open()))
+    icar_classes = known if known is not None else {r["train_class"] for r in csv.DictReader(MANIFEST.open())}
+    cap_new, cap_existing = cap_new or EXTRA_CAP_NEW, cap_existing or EXTRA_CAP_EXISTING
     rng = random.Random(SEED)
     by_class: dict[str, list] = {}
     for r in rows:
         by_class.setdefault(r["train_class"], []).append(r)
     out = {"train": [], "val": [], "test": []}
     for cls, items in sorted(by_class.items()):
-        items = sorted(items, key=lambda r: r["sha1"])
+        items = sorted(items, key=lambda r: r.get("sha1") or r["dhash"] + r["path"])
         rng.shuffle(items)
         n = len(items)
         cut1, cut2 = int(n * 0.70), int(n * 0.85)
-        caps = EXTRA_CAP_EXISTING if cls in icar_classes else EXTRA_CAP_NEW
+        caps = cap_existing if cls in icar_classes else cap_new
         for split, part in (("train", items[:cut1]), ("val", items[cut1:cut2]), ("test", items[cut2:])):
             out[split] += part[: caps[split]]
     return out["train"], out["val"], out["test"]
@@ -436,6 +444,8 @@ def main():
                     help="with --with-extra: add expert-labelled field photos from ml/export_confirmed.py")
     ap.add_argument("--warm-start", action="store_true",
                     help="with --with-extra: continue from the deployed model instead of ImageNet weights")
+    ap.add_argument("--with-more", action="store_true",
+                    help="also the cotton, soybean and extra maize/rice sets (data/processed/more_images.csv)")
     ap.add_argument("--with-extra", action="store_true",
                     help="v2: add the extra sources (blast, rust, field FAW) with background randomisation")
     args = ap.parse_args()
@@ -607,6 +617,12 @@ def main_extra(args):
     else:
         i_tr, i_va, i_te = load_split()
     e_tr, e_va, e_te = load_extra_split()
+    if getattr(args, "with_more", False):
+        known = {r["train_class"] for r in list(icar.values()) + e_tr + e_va + e_te}
+        m_tr, m_va, m_te = load_extra_split(MORE_MANIFEST, MORE_CAP_NEW, MORE_CAP_EXISTING, known)
+        e_tr, e_va, e_te = e_tr + m_tr, e_va + m_va, e_te + m_te
+        print(f"with cotton, soybean and more maize/rice: {len(m_tr)}/{len(m_va)}/{len(m_te)} "
+              f"images over {len({r['train_class'] for r in m_tr})} classes (data/ingest_more.py)")
     if getattr(args, "with_confirmed", False):
         conf_csv = ROOT / "data" / "processed" / "confirmed.csv"
         if conf_csv.exists():
@@ -623,7 +639,7 @@ def main_extra(args):
     def healthy(rows, crop):
         return [r["path"] for r in rows if r["train_class"] == f"{crop}_healthy" and r["bg"] == "field"]
 
-    crops = ("rice", "maize")
+    crops = tuple(sorted({r["crop"] for r in train + val + i_te + e_te}))
     bgs = {"train": {c: healthy(i_tr + e_tr, c) for c in crops},
            "val": {c: healthy(i_va + e_va, c) for c in crops},
            "test": {c: healthy(i_te + e_te, c) for c in crops}}
@@ -685,12 +701,19 @@ def main_extra(args):
         checks.append(("ICAR accuracy-when-advised within 1 point of deployed",
                        (gate["accuracy_when_advised"] or 0) >= pg - 0.01,
                        f"{gate['accuracy_when_advised']} vs {pg}"))
+    MIN_SWAP_ROWS = 10
     for c in new_classes:
-        r = extra["plain_rows_swapped"]["per_class"].get(c, {}).get("recall", 0)
-        checks.append((f"{c} recall after background swap >= 0.70", r >= 0.70, f"{r:.3f}"))
+        swapped = extra["plain_rows_swapped"]["per_class"].get(c, {})
+        if swapped.get("n", 0) >= MIN_SWAP_ROWS:  # enough lab-backdrop photos to swap the backdrop
+            r = swapped.get("recall", 0)
+            checks.append((f"{c} recall after background swap >= 0.70", r >= 0.70, f"{r:.3f}"))
+        else:  # a class learnt from field photos: judge it on its own held-out photos
+            r = extra["original_background"]["per_class"].get(c, {}).get("recall", 0)
+            checks.append((f"{c} recall on held-out photos >= 0.70", r >= 0.70, f"{r:.3f}"))
     deploy = not args.quick and all(ok for _, ok, _ in checks)
 
-    version = (f"icar+extra-efficientnet_v2_s-{'warmstart' if init else 'finetune'}-"
+    version = (f"icar+extra{'+more' if getattr(args, 'with_more', False) else ''}-"
+               f"efficientnet_v2_s-{'warmstart' if init else 'finetune'}-"
                f"{datetime.now(UTC):%Y%m%d}")
     meta = {
         "model_version": version, "backbone": "efficientnet_v2_s", "head": "finetune", "img_size": IMG,

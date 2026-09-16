@@ -34,7 +34,7 @@ from app.i18n import LANGS
 from app.kb import KB, tr, trl
 from app.models import Alert, Farm, FollowUp, Problem
 
-MATCH_MIN = 0.16
+MATCH_MIN = 0.14
 """Below this similarity Krishi says it didn't understand instead of guessing."""
 SCREEN_BOOST = 0.05
 KEYWORD_BOOST = 0.08

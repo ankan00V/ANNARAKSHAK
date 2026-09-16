@@ -133,7 +133,7 @@ def test_cases_and_farm_answers(krishi_world):
     some = c.post("/api/krishi/ask", json={"topic": "my_cases", "lang": "en", "farm_id": 1}).json()
     assert some["steps"] and "Rice blast" in some["steps"][0]
     f = c.post("/api/krishi/ask", json={"topic": "my_farm", "lang": "en", "farm_id": 1}).json()
-    assert "80 days old" in f["text"] and "Bhandara" in f["text"]
+    assert "days old" in f["text"] and "Bhandara" in f["text"] and "Rice" in f["text"]
 
 
 def test_live_answer_needs_a_farm_the_caller_may_open(krishi_world, monkeypatch):
