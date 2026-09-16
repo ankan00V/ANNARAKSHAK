@@ -244,3 +244,26 @@ def test_live_walk_refuses_someone_elses_farm(client, mail):
     farmer_signup(client, mail)
     with client.websocket_connect("/api/live/1") as ws:
         assert ws.receive_json() == {"type": "error", "code": "NOT_ALLOWED"}
+
+
+def test_verdict_carries_the_signed_in_expert(client, mail):
+    """The expert console no longer asks who is reviewing: the server takes the
+    name from the session, so a verdict cannot be filed under someone else."""
+    from app.models import Case, Confirmation, Diagnosis, Problem
+
+    with SessionLocal() as db:
+        p = Problem(farm_id=1, target="rice_brown_spot", status="open")
+        db.add(p)
+        db.flush()
+        db.add(Diagnosis(problem_id=p.id, topk=[{"target": "rice_brown_spot", "confidence": 0.5}],
+                         gate_outcome="escalate", gate_reason="BELOW_GATE", confidence=0.5,
+                         model_version="test", is_stub=True))
+        db.add(Case(problem_id=p.id, status="open", reason="BELOW_GATE"))
+        db.commit()
+        case_id = db.scalar(select(Case.id))
+    assert expert_signup(client, mail).status_code == 201
+    r = client.post(f"/api/cases/{case_id}/resolve", json={
+        "verdict": "confirmed", "final_label": "rice_brown_spot", "expert_name": "Somebody Else"})
+    assert r.status_code == 200, r.text
+    with SessionLocal() as db:
+        assert db.scalar(select(Confirmation)).expert_name == "Dr. S. Kale"
