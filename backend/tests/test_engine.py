@@ -378,3 +378,22 @@ def test_translation_memory_refuses_broken_placeholders(tmp_path, monkeypatch):
         assert i18n.protect(src)[1] == ["month", "obs", "dep:+.0f"]
     finally:
         i18n.memory.cache_clear()
+
+
+@pytest.mark.parametrize(("text", "shown"), [
+    ("Water is just plain water. It does not treat fall armyworm.", True),
+    ("Kerosene is a fuel, not a pesticide, and can harm the crop.", True),
+    ("Use Mancozeb instead for this disease.", False),      # names a chemical
+    ("Try tricyclazole, it works well.", False),            # names a chemical
+    ("Emamectin benzoate is the right choice here.", False),
+    ("Spray 2 ml per litre of water.", False),              # a dose
+    ("Apply 500 g per acre.", False),
+])
+def test_an_ai_note_may_explain_but_never_recommend(text, shown):
+    """The spray check asks a model what an unrecognised input is. It is told to
+    explain and never to prescribe; this is the part that does not rely on it
+    having listened. A named chemical or any dose is dropped, and the farmer
+    keeps the verified refusal."""
+    from app.engine.labelcheck import safe_suggestion
+
+    assert (safe_suggestion(kb, text) is not None) is shown

@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app import auth, services
+from app import auth, config, nim, services
 from app.db import get_db
 from app.limits import limit
 from app.engine import labelcheck, vision
@@ -386,4 +386,16 @@ def label_check(body: LabelCheckIn, request: Request, db: Session = Depends(get_
         target = latest.target if latest else None
     if target and target.endswith("_healthy"):
         target = None
-    return labelcheck.check(kb, body.product, farm.crop, target, body.lang) | {"target": target}
+    out = labelcheck.check(kb, body.product, farm.crop, target, body.lang) | {"target": target}
+    if out["tone"] == "unknown":
+        # We hold no record of what was typed, so the verified answer stops at
+        # "ask an expert". A model can still say what the thing IS — that water
+        # is not a pesticide, that a fertiliser will not cure a fungus — which is
+        # the difference between a dead end and an answer. It explains only:
+        # labelcheck.safe_suggestion drops anything carrying a dose or naming a
+        # chemical, and the verified refusal above is never replaced.
+        problem = tr(kb.targets[target]["names"], "en") if target else "not diagnosed yet"
+        out["suggestion"] = labelcheck.safe_suggestion(kb, nim.suggest(
+            body.product, tr(kb.crops[farm.crop]["names"], "en"), problem, body.lang,
+            key=config.NVIDIA_SUGGEST_KEY))
+    return out

@@ -74,13 +74,14 @@ def enabled() -> bool:
     return bool(NVIDIA_API_KEY)
 
 
-def _chat(messages: list[dict], *, max_tokens: int, temperature: float) -> str | None:
-    if not NVIDIA_API_KEY:
+def _chat(messages: list[dict], *, max_tokens: int, temperature: float, key: str | None = None) -> str | None:
+    key = key or NVIDIA_API_KEY
+    if not key:
         return None
     try:
         r = httpx.post(
             f"{NVIDIA_BASE_URL}/chat/completions",
-            headers={"Authorization": f"Bearer {NVIDIA_API_KEY}", "Accept": "application/json"},
+            headers={"Authorization": f"Bearer {key}", "Accept": "application/json"},
             # A farmer is waiting, so the model answers instead of thinking about
             # it: left to reason, this one takes 16 s over "read it out to me"
             # and 1 s with reasoning off, for the same answer.
@@ -166,6 +167,48 @@ def say(question: str, facts: str, lang: str) -> tuple[str, list[str]] | None:
         lead = _trim(got.get("text"), LEAD_WORDS)
     points = [p for p in points if p]
     return (lead, points) if lead else None
+
+
+SUGGEST_SYSTEM = """You help a farmer in India who typed something into a \
+pesticide checker that the app has no record of. The app has already refused to \
+endorse it. Your only job is to tell them what the thing they typed actually is, \
+and whether it treats their crop problem.
+
+Crop: {crop}. Problem being treated: {problem}.
+
+Rules you must not break:
+- NEVER name any pesticide, fungicide, insecticide or chemical as something to \
+use. Not one. If asked what to use instead, say the app's own advice for this \
+problem is the place to look.
+- NEVER give a dose, quantity, concentration, or mixing ratio.
+- If the thing is dangerous to spray on a crop or on a person, say so plainly \
+and first.
+- If you do not know what it is, say so. Do not invent a product.
+
+Reply in {language} as JSON and nothing else:
+
+{{"text": "one or two short sentences: what it is, and whether it works for \
+this problem. At most 35 words."}}
+
+Plain words a farmer can read on a phone. No markdown, no lists, no greeting."""
+
+
+def suggest(product: str, crop: str, problem: str, lang: str, *, key: str | None = None) -> str | None:
+    """What an unrecognised thing actually is — explanation only, never a
+    recommendation. The caller must still run it past the guards in
+    labelcheck.safe_suggestion() before showing it."""
+    product = " ".join((product or "").split())[:80]
+    if not product:
+        return None
+    system = SUGGEST_SYSTEM.format(crop=crop, problem=problem, language=LANG_NAME.get(lang, "English"))
+    out = _chat([{"role": "system", "content": system},
+                 {"role": "user", "content": f'The farmer typed: "{product}"'}],
+                max_tokens=900, temperature=0.1, key=key)
+    if not out:
+        return None
+    got = json_reply(out)
+    text = _trim((got or {}).get("text") if got else out, 40)
+    return text or None
 
 
 def json_reply(text: str) -> dict | None:

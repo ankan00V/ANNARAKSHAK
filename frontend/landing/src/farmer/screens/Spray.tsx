@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Ban, FlaskConical, HelpCircle, Info, Loader2, ShieldCheck, SprayCan } from 'lucide-react'
+import { Ban, FlaskConical, HelpCircle, Info, Loader2, ShieldCheck, Sparkles, SprayCan } from 'lucide-react'
 import { api } from '../../api/client'
 import type { LabelVerdict } from '../../api/types'
 import { useAsync } from '../../lib/hooks'
@@ -119,6 +119,14 @@ export default function Spray() {
           </div>
           {v.product && <p className={`mt-1 text-xs ${v.tone === 'stop' ? 'text-cream/80' : 'text-soil-dark/60'}`}>{v.product}</p>}
           <p className="mt-3 text-[15px] leading-snug">{v.message}</p>
+          {v.suggestion && (
+            <div className="mt-3 rounded-xl bg-white/70 border border-soil-dark/10 p-3">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-soil-dark/45">
+                <Sparkles className="w-3.5 h-3.5" /> {t('aiNote')}
+              </p>
+              <p className="mt-1 text-[14px] leading-snug">{v.suggestion}</p>
+            </div>
+          )}
           {!v.is_veto && (
             logged
               ? <p className="mt-3 text-sm rounded-xl bg-leaf/10 text-leaf-deep p-2.5">{logged}</p>

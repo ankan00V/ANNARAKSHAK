@@ -28,6 +28,9 @@ NVIDIA_MODEL = os.environ.get("NVIDIA_MODEL", "openai/gpt-oss-20b")
 (Hinglish, romanised Marathi, typos): it routed 25 right where Krishi's own
 matcher managed 16, refused all 4 off-topic questions, and answers in under a
 second. nemotron-3-super-120b was faster (366 ms) but got 21."""
+NVIDIA_SUGGEST_KEY = (os.environ.get("NVIDIA_API_KEYS") or "").split(",")[-1].strip() or NVIDIA_API_KEY
+"""The spray check's own key. It is a separate, farmer-facing call on a screen
+about chemicals, and it should not go dark because Krishi used up the quota."""
 NVIDIA_TIMEOUT_S = 10.0
 """Measured median 2.6 s, 90th percentile 4.8 s. A call that times out costs the
 farmer the wait AND falls back anyway, so the bar is set past the slow tail."""

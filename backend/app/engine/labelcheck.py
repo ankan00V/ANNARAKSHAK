@@ -9,6 +9,8 @@ best outcome is "no objection found — follow the printed label".
 
 from __future__ import annotations
 
+import re
+
 from app.kb import KB, tr
 
 VERDICTS = {
@@ -67,6 +69,38 @@ CLASS_FITS = {
     "virus": {"insecticide"},
     "pest": {"insecticide"},
 }
+
+
+DOSE = re.compile(r"\d+\s*(?:%|ml|l|litre|liter|g|gm|gram|kg|mg|ppm|acre|hectare|ha)\b", re.I)
+
+
+def safe_suggestion(kb: KB, text: str | None) -> str | None:
+    """A model's explanation of an unrecognised input, or None if it strayed.
+
+    The model is told to explain and never to recommend. Being told is not a
+    guarantee, so two things are checked in code before a farmer sees it:
+
+      - no dose, quantity or concentration anywhere in it;
+      - no pesticide name from our own list — the moment it names a chemical,
+        a farmer will read it as a suggestion to buy that chemical, whatever
+        the sentence around it says.
+
+    Either way it fails closed: the farmer keeps the verified refusal and loses
+    only the extra sentence.
+    """
+    if not text:
+        return None
+    if DOSE.search(text):
+        return None
+    low = text.lower()
+    for pid, p in kb.pesticides.items():
+        if pid.startswith("_"):
+            continue
+        for name in (p["name"], *p.get("aliases", [])):
+            token = name.lower().split()[0]
+            if len(token) > 4 and token in low:
+                return None
+    return text
 
 
 def check(kb: KB, query: str, crop: str, target: str | None, lang: str) -> dict:

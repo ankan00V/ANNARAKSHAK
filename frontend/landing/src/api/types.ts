@@ -229,6 +229,9 @@ export interface LabelVerdict {
   is_veto: boolean
   /** 'stop' = known to be wrong here, 'unknown' = no record of it, 'ok' = no objection found. */
   tone: 'stop' | 'unknown' | 'ok'
+  /** AI explanation of an unrecognised input. Never a recommendation — the
+   *  server drops any reply carrying a dose or naming a chemical. */
+  suggestion?: string | null
   target: string | null
 }
 
