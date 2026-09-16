@@ -84,7 +84,7 @@ export default function Onboard() {
           className="w-full min-h-[52px] rounded-2xl border-2 border-dashed border-leaf/40 text-leaf-deep text-sm font-medium flex items-center justify-center gap-2 hover:bg-leaf/5"
         >
           <Plus className="w-4 h-4" />
-          {t('registerFarm')}
+          {(farms.data?.length ?? 0) > 0 ? t('authAddField') : t('registerFarm')}
         </button>
       ) : (
         crops.data && <RegisterForm crops={crops.data} onDone={(id) => setFarmId(id)} />

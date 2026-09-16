@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { AlertTriangle, Bell, Camera, CloudSun, FlaskConical, Home as HomeIcon, MapPin, Repeat, X } from 'lucide-react'
+import { AlertTriangle, Bell, Camera, ChevronDown, CloudSun, FlaskConical, Home as HomeIcon, MapPin, X } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import type { Farm, LiveEvent } from '../api/types'
@@ -24,6 +24,10 @@ function Shell() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const [farm, setFarm] = useState<Farm | null>(null)
+  const switchFarm = () => {
+    setFarmId(null)
+    navigate('/app')
+  }
   const synced = useRef<number | null>(null)
 
   useEffect(() => {
@@ -82,18 +86,22 @@ function Shell() {
     <div className="min-h-screen w-full bg-cream text-soil-dark flex flex-col">
       <header className="sticky top-0 z-30 bg-leaf-deep text-cream shadow-sm">
         <div className="max-w-md mx-auto flex items-center justify-between gap-3 px-4 py-3">
-          <Link to="/app" className="flex items-center gap-2 min-w-0">
-            <BrandMark size={34} />
+          {/* The field line is the switcher: a farmer with rice on one plot and
+              cotton on another taps their crop to move between them. */}
+          <div className="flex items-center gap-2 min-w-0">
+            <Link to="/app" aria-label="AnnRakshak"><BrandMark size={34} /></Link>
             <span className="min-w-0">
               <span className="block font-semibold tracking-tight leading-none">AnnRakshak</span>
               {farm && (
-                <span className="flex items-center gap-1 text-[11px] text-cream/70 truncate">
+                <button onClick={switchFarm} aria-label={t('switchFarm')}
+                  className="flex items-center gap-1 text-[11px] text-cream/70 max-w-full">
                   <MapPin className="w-3 h-3 shrink-0" />
-                  {farm.farmer_name} · {farm.crop_name} · {farm.district}
-                </span>
+                  <span className="truncate">{farm.crop_name} · {farm.village || farm.district}</span>
+                  <ChevronDown className="w-3 h-3 shrink-0" />
+                </button>
               )}
             </span>
-          </Link>
+          </div>
           <div className="flex items-center gap-1.5">
             {farm && (
               <Link to="/app/alerts" aria-label={t('noticesTitle')}
@@ -105,18 +113,6 @@ function Shell() {
                   </span>
                 )}
               </Link>
-            )}
-            {farm && (
-              <button
-                onClick={() => {
-                  setFarmId(null)
-                  navigate('/app')
-                }}
-                aria-label={t('switchFarm')}
-                className="w-9 h-9 rounded-full bg-cream/10 flex items-center justify-center hover:bg-cream/20"
-              >
-                <Repeat className="w-4 h-4" />
-              </button>
             )}
             <LanguagePicker onPick={(code) => {
               setLang(code)
