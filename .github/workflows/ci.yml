@@ -85,6 +85,9 @@ jobs:
     name: secrets and forbidden files
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # gitleaks lists the PR's commits to know what to scan
     steps:
       - uses: actions/checkout@v4
         with:
