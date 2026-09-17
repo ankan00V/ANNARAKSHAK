@@ -55,6 +55,13 @@ def ask(body: AskIn, request: Request, db: Session = Depends(get_db), kb: KB = D
     # can see, and an expert gets no personal answer at all.
     farms: list[Farm] = []
     if user is not None and user.role == "farmer":
-        farms = list(db.scalars(select(Farm).where(Farm.user_id == user.id).order_by(Farm.id)).all())
+        # Their own fields, and for a demo account the seeded demo ones — the
+        # same rule as auth.can_open_farm. Written as a query rather than reusing
+        # auth.farm_ids_for because that returns "all farms" when AUTH_ENFORCE is
+        # off, and a personal answer must never widen to another farmer's rows,
+        # whatever a deployment flag says.
+        owned = Farm.user_id == user.id
+        where = (owned | Farm.is_demo.is_(True)) if user.is_demo else owned
+        farms = list(db.scalars(select(Farm).where(where).order_by(Farm.id)).all())
     return krishi.answer(db, kb, text=body.text, topic=body.topic, screen=body.screen, lang=_lang(body.lang),
                          farm=farm, user=user if user and user.role == "farmer" else None, farms=farms)
