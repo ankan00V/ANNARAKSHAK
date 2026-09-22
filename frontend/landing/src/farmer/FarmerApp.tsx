@@ -5,6 +5,7 @@ import { api } from '../api/client'
 import type { Farm, LiveEvent } from '../api/types'
 import { registerWorker } from '../lib/push'
 import { FarmerProvider, useFarmer } from './FarmerContext'
+import { TourProvider, useTour } from './tour/Tour'
 import LanguagePicker from './components/LanguagePicker'
 import Onboard from './screens/Onboard'
 import BrandMark from '../ui/BrandMark'
@@ -22,6 +23,7 @@ const NAV = [
 function Shell() {
   const { lang, setLang, farmId, setFarmId, t, unread, setUnread, setToast } = useFarmer()
   const { pathname } = useLocation()
+  const { start: startTour } = useTour()
   // Tab screens use the full desktop grid; detail screens stay at reading width.
   const wideRoute = ['/app', '/app/', '/app/weather', '/app/scan', '/app/spray', '/app/alerts'].includes(pathname)
   const navigate = useNavigate()
@@ -121,7 +123,8 @@ function Shell() {
               setLang(code)
               if (farmId != null) api.setFarmLang(farmId, code).catch(() => undefined)
             }} />
-            <AccountMenu logoutLabel={t('authLogout')} demoLabel={t('demoFarm')} />
+            <AccountMenu logoutLabel={t('authLogout')} demoLabel={t('demoFarm')}
+              extra={farm ? { label: t('tourMenu'), onClick: startTour } : undefined} />
           </div>
         </div>
       </header>
@@ -151,7 +154,7 @@ function Shell() {
               return (
                 <Link
                   key={to}
-                  to={to}
+                  to={to} data-tour={`nav-${to.split('/').pop()}`}
                   className={`flex flex-col items-center justify-center gap-0.5 py-2 min-h-[60px] text-[10.5px] font-medium transition-colors
                     lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:min-h-[44px] lg:rounded-xl lg:text-[14px] ${
                     on ? 'text-leaf-deep lg:text-cream lg:bg-cream/10' : 'text-soil-dark/50 hover:text-soil-dark lg:text-cream/65 lg:hover:text-cream lg:hover:bg-cream/5'
@@ -209,7 +212,9 @@ function Toast() {
 export default function FarmerApp() {
   return (
     <FarmerProvider>
-      <Shell />
+      <TourProvider>
+        <Shell />
+      </TourProvider>
     </FarmerProvider>
   )
 }

@@ -11,6 +11,7 @@ import LocationAsk from '../components/LocationAsk'
 import ProblemRow from '../components/ProblemRow'
 import WeatherStrip from '../components/WeatherStrip'
 import { WeatherNowCard } from './Weather'
+import { TourInvite } from '../tour/Tour'
 import { useFarmer } from '../FarmerContext'
 
 export default function Home() {
@@ -41,7 +42,7 @@ export default function Home() {
   const cta = (
     <>
         <Link
-          to="/app/live"
+          to="/app/live" data-tour="live"
           className="relative block w-full rounded-3xl bg-gradient-to-br from-soil-dark to-leaf-deep text-cream overflow-hidden p-5 shadow-lg shadow-leaf-deep/25 active:scale-[0.99] transition-transform"
         >
           <span aria-hidden className="absolute -bottom-14 -right-8 w-48 h-48 rounded-full bg-ochre/30 blur-2xl" />
@@ -60,7 +61,7 @@ export default function Home() {
         </Link>
 
         <Link
-          to="/app/scan"
+          to="/app/scan" data-tour="scan"
           className="relative block w-full rounded-3xl bg-leaf-deep text-cream overflow-hidden p-5 shadow-lg shadow-leaf-deep/25 active:scale-[0.99] transition-transform"
         >
           <span aria-hidden className="absolute -top-12 -right-10 w-44 h-44 rounded-full bg-leaf/40 blur-2xl" />
@@ -81,7 +82,7 @@ export default function Home() {
     </>
   )
   const todayChecks = (
-        <section>
+        <section data-tour="checks">
           <SectionTitle sub={t('todayChecksSub')}>
             <span className="flex items-center gap-2">
               <ClipboardCheck className="w-5 h-5 text-leaf" />
@@ -134,6 +135,7 @@ export default function Home() {
   if (wide) {
     return (
       <div className="space-y-8">
+        <TourInvite />
         <div className={ROW}>
           <div className="col-span-8"><FarmCard data={d} crop={crop} /></div>
           <div className="col-span-4"><WeatherNowCard /></div>
@@ -170,6 +172,7 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
+      <TourInvite />
       <FarmCard data={d} crop={crop} />
 
       {/* Everything below is read at the field's spot, so ask for it until we have one. */}
@@ -197,7 +200,7 @@ function FarmCard({ data, crop }: { data: HomeData; crop?: CropInfo }) {
   const lastDas = stages.length ? stages[stages.length - 2]?.das[1] ?? 120 : 120
   const pct = Math.min(100, Math.max(0, (f.das / lastDas) * 100))
   return (
-    <Card className="p-4 lg:h-full lg:p-8 lg:flex lg:flex-col lg:justify-between lg:rounded-3xl">
+    <Card data-tour="farm" className="p-4 lg:h-full lg:p-8 lg:flex lg:flex-col lg:justify-between lg:rounded-3xl">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs text-soil-dark/50 lg:text-sm">{f.district} · {f.area_acres} {t('acres')}{f.variety ? ` · ${f.variety}` : ''}</p>
