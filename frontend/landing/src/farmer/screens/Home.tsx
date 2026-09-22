@@ -11,7 +11,7 @@ import LocationAsk from '../components/LocationAsk'
 import ProblemRow from '../components/ProblemRow'
 import WeatherStrip from '../components/WeatherStrip'
 import { WeatherNowCard } from './Weather'
-import { TourInvite } from '../tour/Tour'
+import { TourButton } from '../tour/Tour'
 import { useFarmer } from '../FarmerContext'
 
 export default function Home() {
@@ -135,7 +135,6 @@ export default function Home() {
   if (wide) {
     return (
       <div className="space-y-8">
-        <TourInvite />
         <div className={ROW}>
           <div className="col-span-8"><FarmCard data={d} crop={crop} /></div>
           <div className="col-span-4"><WeatherNowCard /></div>
@@ -172,7 +171,6 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
-      <TourInvite />
       <FarmCard data={d} crop={crop} />
 
       {/* Everything below is read at the field's spot, so ask for it until we have one. */}
@@ -189,6 +187,9 @@ export default function Home() {
       <WeatherStrip weather={d.weather} rain={d.rain_context} />
 
       {recentProblems}
+
+      {/* The tour, any time (on a wide screen it sits in the sidebar). */}
+      <TourButton variant="row" />
     </div>
   )
 }

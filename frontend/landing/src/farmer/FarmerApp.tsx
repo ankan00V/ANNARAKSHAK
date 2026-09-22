@@ -5,7 +5,7 @@ import { api } from '../api/client'
 import type { Farm, LiveEvent } from '../api/types'
 import { registerWorker } from '../lib/push'
 import { FarmerProvider, useFarmer } from './FarmerContext'
-import { TourProvider, useTour } from './tour/Tour'
+import { TourButton, TourProvider, useTour } from './tour/Tour'
 import LanguagePicker from './components/LanguagePicker'
 import Onboard from './screens/Onboard'
 import BrandMark from '../ui/BrandMark'
@@ -172,8 +172,9 @@ function Shell() {
               )
             })}
           </div>
-          {/* Desktop only: the free helpline sits at the foot of the sidebar. */}
-          <a href="tel:18001801551" className="hidden lg:flex mt-auto m-4 items-start gap-2.5 rounded-xl bg-cream/5 border border-cream/10 p-3 text-[12px] leading-snug text-cream/70 hover:text-cream hover:bg-cream/10">
+          {/* Desktop only: the app tour, and the free helpline at the foot of the sidebar. */}
+          <TourButton variant="sidebar" />
+          <a href="tel:18001801551" className="hidden lg:flex mx-4 mb-4 items-start gap-2.5 rounded-xl bg-cream/5 border border-cream/10 p-3 text-[12px] leading-snug text-cream/70 hover:text-cream hover:bg-cream/10">
             <Phone className="w-4 h-4 shrink-0 mt-0.5 text-ochre" />
             {t('callKcc')}
           </a>

@@ -124,3 +124,21 @@
 @media (prefers-reduced-motion: reduce) {
   .driver-popover.ar-tour .ar-tour-audio .ar-tour-playing::before { animation: none; }
 }
+
+/* How far through the step's voice (or reading time) we are. */
+.driver-popover.ar-tour .ar-tour-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(43, 29, 18, 0.08);
+  overflow: hidden;
+}
+
+.driver-popover.ar-tour .ar-tour-bar > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: #c8862d;
+  transition: width 0.25s linear;
+}
