@@ -239,6 +239,11 @@ class Case(Base):
     reason: Mapped[str] = mapped_column(String(40))
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime)
+    assigned_to: Mapped[int | None] = mapped_column(ForeignKey("app_user.id"))
+    """The officer this case was routed to (app.engine.assign). None when the
+    district has no verified officer yet: the case stays in everyone's queue
+    rather than waiting for a name."""
+    assigned_at: Mapped[datetime | None] = mapped_column(DateTime)
 
 
 class Confirmation(Base):
