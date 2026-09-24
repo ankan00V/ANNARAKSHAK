@@ -3,7 +3,6 @@
 ## Satellite Intelligence for Crop Stress & Drought Monitoring
 
 **Autonomous Satellite Imagery Crop Disease & Drought Segmentation Suite**  
-Smart India Hackathon 2026 · PS 26131 · Government of Maharashtra
 
 AnnRakshak is an agricultural intelligence platform designed to help farmers and agricultural stakeholders identify crop-health risks earlier. Its existing crop-diagnosis workflow combines image-based disease identification, confidence-aware decision-making, expert escalation, weather risk signals, and field-level monitoring.
 
